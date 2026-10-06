@@ -1,4 +1,4 @@
-# laser_wire_ded_project: laser wire-feed DED (stranded / Fe+Ni wire) in OpenFOAM
+﻿# laser_wire_ded_project: laser wire-feed DED (stranded / Fe+Ni wire) in OpenFOAM
 
 Single-track laser wire DED simulation: a custom OpenFOAM.com solver (`laserWireDEDFoam`,
 VOF + enthalpy-porosity + ray-traced laser + multi-component Fe/Ni tracers), a Python case
@@ -36,8 +36,9 @@ laser_wire_ded_project/
   validation/               X-ray + EDS measurements, annotated frames, metrics tables
   scripts/box/              run/status scripts used on the build box (absolute box paths;
                             reference only, edit paths before reuse)
-  scripts/pc/               WSL run scripts used on this PC + launch_wsl_job.ps1
+  scripts/pc/               WSL run scripts + launch_wsl_job.ps1 + open_in_paraview.ps1/.bat
   docs/MODEL_NOTES.md       long-form model documentation
+  docs/PARAVIEW.md          Windows ParaView + WSL OpenFOAM viewing
 ```
 
 ### Cases included (`cases/`)
@@ -199,6 +200,16 @@ WSL binary, which does not know those keywords. The GUI refuses `~/laser_wire_de
 
 ---------------------------------------------------------------------------------------------
 
+
+## 5b. View results in ParaView (Windows)
+
+Use **Windows ParaView 6.2** against the WSL case over UNC. Linux `paraFoam` is not installed and not needed.
+
+- Double-click Desktop **Open live DED case (ParaView)** (or `C:\Users\dukyo\laser_wire_ded\Open live DED case (ParaView).lnk`)
+- Or: `scripts\pc\open_in_paraview.bat`  (default = live `val3mm_fe_ni_v2`)
+- Any case: `scripts\pc\open_any_foam_case.bat <case-folder>`
+
+After open: Properties -> **Case Type = Decomposed Case** for live `mpirun` jobs (`processor*`), check **internalMesh**, Apply. Color by `T` / `alpha.metal` / `cFe`. **File -> Reload Files** to pick up new times while the solver runs. Full notes: [`docs/PARAVIEW.md`](docs/PARAVIEW.md).
 ## 6. Model summary
 
 Full details: `docs/MODEL_NOTES.md`.

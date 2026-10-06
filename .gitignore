@@ -1,4 +1,4 @@
-# --- OpenFOAM run output -------------------------------------------------
+﻿# --- OpenFOAM run output -------------------------------------------------
 processor*/
 postProcessing/
 # time directories (0 is regenerated from 0.orig by Allrun)
@@ -11,6 +11,8 @@ cases/*/constant/cellToRegion
 cases/*/VTK/
 cases/*/dynamicCode/
 *.foam
+!**/case.foam
+!case.foam
 log.*
 *.log
 !validation/*.log
