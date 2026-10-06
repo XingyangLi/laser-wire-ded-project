@@ -1,0 +1,11 @@
+{
+  "case": "val3mm_fe_ni_defocus",
+  "sim_end_time_s": 1.1249,
+  "wire_tip_in_pool_no_balling": true,
+  "bead_height_mm": {"sim_plateau": 0.85, "sim_probe_avg_last20pct": 0.70, "exp_xray": "1.32 +/- 0.20", "exp_eds": 0.94},
+  "penetration_mm": {"sim_avg_last20pct": 0.085, "sim_latest": 0.171, "exp_xray_auto": "0.08 +/- 0.03", "exp_guide": "0.25-0.45"},
+  "pool_length_mm": {"sim_avg_last20pct": 3.69, "sim_latest": 3.90, "exp": "3.33 +/- 0.18"},
+  "unmelted_Fe": {"sim_fraction_of_deposited_Fe": 0.115, "sim_fraction_build_reconstructed": 0.21, "sim_pieces": 6, "sim_d_eq_mm": [0.42,0.22,0.22,0.20,0.16,0.11], "sim_location": "keeps forming after t~0.45 s, at z -0.3..-0.5 mm below the original plate surface", "exp": "5-12 % area, d ~0.19 mm, along whole track inside bead"},
+  "unmelted_Ni": {"sim_fraction_of_deposited_Ni": 0.119, "sim_pieces": 4, "exp": "none visible"},
+  "feed_mass_balance": {"nominal_wire_metal_area_mm2": 0.353, "effective_delivered_area_mm2": 0.20, "ratio": 0.56, "note": "voxelised 0.3 mm strands at dx=120 um under-deliver the fed metal; expected bead area 2.41 mm2"}
+}

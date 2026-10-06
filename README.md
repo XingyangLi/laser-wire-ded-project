@@ -279,6 +279,7 @@ Runs at the experiment settings (3 mm Fe+Ni test):
   ball, pool ~2.7-3.0 mm long, 2.3-2.4 mm wide, 0.06-0.17 mm deep, Tmax ~2070-2100 K, 181 W of
   600 W absorbed. Penetration reads 0 so far; final comparison pending (run on the box was due to
   finish ~1 AM CT 2026-10-06; its results are not in this snapshot).
+- **val3mm_fe_ni_defocus** (Oct 6, 2026; 600 W, 2.67 mm/s, WFS 18.2 mm/s, focus -1.5 mm, A_wire 0.25 / A_sub 0.35, 3 mm track): finished. Wire tip stays in the pool with no balling; penetration ~0.09 mm and unmelted Fe ~11.5 % (pieces ~0.2 mm) match the experiment, but bead height is ~0.85 mm vs 1.32 mm (fed metal only ~56 % of nominal from voxelised strands), pool is ~11-17 % long (3.7-3.9 vs 3.33 mm), unmelted Fe sits below the plate line and ~12 % Ni stays unmelted. See `results/val3mm_fe_ni_defocus/val3mm_defocus_vs_experiment.png`.
 
 ### Open issues
 1. **Fe strands surviving along the track.** The experiment keeps unmelted Fe over the whole 10 mm;
