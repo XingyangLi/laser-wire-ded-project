@@ -157,6 +157,18 @@ def build_parser():
     a("--no-wire-stubbing", action="store_true",
       help="multi-component: allow the feed drive to push never-molten wire into solid substrate (old behaviour). "
            "Default: wire within one cell of the solid substrate/deposit top is dragged with the substrate")
+    a("--feed-scale", type=float, default=1.0,
+      help="multiplies the final wire feed speed (after the metal-basis conversion and --max-wfs cap) "
+           "to compensate a metal-delivery deficit; check the metal mass balance first "
+           "(meltPool.dat metalVolume slope vs wire_mass_rate). Default 1.0")
+    a("--rigid-substrate", type=float, default=None, metavar="KFACTOR",
+      help="solver rigidSubstrate: multiply the Carman-Kozeny coefficient by KFACTOR (e.g. 100) in solid "
+           "metal (fl < 0.05) below the original plate surface, so the feed drive cannot indent the solid "
+           "plate with a cold wire tip. Default off")
+    a("--stub-floor", action="store_true",
+      help="multi-component wireStubbing: use the original plate surface (centre of the top substrate cell) "
+           "as the minimum support height, so never-molten solid strands are never driven below the plate "
+           "line even when the plate under the tip is molten. Default off")
     a("--track-length", type=float, default=None,
       help="deposited track length [m]: sets the end time = track length / scan speed (if --end-time not given)")
     a("--record-x", default=None,
@@ -320,6 +332,10 @@ class Case:
                     print(f"[generate] WARNING: metal-basis feed {a.wire_feed_speed*1e3:.1f} mm/s capped at "
                           f"{a.max_wfs*1e3:.1f} mm/s (--max-wfs)")
                     a.wire_feed_speed = a.max_wfs
+        if abs(a.feed_scale - 1.0) > 1e-12:
+            print(f"[generate] --feed-scale {a.feed_scale:g}: WFS {a.wire_feed_speed*1e3:.2f} -> "
+                  f"{a.wire_feed_speed*a.feed_scale*1e3:.2f} mm/s")
+            a.wire_feed_speed *= a.feed_scale
         if self.comp_names:
             self.setup_components()
         # 2D: wire becomes a slab; equivalent thickness so that the bead height matches
@@ -1028,7 +1044,7 @@ mushyZone   // Carman-Kozeny: K = C alpha (1-fl)^2/(fl^3 + eps)
     C           {f(a.mushy_C)};
     eps         0.001;
 }}
-
+{self.rigid_substrate_block()}
 solution
 {{
     nTCorr      3;
@@ -1121,6 +1137,16 @@ statistics
 }}
 """ + FOOT
 
+    def rigid_substrate_block(self):
+        a = self.a
+        if not a.rigid_substrate:
+            return ""
+        return ("\nrigidSubstrate   // stiffer Carman-Kozeny sink in the solid plate (no indentation by the wire tip)\n{\n"
+                "    enabled     true;\n"
+                "    zTop        0;        // original plate surface\n"
+                f"    KFactor     {f(a.rigid_substrate)};\n"
+                "    flMax       0.05;     // only (nearly) solid cells\n}\n")
+
     def components_block(self):
         a = self.a
         out = ["components      // multi-component wire (one tracer c<name> + unmelted marker u<name> each)", "{",
@@ -1131,6 +1157,9 @@ statistics
                "    unmeltedResetFl 0.5;   // u<name> -> 0 where the liquid fraction exceeds this",
                f"    wireStubbing {'false' if a.no_wire_stubbing else 'true'};   // solid wire cannot be pushed into solid substrate",
                f"    stubContactDist {f(1.6 * self.dx)};   // wire cells (centres) closer than this above the solid-support cell centre are dragged (= first cell above it)"]
+        if a.stub_floor:
+            out.append(f"    stubFloorZ {f(-0.5 * self.dx)};   // minimum support height (~ top substrate cell centre): "
+                       "solid never-molten strands are not driven below the plate line")
         for c in self.comp_names:
             m = MATERIALS[c]
             if a.absorptivity_wire is not None:

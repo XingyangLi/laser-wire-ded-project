@@ -24,6 +24,12 @@ const bool meltedFollowsSubstrate =
 const scalar uMeltFl = compDict.getOrDefault<scalar>("unmeltedResetFl", 0.5);
 const bool wireStubbing = compDict.getOrDefault<bool>("wireStubbing", false);
 const scalar stubContactDist = compDict.getOrDefault<scalar>("stubContactDist", 1e-4);
+// Optional floor for the stubbing support (default off): the support height of
+// every column is at least stubFloorZ (e.g. the centre of the top substrate
+// cell), so never-molten solid wire within stubContactDist of the original
+// plate surface is dragged with the substrate even when the plate below the
+// tip is already molten (solid strands cannot be driven below the plate line).
+const scalar stubFloorZ = compDict.getOrDefault<scalar>("stubFloorZ", -GREAT);
 // If max(c_i) exceeds this, keep that component's own Tsol/Tliq instead of the
 // Fe-Ni table (so a nearly-pure Fe strand stays at Tl=1811 K until mixed).
 const scalar liquidusUnmixedThr =
@@ -88,5 +94,10 @@ if (multiComp)
         << ", liquidusUnmixedThreshold " << liquidusUnmixedThr
         << ", unmeltedKFactor " << unmeltedKFactor
         << ", meltedFollowsSubstrate " << meltedFollowsSubstrate
-        << ", wireStubbing " << wireStubbing << " (contact " << stubContactDist << " m)" << nl << endl;
+        << ", wireStubbing " << wireStubbing << " (contact " << stubContactDist << " m)" << nl;
+    if (stubFloorZ > -0.5*GREAT)
+    {
+        Info<< "    stubbing support floor stubFloorZ = " << stubFloorZ << " m" << nl;
+    }
+    Info<< endl;
 }

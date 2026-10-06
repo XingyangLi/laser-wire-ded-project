@@ -44,6 +44,7 @@ laser_wire_ded_project/
 
 | case | what | status of the original run |
 |---|---|---|
+| `val3mm_fe_ni_v2` | as `val3mm_fe_ni_defocus` + **`--rigid-substrate 100 --stub-floor`** (no wire pushed into the plate), `--feed-scale 1.0` (see its `FIXES.md`) | started on the PC 2026-10-06 11:30 CT (WSL `~/laser_wire_ded_stranded/val3mm_fe_ni_v2`, ~13-14 h); smoke test: wire metal below the plate 0.0006 vs 0.019 mm3 at 0.02 s |
 | `val3mm_fe_ni_defocus` | Fe+Ni 5-strand on Invar, **experiment settings** 600 W, 2.67 mm/s, WFS 18.2 mm/s, 3 mm track, **focus -1.5 mm, zR 1.2 mm**, tip touching plate, A_sub 0.35, A_wire 0.25, strand-k 0.4, unmelted-k 0.3, liquidusUnmixed 0.85 | was still running on the box at export (t = 0.69 / 1.125 s) |
 | `val3mm_fe_ni_focus03_balled` | same fixes but focus +0.3 mm, collimated, A_sub 0.30, 50 um gap | stopped at 0.30 s: wire tip hung ~1.5 mm up and **balled** (kept as reference) |
 | `val3mm_fe_ni_defocus_coarse` | 25 ms coarse sanity check of the defocus case | done |
@@ -82,9 +83,10 @@ which laserWireDEDFoam
   LWDED_APPBIN=$HOME/lwded_bin ./Allwmake
   export PATH=$HOME/lwded_bin:$PATH        # put first on PATH before running cases
   ```
-* Building on `/mnt/c` works but is slow (NTFS through 9P) and leaves `Make/linux64GccDPInt32Opt`
-  and `lnInclude` artifacts in the Windows tree (both git-ignored). A copy in the WSL home is faster:
-  `rsync -a --exclude .git /mnt/c/Users/dukyo/laser_wire_ded_project/ ~/lwded_dev/`.
+* **Do not build directly on `/mnt/c`**: the Windows filesystem is case-insensitive, so the solver's
+  `correctPhi.H` shadows OpenFOAM's `CorrectPhi.H` and the compile fails ("'CorrectPhi' was not
+  declared"). Build from a copy in the WSL home, e.g. `scripts/pc/build_solver_wsl.sh`
+  (rsync `solver/` to `~/lwded_v2/solver_build`, then `LWDED_APPBIN=$HOME/lwded_bin ./Allwmake`).
 * Clean: `./Allwclean`.
 * The solver was developed on the box against OpenFOAM.com v2412 and verified to compile against
   v2406 in WSL (see "Build check" at the bottom).
@@ -166,6 +168,7 @@ This reproduces `cases/val3mm_fe_ni_defocus` exactly (verified). Notes:
 | wire geometry | `--wire-type solid\|stranded`, `--wire-diameter`, `--strands`, `--strand-layout auto\|ring\|centre`, `--strand-diameter`, `--strand-gap`, `--lay-length`, `--lay-direction`, `--strand-feed-basis metal\|wfs`, `--feed-reference-diameter`, `--max-wfs` |
 | feed | `--feed-angle` (90 = vertical/coaxial), `--feed-side`, `--wire-aim`, `--wire-gap` (0 = tip touching the plate), `--feed-start` |
 | **multi-component Fe/Ni** | `--strand-materials Fe,Ni,Fe,Ni,Fe` turns on tracers cFe/cNi + unmelted markers uFe/uNi; `--liquidus table\|mixture`; **NEW** `--strand-k-factor` (scales solid k of the strands: weaker strand-to-strand conduction), **NEW** `--unmelted-k-factor` (solver further scales k in never-molten wire cells), **NEW** `--liquidus-unmixed-threshold` (cell dominated >thr by one component keeps that component's Tsol/Tliq, so pure Fe stays at 1811 K until mixed), `--no-melted-follow-substrate`, `--no-wire-stubbing` |
+| **NEW anti-sinking / feed** | `--rigid-substrate KFACTOR` (solver `rigidSubstrate{}`: Carman-Kozeny coefficient x KFACTOR, e.g. 100, in solid metal below the original plate surface, so the imposed feed cannot indent the solid plate with a cold wire tip), `--stub-floor` (components `stubFloorZ`: the original plate surface is always a support for the stubbing rule, so never-molten strands are not driven below the plate line), `--feed-scale` (multiplies the final WFS; default 1.0, check the metal mass balance before using it). All default off / 1.0 |
 | recording planes | `--record-x`, `--record-interval` (y-z planes stacked into a full-length build by `visualize_multicomp.py`) |
 | mesh | `--resolution coarse\|medium\|fine` or `--dx`, `--wire-refine`, `--refine-halfwidth`, `--refine-halfwidth-y`, `--refine-downstream`, `--uniform-downstream`, `--domain-y auto\|half\|full`, `--dim 3d\|2d`, `--upstream/--downstream/--half-width/--substrate-thickness/--gas-height` |
 | physics switches | `--no-marangoni`, `--no-recoil`, `--no-evaporation`, `--no-radiation`, `--no-convection`, `--buoyancy`, `--gas-viscosity-factor`, `--mushy-C`, `--preheat` |
@@ -173,7 +176,8 @@ This reproduces `cases/val3mm_fe_ni_defocus` exactly (verified). Notes:
 
 Solver-side dictionary keywords added recently (written by the generator):
 `laser{ beams{ ... rayleighLength } alphaHit }`, `wireMaterial{ absorptivity }`,
-`components{ liquidusUnmixedThreshold unmeltedKFactor ... }` (in `constant/meltProperties`).
+`components{ liquidusUnmixedThreshold unmeltedKFactor stubFloorZ ... }`,
+`rigidSubstrate{ enabled zTop KFactor flMax }` (in `constant/meltProperties`).
 
 ---------------------------------------------------------------------------------------------
 
@@ -233,8 +237,9 @@ Full details: `docs/MODEL_NOTES.md`.
   `alpha.metal T liquidFraction U p_rgh cFe cNi uFe uNi meltHistory ...`.
 * **Known limits:** single metal density (fragments don't sink/float), no dissolution kinetics
   (melting decided by cell T vs local liquidus), constant cp, evaporation removes heat but not mass,
-  imposed incompressible feed can push unmelted strands into soft substrate instead of
-  stubbing/lifting, no multiple reflections / Fresnel absorption.
+  imposed incompressible feed can push unmelted strands into the substrate instead of
+  stubbing/lifting (use `--rigid-substrate 100 --stub-floor`, new 2026-10-06), no multiple
+  reflections / Fresnel absorption.
 
 ---------------------------------------------------------------------------------------------
 
@@ -279,7 +284,16 @@ Runs at the experiment settings (3 mm Fe+Ni test):
   ball, pool ~2.7-3.0 mm long, 2.3-2.4 mm wide, 0.06-0.17 mm deep, Tmax ~2070-2100 K, 181 W of
   600 W absorbed. Penetration reads 0 so far; final comparison pending (run on the box was due to
   finish ~1 AM CT 2026-10-06; its results are not in this snapshot).
-- **val3mm_fe_ni_defocus** (Oct 6, 2026; 600 W, 2.67 mm/s, WFS 18.2 mm/s, focus -1.5 mm, A_wire 0.25 / A_sub 0.35, 3 mm track): finished. Wire tip stays in the pool with no balling; penetration ~0.09 mm and unmelted Fe ~11.5 % (pieces ~0.2 mm) match the experiment, but bead height is ~0.85 mm vs 1.32 mm (fed metal only ~56 % of nominal from voxelised strands), pool is ~11-17 % long (3.7-3.9 vs 3.33 mm), unmelted Fe sits below the plate line and ~12 % Ni stays unmelted. See `results/val3mm_fe_ni_defocus/val3mm_defocus_vs_experiment.png`.
+- **val3mm_fe_ni_defocus** (Oct 6, 2026; 600 W, 2.67 mm/s, WFS 18.2 mm/s, focus -1.5 mm, A_wire 0.25 / A_sub 0.35, 3 mm track): finished. Wire tip stays in the pool with no balling; penetration ~0.09 mm and unmelted Fe ~11.5 % (pieces ~0.2 mm) match the experiment, but bead height is ~0.85 mm vs 1.32 mm, pool is ~11-17 % long (3.7-3.9 vs 3.33 mm), unmelted Fe sits below the plate line and ~12 % Ni stays unmelted. See `results/val3mm_fe_ni_defocus/val3mm_defocus_vs_experiment.png`.
+
+- **Re-check of the defocus run (Oct 6):** the metal inventory (meltPool.dat `metalVolume`) grew by
+  7.18 mm3 in 1.125 s = 6.38 mm3/s vs 6.43 mm3/s fed, so **99 % of the fed metal is delivered**
+  (the earlier "56 %" was a tracer/probe-based estimate). The low bead comes from (a) the 3 mm track
+  being shorter than the 3.7 mm pool (no steady bead behind the pool yet; mid-track cross-sections
+  1.6-2.1 mm2 vs 2.41 mm2 steady), (b) ~1 mm3 of wire metal pushed **into the solid plate** during
+  the cold start (fl = 0 there; 0.75 mm3 by 0.2 s, down to z = -0.51 mm), (c) melt held ahead of the
+  wire. A 1.8x feed would overshoot the X-ray bead (~2.4 mm2). Fix for (b): `--rigid-substrate 100
+  --stub-floor` (`val3mm_fe_ni_v2`). A steady bead height needs a longer track (>= 6 mm).
 
 ### Open issues
 1. **Fe strands surviving along the track.** The experiment keeps unmelted Fe over the whole 10 mm;
@@ -298,7 +312,10 @@ Runs at the experiment settings (3 mm Fe+Ni test):
 5. Full 10 mm cases at the experiment settings (`val_exp_*`) are set up but have the old optics
    (focus 0, A 0.42); regenerate them with the defocus/absorption fixes before a long run
    (~32 h box / ~45 h PC on 8 cores).
-6. GUI lacks the newest options (section 5).
+6. GUI lacks the newest options (section 5), incl. `--rigid-substrate`, `--stub-floor`, `--feed-scale`.
+7. Wire tracer inventory: in the defocus run sum(alpha (cFe+cNi) V) was 4.9 mm3 at the end vs
+   ~7.2 mm3 fed (VOF metal is conserved, the tracers are not quite: clipping in `cWireEqn.H`).
+   Affects composition / dilution numbers, not the bead size.
 
 ---------------------------------------------------------------------------------------------
 

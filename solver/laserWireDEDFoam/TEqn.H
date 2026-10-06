@@ -157,6 +157,20 @@
         Cmushy.value()*max(min(alpha1.primitiveField(), 1.0), 0.0)
        *sqr(1.0 - liquidFraction.primitiveField())
        /(pow3(liquidFraction.primitiveField()) + epsMushy);
+    if (rigidSubstrate)
+    {
+        // stiffer momentum sink in the solid plate below the original surface
+        scalarField& Kc = Kmushy.primitiveFieldRef();
+        const vectorField& Cc = mesh.C().primitiveField();
+        const scalarField& flc = liquidFraction.primitiveField();
+        forAll(Kc, celli)
+        {
+            if (Cc[celli].z() < rigidSubZTop && flc[celli] < rigidSubFlMax)
+            {
+                Kc[celli] *= rigidSubKFactor;
+            }
+        }
+    }
     Kmushy.correctBoundaryConditions();
 
     Info<< "T: min = " << gMin(T.primitiveField())

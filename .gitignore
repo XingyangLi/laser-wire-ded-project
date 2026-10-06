@@ -18,8 +18,8 @@ nohup*.out
 *.status
 # --- wmake build output --------------------------------------------------
 lnInclude/
-Make/linux64*/
-Make/darwin*/
+**/Make/linux64*/
+**/Make/darwin*/
 platforms/
 *.o
 *.dep

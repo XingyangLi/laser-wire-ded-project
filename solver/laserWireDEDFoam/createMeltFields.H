@@ -196,6 +196,27 @@ volScalarField Kmushy
     dimensionedScalar(dimDensity/dimTime, Zero)
 );
 
+// --- Optional rigid substrate (anti-indentation, default off):
+//     the Carman-Kozeny coefficient is multiplied by KFactor in (nearly) solid
+//     metal whose cell centre lies below the original plate surface zTop.
+//     The prescribed wire feed then cannot indent / displace the solid plate
+//     through the pressure coupling (a cold, never-molten wire tip used to be
+//     pushed ~0.5 mm into the solid substrate at start-up); the fed wire metal
+//     is deflected along the plate instead (dragged with the substrate).
+const dictionary rigidSubDict(meltProperties.subOrEmptyDict("rigidSubstrate"));
+const bool rigidSubstrate = rigidSubDict.getOrDefault<bool>("enabled", false);
+const scalar rigidSubZTop = rigidSubDict.getOrDefault<scalar>("zTop", 0.0);
+const scalar rigidSubKFactor = rigidSubDict.getOrDefault<scalar>("KFactor", 100.0);
+const scalar rigidSubFlMax = rigidSubDict.getOrDefault<scalar>("flMax", 0.05);
+Info<< "Rigid substrate (Kmushy x KFactor below zTop where fl < flMax): "
+    << (rigidSubstrate ? "on" : "off");
+if (rigidSubstrate)
+{
+    Info<< "  zTop " << rigidSubZTop << " KFactor " << rigidSubKFactor
+        << " flMax " << rigidSubFlMax;
+}
+Info<< nl << endl;
+
 volVectorField Usolid
 (
     IOobject("Usolid", runTime.timeName(), mesh, IOobject::NO_READ, IOobject::NO_WRITE),

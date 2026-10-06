@@ -36,6 +36,11 @@
                     break;
                 }
             }
+            // optional floor: the original plate surface always supports
+            if (stubFloorZ > -0.5*GREAT)
+            {
+                zSupport[ci] = max(zSupport[ci], stubFloorZ);
+            }
         }
     }
     forAll(Us, celli)

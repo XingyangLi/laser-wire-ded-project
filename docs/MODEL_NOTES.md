@@ -205,6 +205,20 @@ has solidified, and the never-melted fractions and fragment sizes.
   being forced into the hot, still-solid substrate. That penetration is driven by mass conservation: the inlet
   keeps feeding 52 mm/s of incompressible wire, and the Carman-Kozeny "solid" is only a velocity penalty that
   pressure can overcome. See the limits below.
+- **`rigidSubstrate{}` and `stubFloorZ` (2026-10-06, default off; `--rigid-substrate 100 --stub-floor`).**
+  The defocus validation run showed that the cold wire tip is pushed into the *solid* plate during
+  the first ~0.3 s (fl = 0 in those cells, 0.75 mm3 of never-melted wire down to z = -0.51 mm by 0.2 s,
+  later trailing behind the pool as "unmelted strands below the plate line", also the source of the
+  unmelted Ni). Cause: plate and wire carry the same Carman-Kozeny stiffness, so the pressure needed to
+  keep feeding incompressible wire indents the plate as easily as it deflects the wire.
+  `rigidSubstrate { enabled true; zTop 0; KFactor 100; flMax 0.05; }` multiplies K by KFactor in cells
+  with centre z < zTop and fl < flMax (solid plate and solid deposit below the original surface;
+  the pool and its mushy rim are unchanged). The fed wire metal then spreads along the plate and is
+  dragged with the substrate (stub), as a real wire would deflect. `components{ stubFloorZ z; }` makes
+  the stubbing support of every column at least z (generator: -dx/2, the top substrate cell centre), so
+  never-molten solid strands within `stubContactDist` of the original surface follow the substrate even
+  when the plate under the tip is molten. Implementation: `createMeltFields.H`, `TEqn.H` (K),
+  `createComponents.H`, `updateWireZone.H` (floor).
 - Pressure solver (multi-component cases): GAMG without the cheap coarsest-level solve and with a 10-cycle cap.
   With the extended refined box the cheap coarsest solve made GAMG stall (1000 cycles per solve, 10x slower).
 - `postProcessing/meltPool/components.dat` logs, per component, the metal volume and the never-melted volume in the
@@ -233,6 +247,8 @@ Swartzendruber et al. 1991 + Tetsu-to-Hagane 2026 DSC data (Fe-Ni liquidus/solid
   (seen down to z = -0.4 mm in the coarse run). A real wire would buckle, stub or lift the nozzle instead. The fact
   that unmelted Fe/Ni ends up in the deposit is a real consequence of the energy balance. The exact location and
   depth of those pieces is not reliable.
+  `--rigid-substrate 100 --stub-floor` (above) removes the push into the solid plate; strands can still be
+  pushed into liquid pool.
 - The end of the track (laser switch-off, crater) is not simulated; the run stops when 5 mm have been deposited.
 
 ## Two-metal model (Invar 36 wire on SS304)
