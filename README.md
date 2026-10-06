@@ -1,13 +1,24 @@
-﻿# laser_wire_ded_project: laser wire-feed DED (stranded / Fe+Ni wire) in OpenFOAM
+# laser_wire_ded_project: laser wire-feed DED (stranded / Fe+Ni wire) in OpenFOAM
+
+**New here?** Read **[START_HERE.md](START_HERE.md)** first — one folder, double-click bats, no Linux required.
 
 Single-track laser wire DED simulation: a custom OpenFOAM.com solver (`laserWireDEDFoam`,
 VOF + enthalpy-porosity + ray-traced laser + multi-component Fe/Ni tracers), a Python case
 generator, post-processing scripts, a Windows GUI, the case setups of every run so far, and the
 X-ray / EDS validation data for the Invar stranded-wire experiment (600 W, 160 mm/min).
 
-Snapshot exported 2026-10-05 from the build box (`/workspace/laser_wire_ded`) plus the stranded
-cases from WSL `~/laser_wire_ded_stranded`. The detailed model notes from the box are in
-[`docs/MODEL_NOTES.md`](docs/MODEL_NOTES.md) (paper basis, stranded wire, Fe/Ni model, limits).
+Quick Windows buttons (also on the Desktop):
+
+| Double-click | Does |
+|---|---|
+| `Build_Solver.bat` | Rebuild solver → WSL `~/lwded_bin` |
+| `Run_Case.bat` | Start a **new** case (default recipe = 3 mm Fe+Ni v2; will not touch the live v2 run) |
+| `Status.bat` | Progress / ETA |
+| `Open_in_ParaView.bat` | Sync + open ParaView |
+| `Open_in_Cursor.bat` | Open this folder in Cursor |
+| `gui\launch_gui.bat` | Point-and-click run panel |
+
+Solver binary after build: WSL `~/lwded_bin/laserWireDEDFoam` (see `scripts/pc/build_solver_wsl.sh`).
 
 ---------------------------------------------------------------------------------------------
 

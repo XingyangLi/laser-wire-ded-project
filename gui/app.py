@@ -377,7 +377,7 @@ cd "$WSL_WD"
 cp -a "$SRC_PROJ"/*.py "$WSL_WD/"
 source {shlex.quote(of)} >/dev/null 2>&1 || true
 echo "$(date) GUI job steps={steps} NP=$NP" >> "$ST"
-export PATH="$HOME/OpenFOAM/$USER-v2406/platforms/linux64GccDPInt32Opt/bin:$PATH"
+export PATH="$HOME/lwded_bin:$HOME/OpenFOAM/$USER-v2406/platforms/linux64GccDPInt32Opt/bin:$PATH"  # prefer rebuilt solver
 """
         if steps in ("generate", "generate_mesh", "all"):
             body += f"""
