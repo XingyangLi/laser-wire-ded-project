@@ -1,0 +1,5 @@
+[generate] 3d config=transitional_r wire=Invar36 substrate=SS304: P=600 W in 3 beam(s), A=0.42/0.42, end=0.862 s, v_scan=5.8 mm/s, WFS=44.9 mm/s, d_wire=0.90 mm @ 90 deg (front feed)
+[generate] stranded wire: 7 strands d=0.273 mm (ring radius 0.313 mm, gap 0.040 mm), lay 9.00 mm right-hand, helix angle 12.3 deg, fill 0.646, 5.5 cells/strand; feed 29.0 -> 44.92 mm/s (metal basis)
+[generate] wire box +-0.75 mm refined 1x in x-y (256 columns) -> dx_min = 50 um; domain y: full
+[generate] mesh 87 x 52 x (13+22) = 158340 block cells -> 185220 cells, dx=100 um; capillary dt ~ 6.45e-06 s; expected bead area 3.18 mm^2; E_L = 103 J/mm
+[generate] wrote /home/dukyong/laser_wire_ded_stranded/full_transitional_r_stranded

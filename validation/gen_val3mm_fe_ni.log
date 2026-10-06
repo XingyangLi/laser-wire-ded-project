@@ -1,0 +1,6 @@
+[generate] 3d config=transitional_r wire=Fe+Ni substrate=Invar36: P=600 W in 3 beam(s), A=0.25/0.3, end=1.1249 s, v_scan=2.7 mm/s, WFS=18.2 mm/s, d_wire=0.95 mm @ 90 deg (front feed)
+[generate] stranded wire: 5 strands d=0.300 mm (ring radius 0.323 mm, gap 0.080 mm), lay 9.46 mm right-hand, helix angle 12.1 deg, fill 0.502, 5.0 cells/strand; feed 10.1 -> 18.18 mm/s (metal basis)
+[generate] components ['Fe', 'Ni']: strands ['Fe', 'Ni', 'Fe', 'Ni', 'Fe']; area share Fe 0.600, Ni 0.400; mass share Fe 0.570, Ni 0.430 -> Fe-43.0Ni wt%; envelope 0.946 mm, central gap 0.346 mm; recording planes x = 1.970, 2.930, 4.010, 4.970 mm
+[generate] wire box +-0.77 mm refined 1x in x-y (814 columns) -> dx_min = 60 um; domain y: full
+[generate] mesh 78 x 42 x (11+18) = 95004 block cells -> 165822 cells, dx=120 um; capillary dt ~ 8.50e-06 s; expected bead area 2.41 mm^2; E_L = 225 J/mm
+[generate] wrote /workspace/laser_wire_ded/val3mm_fe_ni

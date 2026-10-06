@@ -1,0 +1,15 @@
+#!/bin/sh
+# Build laserWireDEDFoam (requires a sourced OpenFOAM.com v2406+ environment, e.g.
+#   source /usr/lib/openfoam/openfoam2406/etc/bashrc)
+#
+# By default the executable goes to $FOAM_USER_APPBIN (on PATH after sourcing OpenFOAM).
+# NOTE: that location is shared by every laserWireDEDFoam build of this Linux user
+# (e.g. the older build used by ~/laser_wire_ded_stranded). To install somewhere else:
+#   LWDED_APPBIN=$HOME/lwded_bin ./Allwmake      then   export PATH=$HOME/lwded_bin:$PATH
+cd "${0%/*}" || exit 1
+if [ -n "$LWDED_APPBIN" ]; then
+    mkdir -p "$LWDED_APPBIN"
+    export FOAM_USER_APPBIN="$LWDED_APPBIN"
+fi
+echo "laserWireDEDFoam -> $FOAM_USER_APPBIN"
+wmake laserWireDEDFoam

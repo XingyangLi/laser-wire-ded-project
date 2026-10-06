@@ -1,0 +1,3 @@
+[generate] 3d config=transitional_r wire=Invar36 substrate=SS304: P=600 W in 3 beam(s), A=0.42/0.42, end=0.862 s, v_scan=5.8 mm/s, WFS=29.0 mm/s, d_wire=0.90 mm @ 90 deg (front feed)
+[generate] mesh 87 x 26 x (13+22) = 79170 cells, dx=100 um; capillary dt ~ 1.83e-05 s; expected bead area 3.18 mm^2; E_L = 103 J/mm
+[generate] wrote /workspace/laser_keep/transitional_r_solid_wire/case_settings_reconstructed

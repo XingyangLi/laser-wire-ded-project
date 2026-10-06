@@ -1,0 +1,60 @@
++++ '[' Linux = Darwin ']'
++++ export LD_LIBRARY_PATH
++++ _foamClean PATH
++++ foamVar_name=PATH
++++ shift
+++++ /home/box/mamba/envs/of/bin/foamCleanPath -sh-env=PATH
++++ eval 'PATH="/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/bin:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/bin:/bin:/home/box/mamba/envs/of/bin:/home/box/mamba/envs/of/wmake:/usr/local/bin:/usr/bin:/usr/local/games:/usr/games"'
+++++ PATH=/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/bin:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/bin:/bin:/home/box/mamba/envs/of/bin:/home/box/mamba/envs/of/wmake:/usr/local/bin:/usr/bin:/usr/local/games:/usr/games
++++ unset foamVar_name
++++ _foamClean MANPATH
++++ foamVar_name=MANPATH
++++ shift
+++++ /home/box/mamba/envs/of/bin/foamCleanPath -sh-env=MANPATH
++++ eval ''
++++ unset foamVar_name
++++ _foamClean -lib
++++ foamVar_name=-lib
++++ shift
+++++ /home/box/mamba/envs/of/bin/foamCleanPath -sh-env=-lib
++++ eval 'LD_LIBRARY_PATH="/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/lib:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/lib:/lib/sys-openmpi:/lib:/lib/dummy"'
+++++ LD_LIBRARY_PATH=/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/lib:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/lib:/lib/sys-openmpi:/lib:/lib/dummy
++++ unset foamVar_name
++++ '[' Linux = Darwin ']'
++++ '[' -n '' ']'
++++ . /home/box/mamba/envs/of/etc/config.sh/functions
+++++ '[' -z loaded ']'
+++++ unset -f _foamAddPath _foamAddMan _foamAddLib _foamAddLibAuto
+++++ unset -f _foamClean _foamEcho _foamEtc
+++++ unset foamClean
+++++ unset _foam_uname_s
+++++ unset WM_SHELL_FUNCTIONS
++++ unset cleaned foamOldDirs _foamFoundDir _foamPrefixDir
+++ unset foamOldDirs projectDir
++ source /tmp/ofenv.sh
+++ export LD_LIBRARY_PATH=/home/box/mamba/envs/of/lib/mpich-3.3:/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/lib:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/lib:/lib/sys-openmpi:/lib:/lib/dummy
+++ LD_LIBRARY_PATH=/home/box/mamba/envs/of/lib/mpich-3.3:/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/lib:/home/box/mamba/envs/of/site//platforms/linux64GccDPInt32Opt/lib:/lib/sys-openmpi:/lib:/lib/dummy
++ export CXX=/home/box/mamba/envs/of/bin/x86_64-conda-linux-gnu-c++
++ CXX=/home/box/mamba/envs/of/bin/x86_64-conda-linux-gnu-c++
++ export CC=/home/box/mamba/envs/of/bin/x86_64-conda-linux-gnu-cc
++ CC=/home/box/mamba/envs/of/bin/x86_64-conda-linux-gnu-cc
+++ date
+++ which laserWireDEDFoam
++ echo 'START Mon Oct  5 11:55:09 CDT 2026  binary=/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/bin/laserWireDEDFoam'
+START Mon Oct  5 11:55:09 CDT 2026  binary=/home/box/OpenFOAM/box-v2412/platforms/linux64GccDPInt32Opt/bin/laserWireDEDFoam
++ '[' '!' -d processor0 ']'
++ ./Allrun 8
+numberOfSubdomains 8;
+n               ( 4 2 1 );
+++ date
++ echo 'SOLVER_EXIT:15 at Mon Oct  5 14:42:43 CDT 2026'
+SOLVER_EXIT:15 at Mon Oct  5 14:42:43 CDT 2026
++ mkdir -p /workspace/laser_wire_ded_viz/val3mm_fe_ni
++ /workspace/vizenv/bin/python /workspace/laser_wire_ded/visualize_multicomp.py --case . --out /workspace/laser_wire_ded_viz/val3mm_fe_ni
++ /workspace/vizenv/bin/python /workspace/laser_wire_ded/visualize.py --case . --out /workspace/laser_wire_ded_viz/val3mm_fe_ni/standard --only-latest
+++ date
++ echo 'VIZ_EXIT:0 at Mon Oct  5 14:42:57 CDT 2026'
+VIZ_EXIT:0 at Mon Oct  5 14:42:57 CDT 2026
+++ date
++ echo 'DONE Mon Oct  5 14:42:57 CDT 2026'
+DONE Mon Oct  5 14:42:57 CDT 2026

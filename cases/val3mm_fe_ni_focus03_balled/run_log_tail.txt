@@ -1,0 +1,201 @@
+# last 200 lines of log.laserWireDEDFoam (copied 2026-10-05 21:03 CDT)
+GAMG:  Solving for p_rgh, Initial residual = 0.0013111033, Final residual = 2.4381722e-05, No Iterations 3
+time step continuity errors : sum local = 7.4166304e-08, global = -8.5356963e-09, cumulative = 0.00018994981
+GAMG:  Solving for p_rgh, Initial residual = 0.00023909688, Final residual = 1.8895762e-05, No Iterations 10
+time step continuity errors : sum local = 5.7456804e-08, global = 2.4130453e-08, cumulative = 0.00018997394
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.473767e-05, Final residual = 7.6527611e-10, No Iterations 1
+ExecutionTime = 9645.26 s  ClockTime = 10048 s
+
+Courant Number mean: 0.00057600485 max: 0.27123947
+Interface Courant Number mean: 0.0001173485 max: 0.25685198
+deltaT = 7.5553437e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29716578
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0879218e-05, Final residual = 7.2232679e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849992  Min(alpha.metal) = -6.4298827e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849992  Min(alpha.metal) = -3.4344144e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0063012e-05, Final residual = 3.0947394e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 6.9979551e-06, Final residual = 4.2995782e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 1.5424216e-05, Final residual = 1.3888608e-09, No Iterations 1
+T: min = 300.00125 max = 2526.7205  laser: incident = 600 W absorbed = 163.09052 W  surface loss = 3.477761 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.5704411e-05, Final residual = 4.6569017e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 9.3951298e-05, Final residual = 2.354777e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.00014345364, Final residual = 6.0961942e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.0054434617, Final residual = 8.2444228e-05, No Iterations 2
+time step continuity errors : sum local = 2.5038768e-07, global = -3.015338e-08, cumulative = 0.00018994379
+GAMG:  Solving for p_rgh, Initial residual = 0.0012061995, Final residual = 6.8586152e-06, No Iterations 3
+time step continuity errors : sum local = 2.0871924e-08, global = -3.3852754e-09, cumulative = 0.0001899404
+GAMG:  Solving for p_rgh, Initial residual = 0.00020105479, Final residual = 1.2135534e-05, No Iterations 10
+time step continuity errors : sum local = 3.6923674e-08, global = -3.0862933e-08, cumulative = 0.00018990954
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.4855776e-05, Final residual = 1.1651653e-09, No Iterations 1
+ExecutionTime = 9645.44 s  ClockTime = 10048 s
+
+Courant Number mean: 0.00057589457 max: 0.27602484
+Interface Courant Number mean: 0.00011687551 max: 0.26051602
+deltaT = 7.5378139e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29717237
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0851671e-05, Final residual = 6.9320489e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849959  Min(alpha.metal) = -6.4296908e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849959  Min(alpha.metal) = -2.5939525e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0930637e-05, Final residual = 6.3100885e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 5.5647313e-06, Final residual = 2.4082365e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0706889e-05, Final residual = 1.0358836e-10, No Iterations 1
+T: min = 300.00125 max = 2526.9529  laser: incident = 600 W absorbed = 163.07379 W  surface loss = 3.4813457 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.00010322295, Final residual = 4.7759328e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00018798222, Final residual = 2.449581e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.00042334404, Final residual = 7.7875386e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.006167755, Final residual = 8.7817581e-05, No Iterations 2
+time step continuity errors : sum local = 2.6687668e-07, global = -9.1009802e-09, cumulative = 0.00018990044
+GAMG:  Solving for p_rgh, Initial residual = 0.0012923748, Final residual = 7.9773913e-06, No Iterations 3
+time step continuity errors : sum local = 2.4174401e-08, global = -4.8345129e-09, cumulative = 0.0001898956
+GAMG:  Solving for p_rgh, Initial residual = 0.00021820728, Final residual = 1.454753e-06, No Iterations 10
+time step continuity errors : sum local = 4.4127214e-09, global = 2.7345388e-09, cumulative = 0.00018989834
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.4840461e-05, Final residual = 1.2610201e-09, No Iterations 1
+ExecutionTime = 9645.62 s  ClockTime = 10048 s
+
+Courant Number mean: 0.00057582648 max: 0.2770254
+Interface Courant Number mean: 0.00011673142 max: 0.26121848
+deltaT = 7.5403382e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29717896
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0771389e-05, Final residual = 6.4451536e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849927  Min(alpha.metal) = -6.4294934e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849927  Min(alpha.metal) = -2.4543396e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.1043016e-05, Final residual = 5.4839096e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 2.8916708e-06, Final residual = 5.0565493e-09, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 2.1286586e-06, Final residual = 4.8961153e-09, No Iterations 1
+T: min = 300.00125 max = 2527.1871  laser: incident = 600 W absorbed = 163.07491 W  surface loss = 3.4877649 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.00010720826, Final residual = 5.2701527e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00018442476, Final residual = 3.4598902e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.0013375786, Final residual = 7.9886726e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.0062456049, Final residual = 8.1205909e-05, No Iterations 2
+time step continuity errors : sum local = 2.4675314e-07, global = 4.844514e-09, cumulative = 0.00018990318
+GAMG:  Solving for p_rgh, Initial residual = 0.0012406807, Final residual = 7.4724024e-06, No Iterations 3
+time step continuity errors : sum local = 2.272549e-08, global = 1.8635965e-09, cumulative = 0.00018990504
+GAMG:  Solving for p_rgh, Initial residual = 0.00020645983, Final residual = 4.8442737e-06, No Iterations 10
+time step continuity errors : sum local = 1.4734005e-08, global = 1.1903775e-08, cumulative = 0.00018991695
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.5115107e-05, Final residual = 1.2808791e-09, No Iterations 1
+ExecutionTime = 9645.79 s  ClockTime = 10048 s
+
+Courant Number mean: 0.00057784411 max: 0.28237079
+Interface Courant Number mean: 0.00011719231 max: 0.26474228
+deltaT = 7.5227617e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29718556
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0798207e-05, Final residual = 6.4607662e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849895  Min(alpha.metal) = -6.4292909e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849895  Min(alpha.metal) = -2.3491999e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.071082e-05, Final residual = 4.9083775e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 4.1185044e-06, Final residual = 8.4207305e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 6.7775519e-06, Final residual = 1.4639e-09, No Iterations 1
+T: min = 300.00125 max = 2527.4207  laser: incident = 600 W absorbed = 163.07602 W  surface loss = 3.4865197 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.7954585e-05, Final residual = 5.3491302e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00010263422, Final residual = 2.6220717e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.00015124879, Final residual = 7.513442e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.005737097, Final residual = 5.930215e-05, No Iterations 2
+time step continuity errors : sum local = 1.8070646e-07, global = 1.59265e-08, cumulative = 0.00018993288
+GAMG:  Solving for p_rgh, Initial residual = 0.001122209, Final residual = 6.7763189e-06, No Iterations 3
+time step continuity errors : sum local = 2.060479e-08, global = 2.7511227e-10, cumulative = 0.00018993315
+GAMG:  Solving for p_rgh, Initial residual = 0.00019417137, Final residual = 2.370948e-06, No Iterations 10
+time step continuity errors : sum local = 7.206823e-09, global = -5.5879728e-09, cumulative = 0.00018992756
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.5446038e-05, Final residual = 1.2915903e-09, No Iterations 1
+ExecutionTime = 9645.96 s  ClockTime = 10048 s
+
+Courant Number mean: 0.00058006106 max: 0.29391526
+Interface Courant Number mean: 0.00011732928 max: 0.2704414
+deltaT = 7.4852245e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29719215
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0840949e-05, Final residual = 6.6102921e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849863  Min(alpha.metal) = -6.4290843e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849863  Min(alpha.metal) = -3.1942614e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0812004e-05, Final residual = 7.9416125e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 1.2695874e-06, Final residual = 3.2897173e-09, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 2.8541188e-07, Final residual = 1.5441177e-09, No Iterations 1
+T: min = 300.00125 max = 2527.6555  laser: incident = 600 W absorbed = 163.06633 W  surface loss = 3.4897149 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 3.9988865e-05, Final residual = 5.3931384e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00012292932, Final residual = 2.7245984e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.00015429925, Final residual = 8.4907757e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.0053067921, Final residual = 6.7594281e-05, No Iterations 2
+time step continuity errors : sum local = 2.0539777e-07, global = 5.2028191e-08, cumulative = 0.00018997959
+GAMG:  Solving for p_rgh, Initial residual = 0.0011565225, Final residual = 9.9889453e-06, No Iterations 3
+time step continuity errors : sum local = 3.0333004e-08, global = 9.308235e-09, cumulative = 0.0001899889
+GAMG:  Solving for p_rgh, Initial residual = 0.00020138877, Final residual = 1.9038224e-05, No Iterations 10
+time step continuity errors : sum local = 5.7789288e-08, global = -4.8775962e-08, cumulative = 0.00018994012
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.5198758e-05, Final residual = 1.1680835e-09, No Iterations 1
+ExecutionTime = 9646.13 s  ClockTime = 10049 s
+
+Courant Number mean: 0.00057869309 max: 0.298596
+Interface Courant Number mean: 0.0001173221 max: 0.27112288
+deltaT = 7.4676947e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29719874
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0838197e-05, Final residual = 6.4352891e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849831  Min(alpha.metal) = -6.4288739e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44849831  Min(alpha.metal) = -2.9248049e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0501151e-05, Final residual = 7.2092584e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 1.4951652e-06, Final residual = 3.647208e-09, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 3.2626347e-06, Final residual = 4.186839e-09, No Iterations 1
+T: min = 300.00125 max = 2527.8884  laser: incident = 600 W absorbed = 163.06743 W  surface loss = 3.4907571 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 4.5062536e-05, Final residual = 5.4702288e-09, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 0.00013980387, Final residual = 2.6135073e-09, No Iterations 2
+DILUPBiCGStab:  Solving for Uz, Initial residual = 0.00015804776, Final residual = 7.2854257e-09, No Iterations 2
+GAMG:  Solving for p_rgh, Initial residual = 0.00571736, Final residual = 8.7116318e-05, No Iterations 2
+time step continuity errors : sum local = 2.6348772e-07, global = -5.4809477e-08, cumulative = 0.00018988531
+GAMG:  Solving for p_rgh, Initial residual = 0.0012583627, Final residual = 8.4537078e-06, No Iterations 3
+time step continuity errors : sum local = 2.5564308e-08, global = -5.9595515e-09, cumulative = 0.00018987935
+GAMG:  Solving for p_rgh, Initial residual = 0.00020064562, Final residual = 9.4938488e-06, No Iterations 10
+time step continuity errors : sum local = 2.8708524e-08, global = -2.1661226e-08, cumulative = 0.00018985769
+DILUPBiCGStab:  Solving for meltHistory, Initial residual = 3.5083861e-05, Final residual = 9.6105101e-10, No Iterations 1
+ExecutionTime = 9646.28 s  ClockTime = 10049 s
+
+Courant Number mean: 0.00057699712 max: 0.29968325
+Interface Courant Number mean: 0.00011744684 max: 0.2694721
+deltaT = 7.470032e-06
+deltaT limited by capillary condition = 6.5939543e-06
+Time = 0.29720533
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0772171e-05, Final residual = 6.1726444e-11, No Iterations 2
+Phase-1 volume fraction = 0.44849799  Min(alpha.metal) = -6.4286613e-17  Max(alpha.metal) = 1.0000002
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.448498  Min(alpha.metal) = -2.5612126e-12  Max(alpha.metal) = 1.0000002
+DILUPBiCGStab:  Solving for T, Initial residual = 1.0419896e-05, Final residual = 6.4384165e-10, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 3.9060995e-06, Final residual = 4.4247962e-09, No Iterations 1
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 1308769 RUNNING AT grok-bot-vm-346273436
+=   EXIT CODE: 15
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Terminated (signal 15)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions

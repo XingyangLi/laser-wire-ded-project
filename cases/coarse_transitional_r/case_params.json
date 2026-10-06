@@ -1,0 +1,194 @@
+{
+  "case": "coarse_transitional_r",
+  "laser_config": "transitional_r",
+  "material": null,
+  "wire_material": "Invar36",
+  "substrate_material": "SS304",
+  "beam_angle": 25.0,
+  "focus_height": 0.0005,
+  "beam_radius": 0.0005,
+  "beam_direction": "-",
+  "power": 600.0,
+  "spot_radius": 0.0012,
+  "profile": "gaussian",
+  "absorptivity": null,
+  "laser_x": 0.0,
+  "laser_ramp": 0.002,
+  "no_shadowing": false,
+  "scan_speed": 0.0058,
+  "wire_feed_speed": 0.029,
+  "wire_diameter": 0.0009,
+  "feed_angle": 90.0,
+  "feed_side": "front",
+  "wire_aim": 0.0,
+  "wire_gap": 5e-05,
+  "feed_start": 0.02,
+  "preheat": 300.0,
+  "no_marangoni": false,
+  "no_recoil": false,
+  "no_evaporation": false,
+  "no_radiation": false,
+  "no_convection": false,
+  "buoyancy": false,
+  "gas_viscosity_factor": 20.0,
+  "mushy_C": 100000000.0,
+  "dim": "3d",
+  "resolution": "coarse",
+  "dx": null,
+  "upstream": 0.0035,
+  "downstream": 0.0065,
+  "half_width": 0.003,
+  "substrate_thickness": 0.002,
+  "gas_height": 0.0025,
+  "power_2d_factor": 1.0,
+  "end_time": 0.862,
+  "write_interval": 0.01,
+  "max_co": 0.4,
+  "np": 2,
+  "print": false,
+  "core_dx": 0.00015,
+  "cells": 24012,
+  "cells_xyz": [
+    58,
+    18,
+    8,
+    15
+  ],
+  "absorptivity_substrate": 0.42,
+  "absorptivity_wire": 0.42,
+  "beams": [
+    {
+      "name": "beam1_az0",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0005
+      ],
+      "direction": [
+        -0.42261826174069944,
+        0.0,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    },
+    {
+      "name": "beam2_az120",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0005
+      ],
+      "direction": [
+        0.21130913087034964,
+        0.36599815077066683,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    },
+    {
+      "name": "beam3_az-120",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0005
+      ],
+      "direction": [
+        0.21130913087034964,
+        -0.36599815077066683,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    }
+  ],
+  "material_wire": {
+    "rho": 7700.0,
+    "cp": 600.0,
+    "k_solid": 15.0,
+    "k_liquid": 30.0,
+    "Tsol": 1700.0,
+    "Tliq": 1725.0,
+    "L": 265000.0,
+    "mu": 0.005,
+    "sigma": 1.84,
+    "dsigma_dT": -0.00035,
+    "Tboil": 3150.0,
+    "Lv": 6200000.0,
+    "M": 0.0569,
+    "beta": 0.0001,
+    "emissivity": 0.4,
+    "absorptivity": 0.42
+  },
+  "material_substrate": {
+    "rho": 7500.0,
+    "cp": 650.0,
+    "k_solid": 22.0,
+    "k_liquid": 30.0,
+    "Tsol": 1673.0,
+    "Tliq": 1727.0,
+    "L": 260000.0,
+    "mu": 0.006,
+    "sigma": 1.8,
+    "dsigma_dT": -0.0004,
+    "Tboil": 3090.0,
+    "Lv": 7450000.0,
+    "M": 0.0558,
+    "beta": 0.00015,
+    "emissivity": 0.4,
+    "absorptivity": 0.42
+  },
+  "domain": [
+    [
+      -0.0035,
+      0,
+      -0.002
+    ],
+    [
+      0.0065,
+      0.003,
+      0.0025
+    ]
+  ],
+  "wire_axis": [
+    -6.123233995736766e-17,
+    0.0,
+    1.0
+  ],
+  "wire_origin": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "wire_radius_model": 0.00045,
+  "wire_enters_top_at_x": -1.5308084989341915e-19,
+  "expected_bead_area_m2": 3.1808625617596657e-06,
+  "energy_per_length_J_per_mm": 103.44827586206897,
+  "wire_mass_rate_kg_s": 0.00014205732200818665,
+  "capillary_dt": 3.352850375092852e-05,
+  "bead_probe_x": 0.0053,
+  "material_props": {
+    "rho": 7700.0,
+    "cp": 600.0,
+    "k_solid": 15.0,
+    "k_liquid": 30.0,
+    "Tsol": 1700.0,
+    "Tliq": 1725.0,
+    "L": 265000.0,
+    "mu": 0.005,
+    "sigma": 1.84,
+    "dsigma_dT": -0.00035,
+    "Tboil": 3150.0,
+    "Lv": 6200000.0,
+    "M": 0.0569,
+    "beta": 0.0001,
+    "emissivity": 0.4,
+    "absorptivity": 0.42
+  },
+  "width2D": 0.0024,
+  "frame": "laboratory: laser + wire fixed, substrate moves +x at scan speed"
+}

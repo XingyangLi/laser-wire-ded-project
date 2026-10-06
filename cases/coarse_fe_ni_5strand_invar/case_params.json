@@ -1,0 +1,280 @@
+{
+  "case": "coarse_fe_ni_5strand_invar",
+  "laser_config": "transitional_r",
+  "material": null,
+  "wire_material": "Fe+Ni",
+  "substrate_material": "Invar36",
+  "beam_angle": 25.0,
+  "focus_height": 0.0,
+  "beam_radius": 0.0005,
+  "beam_direction": "-",
+  "power": 600.0,
+  "spot_radius": 0.0012,
+  "profile": "gaussian",
+  "absorptivity": null,
+  "laser_x": 0.0,
+  "laser_ramp": 0.002,
+  "no_shadowing": false,
+  "scan_speed": 0.0058,
+  "wire_feed_speed": 0.0522,
+  "wire_diameter": 0.000878442549679387,
+  "feed_angle": 90.0,
+  "feed_side": "front",
+  "wire_aim": 0.0,
+  "wire_gap": 5e-05,
+  "feed_start": 0.0,
+  "wire_type": "stranded",
+  "strands": {
+    "n_strands": 5,
+    "centre_strand": false,
+    "n_ring": 5,
+    "strand_radius": 0.00015,
+    "strand_diameter": 0.0003,
+    "envelope_diameter": 0.000878442549679387,
+    "central_gap_diameter": 0.0002784425496793871,
+    "ring_radius": 0.0002892212748396935,
+    "gap": 4e-05,
+    "lay_length": 0.00878442549679387,
+    "lay_direction": "right",
+    "helix_angle_deg": 11.687890061556105,
+    "area": 3.5342917352885166e-07,
+    "fill_factor": 0.5831573934938677,
+    "cells_per_strand_diameter": 4.0
+  },
+  "lay_length": 0.00878442549679387,
+  "strand_gap": 4e-05,
+  "lay_direction": "right",
+  "strand_feed_basis": "metal",
+  "strand_diameter": 0.0003,
+  "strand_layout": "ring",
+  "strand_materials": [
+    "Fe",
+    "Ni",
+    "Fe",
+    "Ni",
+    "Fe"
+  ],
+  "feed_reference_diameter": 0.0009,
+  "max_wfs": 0.1,
+  "liquidus": "table",
+  "no_melted_follow_substrate": false,
+  "no_wire_stubbing": false,
+  "track_length": 0.005,
+  "record_x": null,
+  "record_interval": 0.00646551724137931,
+  "refine_downstream": 0.003,
+  "refine_halfwidth_y": 0.0013,
+  "uniform_downstream": 0.0056,
+  "wire_refine": 1,
+  "refine_halfwidth": 0.0007392212748396935,
+  "domain_y": "full",
+  "preheat": 300.0,
+  "no_marangoni": false,
+  "no_recoil": false,
+  "no_evaporation": false,
+  "no_radiation": false,
+  "no_convection": false,
+  "buoyancy": false,
+  "gas_viscosity_factor": 20.0,
+  "mushy_C": 100000000.0,
+  "dim": "3d",
+  "resolution": "medium",
+  "dx": 0.00015,
+  "upstream": 0.0035,
+  "downstream": 0.0065,
+  "half_width": 0.003,
+  "substrate_thickness": 0.002,
+  "gas_height": 0.0025,
+  "power_2d_factor": 1.0,
+  "end_time": 0.8621,
+  "write_interval": 0.02,
+  "max_co": 0.4,
+  "np": 8,
+  "print": false,
+  "wire_diameter_given": false,
+  "wfs_capped": false,
+  "strand_material_list": [
+    "Fe",
+    "Ni",
+    "Fe",
+    "Ni",
+    "Fe"
+  ],
+  "wire_feed_speed_nominal": 0.029,
+  "core_dx": 0.00015,
+  "cells": 87768,
+  "cells_xyz": [
+    61,
+    36,
+    8,
+    15
+  ],
+  "cells_block": 50508,
+  "dx_min": 7.5e-05,
+  "full_domain": true,
+  "refine_columns": 540,
+  "components": [
+    "Fe",
+    "Ni"
+  ],
+  "component_area_share": {
+    "Fe": 0.6,
+    "Ni": 0.4
+  },
+  "component_mass_share": {
+    "Fe": 0.5700564699068487,
+    "Ni": 0.4299435300931512
+  },
+  "wire_Ni_wt": 42.99435300931512,
+  "record_planes_x": [
+    0.0020375,
+    0.0029374999999999996,
+    0.0039875,
+    0.005037499999999999
+  ],
+  "feed_reference_area": 6.36172512351933e-07,
+  "track_length_m": 0.00500018,
+  "absorptivity_substrate": 0.42,
+  "absorptivity_wire": 0.42,
+  "beams": [
+    {
+      "name": "beam1_az0",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "direction": [
+        -0.42261826174069944,
+        0.0,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    },
+    {
+      "name": "beam2_az120",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "direction": [
+        0.21130913087034964,
+        0.36599815077066683,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    },
+    {
+      "name": "beam3_az-120",
+      "power": 200.0,
+      "focus": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "direction": [
+        0.21130913087034964,
+        -0.36599815077066683,
+        -0.9063077870366499
+      ],
+      "radius": 0.0005,
+      "profile": "gaussian"
+    }
+  ],
+  "material_wire": {
+    "rho": 7814.0,
+    "rho_rt": 8287.6,
+    "cp": 660.0,
+    "k_solid": 48.0,
+    "k_liquid": 46.8,
+    "Tsol": 1767.8,
+    "Tliq": 1777.8,
+    "L": 267400.0,
+    "mu": 0.005259999999999999,
+    "sigma": 1.8596,
+    "dsigma_dT": -0.00027100000000000003,
+    "Tboil": 3154.8,
+    "Lv": 6206000.0,
+    "M": 0.056985999999999995,
+    "beta": 0.00012,
+    "emissivity": 0.4,
+    "absorptivity": 0.388,
+    "Ni_wt": 40.0
+  },
+  "material_substrate": {
+    "rho": 7700.0,
+    "cp": 600.0,
+    "k_solid": 15.0,
+    "k_liquid": 30.0,
+    "Tsol": 1700.0,
+    "Tliq": 1725.0,
+    "L": 265000.0,
+    "mu": 0.005,
+    "sigma": 1.84,
+    "dsigma_dT": -0.00035,
+    "Tboil": 3150.0,
+    "Lv": 6200000.0,
+    "M": 0.0569,
+    "beta": 0.0001,
+    "emissivity": 0.4,
+    "absorptivity": 0.42,
+    "Ni_wt": 36.0,
+    "rho_rt": 8050.0
+  },
+  "domain": [
+    [
+      -0.0035,
+      0,
+      -0.002
+    ],
+    [
+      0.0065,
+      0.003,
+      0.0025
+    ]
+  ],
+  "wire_axis": [
+    -6.123233995736766e-17,
+    0.0,
+    1.0
+  ],
+  "wire_origin": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "wire_radius_model": 0.0004392212748396935,
+  "wire_enters_top_at_x": -1.5308084989341915e-19,
+  "expected_bead_area_m2": 3.1808625617596657e-06,
+  "energy_per_length_J_per_mm": 103.44827586206897,
+  "wire_mass_rate_kg_s": 0.00014416050833402212,
+  "capillary_dt": 1.1878428707455526e-05,
+  "bead_probe_x": 0.0053,
+  "material_props": {
+    "rho": 7814.0,
+    "rho_rt": 8287.6,
+    "cp": 660.0,
+    "k_solid": 48.0,
+    "k_liquid": 46.8,
+    "Tsol": 1767.8,
+    "Tliq": 1777.8,
+    "L": 267400.0,
+    "mu": 0.005259999999999999,
+    "sigma": 1.8596,
+    "dsigma_dT": -0.00027100000000000003,
+    "Tboil": 3154.8,
+    "Lv": 6206000.0,
+    "M": 0.056985999999999995,
+    "beta": 0.00012,
+    "emissivity": 0.4,
+    "absorptivity": 0.388,
+    "Ni_wt": 40.0
+  },
+  "width2D": 0.0024,
+  "frame": "laboratory: laser + wire fixed, substrate moves +x at scan speed"
+}

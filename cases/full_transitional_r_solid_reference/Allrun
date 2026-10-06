@@ -1,0 +1,22 @@
+#!/bin/bash
+# Laser wire DED case: mesh, initial fields, run (np=4).  Usage: ./Allrun [np]
+cd "${0%/*}" || exit 1
+NP=${1:-4}
+set -e
+blockMesh > log.blockMesh 2>&1
+topoSet > log.topoSet 2>&1
+createPatch -overwrite > log.createPatch 2>&1
+checkMesh > log.checkMesh 2>&1 || true
+rm -rf 0 && mkdir 0 && cp 0.orig/* 0/
+for f in 0/*.orig; do mv "$f" "${f%.orig}"; done
+setFields > log.setFields 2>&1
+touch case.foam
+if [ "$NP" -gt 1 ]; then
+    foamDictionary -entry numberOfSubdomains -set $NP system/decomposeParDict > /dev/null
+    if [ "3d" = 3d ] && [ "$NP" -ge 4 ] && [ $((NP % 2)) -eq 0 ]; then N="($((NP/2)) 2 1)"; else N="($NP 1 1)"; fi
+    foamDictionary -entry coeffs.n -set "$N" system/decomposeParDict > /dev/null
+    decomposePar -force > log.decomposePar 2>&1
+    mpirun -np $NP laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
+else
+    laserWireDEDFoam > log.laserWireDEDFoam 2>&1
+fi

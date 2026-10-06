@@ -1,0 +1,43 @@
+# --- OpenFOAM run output -------------------------------------------------
+processor*/
+postProcessing/
+# time directories (0 is regenerated from 0.orig by Allrun)
+cases/*/[0-9]/
+cases/*/[0-9]*.[0-9]*/
+cases/*/[1-9]*/
+cases/*/0/
+cases/*/constant/polyMesh/
+cases/*/constant/cellToRegion
+cases/*/VTK/
+cases/*/dynamicCode/
+*.foam
+log.*
+*.log
+!validation/*.log
+nohup*.out
+*.status
+# --- wmake build output --------------------------------------------------
+lnInclude/
+Make/linux64*/
+Make/darwin*/
+platforms/
+*.o
+*.dep
+# --- python / editors ----------------------------------------------------
+__pycache__/
+*.pyc
+.venv/
+venv/
+vizenv/
+.vscode/
+.idea/
+*.bak*
+*~
+# --- local output --------------------------------------------------------
+viz/
+gui/jobs/*
+!gui/jobs/.gitkeep
+*.mp4
+*.zip
+*.tgz
+*.tar.gz

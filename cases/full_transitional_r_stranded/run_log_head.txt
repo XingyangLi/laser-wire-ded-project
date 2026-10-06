@@ -1,0 +1,120 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2406                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : _1653fa08-20260127 OPENFOAM=2406 patch=260127 version=2406
+Arch   : "LSB;label=32;scalar=64"
+Exec   : laserWireDEDFoam -parallel
+Date   : Oct 03 2026
+Time   : 17:30:57
+Host   : DukyongPC
+PID    : 1313
+I/O    : uncollated
+Case   : /home/dukyong/laser_wire_ded_stranded/full_transitional_r_stranded
+nProcs : 8
+Hosts  :
+(
+    (DukyongPC 8)
+)
+Pstream initialized with:
+    floatTransfer      : false
+    maxCommsSize       : 0
+    nProcsSimpleSum    : 0
+    nonBlockingExchange: 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Selecting dynamicFvMesh staticFvMesh
+
+PIMPLE: Operating solver in PISO mode
+
+Reading field p_rgh
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Reading transportProperties
+
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 18 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+Selecting incompressible transport model Newtonian
+Selecting incompressible transport model Newtonian
+Reading meltProperties
+
+    Tsolidus/Tliquidus  : 1673 / 1727 K
+    latent heat         : 260000 J/kg
+    k solid / liquid    : 22 / 30 W/m/K
+    mushy C, eps        : 1e+08, 0.001
+    solid (substrate) U : (0.0058 0 0)
+    wire radius, feed U : 0.00045 m, (2.7503036e-18 0 -0.044915866)  (start 0.02 s)
+
+Two-metal model (wire / substrate):
+    cp 600 / 650
+    k  15,30 / 22,30
+    L  265000 / 260000
+    Ts,Tl 1700,1725 / 1673,1727
+    sigma, dsig/dT 1.84,-0.00035 / 1.8,-0.0004
+    absorptivity 0.42 / 0.42
+
+Reading field T
+
+Laser columns: 5258 vertical cell columns (cells 181842)
+
+Laser beam beam1_az0: P = 200 W, focus (0 0 0.0005), direction (-0.42261826 0 -0.90630779), radius 0.0005 (gaussian), rays 5025
+Laser beam beam2_az120: P = 200 W, focus (0 0 0.0005), direction (0.21130913 0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 5025
+Laser beam beam3_az-120: P = 200 W, focus (0 0 0.0005), direction (0.21130913 -0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 5025
+Laser rays: 15075 rays in the domain, 4537575 samples, spacing 2.5e-05 m, step 1.65e-05 m
+
+Surface tension (CSF)
+    sigma0              : 1.8 N/m
+    sigma(T)            : true  dSigma/dT = -0.0004 N/m/K, Tref = 1727 K, sigmaMin = 0.54 N/m
+    liquid metal only   : true
+    Marangoni stress    : true
+    capillary dt limit  : 6.4813726e-06 s (dx_min = 5e-05 m), factor 0.8
+
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+
+Reading g
+
+Reading hRef
+Calculating field g.h
+
+No MRF models present
+
+No finite volume options present
+DICPCG:  Solving for pcorr, Initial residual = 1, Final residual = 8.7584942e-06, No Iterations 144
+time step continuity errors : sum local = 1.093125e-13, global = -1.0643569e-15, cumulative = -1.0643569e-15
+Courant Number mean: 5.276771e-06 max: 1.8266979e-05
+
+Starting time loop
+
+Courant Number mean: 5.276771e-06 max: 1.8266979e-05
+Interface Courant Number mean: 1.2374128e-08 max: 1.0749796e-05
+deltaT = 1.2000048e-07
+Time = 1.2000048e-07
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.0751674e-08, Final residual = 9.4377762e-16, No Iterations 1
+Phase-1 volume fraction = 0.44821353  Min(alpha.metal) = 0  Max(alpha.metal) = 1
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.44821353  Min(alpha.metal) = -1.8563008e-21  Max(alpha.metal) = 1

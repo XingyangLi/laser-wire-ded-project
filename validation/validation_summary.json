@@ -1,0 +1,50 @@
+{
+  "experiment": {
+    "power_W": 600,
+    "scan_mm_s": 2.67,
+    "scan_mm_min": 160,
+    "WFS_mm_s_adopted": 15.6,
+    "WFS_note": "from bead volume match; \"40 g\" ambiguous",
+    "track_mm": 10,
+    "video_slowdown": 5.27,
+    "H_bead_mm_xray": 1.32,
+    "H_bead_mm_xray_std": 0.2,
+    "H_bead_mm_eds": 0.94,
+    "pen_mm_xray_auto": 0.08,
+    "pen_mm_guide": [
+      0.25,
+      0.45
+    ],
+    "pen_mm_eds": 0.0,
+    "pool_L_mm": 3.33,
+    "pool_L_mm_std": 0.18,
+    "unmelted_Fe_fraction": 0.04815682932026422,
+    "unmelted_Fe_fraction_range": [
+      0.05,
+      0.12
+    ],
+    "unmelted_d_eq_um_median": 189.1786443595028,
+    "unmelted_distribution": "whole track",
+    "feed_angle_deg": 90,
+    "wire_OD_mm_assumed": 0.9
+  },
+  "sim_vs_exp_mismatch": {
+    "scan_ratio_sim_over_exp": 2.1722846441947565,
+    "line_energy_ratio_exp_over_sim": 2.1844660194174756,
+    "WFS_ratio_sim_over_exp_approx": 2.878205128205128
+  },
+  "cases_ready": [
+    "/workspace/laser_wire_ded/val_exp_600W_160mmpm_stranded",
+    "/workspace/laser_wire_ded/val_exp_600W_160mmpm_fe_ni"
+  ],
+  "wall_time_estimate_h": {
+    "box_8core": 32,
+    "PC_8core": 45,
+    "uncertainty": "\u00b130%"
+  },
+  "figures": [
+    "/workspace/validation/validation_side_by_side.png",
+    "/workspace/validation/validation_metrics.md",
+    "/workspace/validation/annotated"
+  ]
+}

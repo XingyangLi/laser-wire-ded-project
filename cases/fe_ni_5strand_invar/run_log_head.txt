@@ -1,0 +1,120 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2412                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : v2412 OPENFOAM=2412 version=v2412
+Arch   : "LSB;label=32;scalar=64"
+Exec   : laserWireDEDFoam -parallel
+Date   : Oct 04 2026
+Time   : 17:28:18
+Host   : grok-bot-vm-346273436
+PID    : 763581
+I/O    : uncollated
+Case   : /workspace/laser_wire_ded/fe_ni_5strand_invar
+nProcs : 8
+Hosts  :
+(
+    (grok-bot-vm-346273436 8)
+)
+Pstream initialized with:
+    floatTransfer      : false
+    maxCommsSize       : 0
+    nProcsSimpleSum    : 0
+    nonBlockingExchange: 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Selecting dynamicFvMesh staticFvMesh
+
+PIMPLE: Operating solver in PISO mode
+
+Reading field p_rgh
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Reading transportProperties
+
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 24 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+Selecting incompressible transport model Newtonian
+Selecting incompressible transport model Newtonian
+Reading meltProperties
+
+    Tsolidus/Tliquidus  : 1700 / 1725 K
+    latent heat         : 265000 J/kg
+    k solid / liquid    : 15 / 30 W/m/K
+    mushy C, eps        : 1e+08, 0.001
+    solid (substrate) U : (0.0058 0 0)
+    wire radius, feed U : 0.00043922127 m, (3.1963281e-18 0 -0.0522)  (start 0 s)
+
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 24 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 24 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+Component Fe: cp 700 k 30/38 L 247000 Ts/Tl 1801/1811 sigma 1.92 dsig -0.000293 A 0.42 Ni 0 wt%
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 24 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+--> FOAM Warning : 
+>>> DEPRECATED after version 2212. This is about 24 months old. <<<
+
+    From Foam::exprFixedValueFvPatchField<Type>::exprFixedValueFvPatchField(const Foam::fvPatch&, const Foam::DimensionedField<Type, Foam::volMesh>&, const Foam::dictionary&, Foam::IOobjectOption::readOption) [with Type = double]
+    in file expressions/fields/fvPatchFields/exprFixedValueFvPatchField.C at line 110
+    Use uniformFixedValue with an expression Function1 instead.
+    This boundary condition will be removed in the future
+Component Ni: cp 600 k 75/60 L 298000 Ts/Tl 1718/1728 sigma 1.769 dsig -0.000238 A 0.34 Ni 100 wt%
+Multi-component model: 2 wire components + substrate (Ni 36 wt%), liquidus from table (local wt% Ni), meltedFollowsSubstrate 1, wireStubbing 1 (contact 0.000192 m)
+
+Reading field T
+
+Laser columns: 5802 vertical cell columns (cells 165822)
+
+Laser beam beam1_az0: P = 200 W, focus (0 0 0), direction (-0.42261826 0 -0.90630779), radius 0.0005 (gaussian), rays 3545
+Laser beam beam2_az120: P = 200 W, focus (0 0 0), direction (0.21130913 0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 3545
+Laser beam beam3_az-120: P = 200 W, focus (0 0 0), direction (0.21130913 -0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 3545
+Laser rays: 10635 rays in the domain, 2690655 samples, spacing 2.9779412e-05 m, step 1.9654412e-05 m
+
+Surface tension (CSF)
+    sigma0              : 1.84 N/m
+    sigma(T)            : true  dSigma/dT = -0.00035 N/m/K, Tref = 1725 K, sigmaMin = 0.552 N/m
+    liquid metal only   : true
+    Marangoni stress    : true
+    capillary dt limit  : 8.41972e-06 s (dx_min = 5.9558824e-05 m), factor 0.8
+
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+
+Reading g

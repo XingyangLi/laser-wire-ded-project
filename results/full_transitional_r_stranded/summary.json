@@ -1,0 +1,29 @@
+{
+  "time": 0.86191591,
+  "pool_length_mm": 1.375,
+  "pool_width_mm": 1.175,
+  "pool_depth_mm": 0.25,
+  "Tmax": 2427.8091,
+  "absorbed_W": 255.35207,
+  "bead_height_mm": 0.047390403,
+  "bead_width_mm": 1.5,
+  "probe_x_mm": 1.25,
+  "bead_area_mm2": 0.06280653,
+  "fused_area_mm2": 0.24597119,
+  "penetration_mm": 0.25,
+  "dilution_geom": 0.94189036,
+  "dilution_comp": 0.99366143,
+  "avg_last20pct": {
+    "pool_length_mm": 1.2262933568489163,
+    "pool_width_mm": 1.1022633747971826,
+    "pool_depth_mm": 0.20990593768371066,
+    "Tmax": 2459.524519576721,
+    "bead_height_mm": 0.05568049214050558,
+    "bead_width_mm": 1.5000000000000244,
+    "bead_area_mm2": 0.06573253591534396,
+    "penetration_mm": 0.24999999999998873,
+    "dilution_geom": 0.9377204298059972,
+    "dilution_comp": 0.9909572895532013
+  },
+  "latest_time": 0.86
+}

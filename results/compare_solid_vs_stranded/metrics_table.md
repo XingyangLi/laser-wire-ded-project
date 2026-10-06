@@ -1,0 +1,11 @@
+| metric | solid wire (end, t=862 ms) | 7-strand wire (end, t=862 ms) | solid wire (avg last 20%) | 7-strand wire (avg last 20%) | change of avg [%] |
+|---|---|---|---|---|---|
+| bead height [mm] | 1.40 | 0.05 | 1.43 | 0.06 | -96 |
+| bead width [mm] | 5.68 | 1.50 | 5.68 | 1.50 | -74 |
+| bead area above plate [mm^2] | 3.00 | 0.06 | 3.04 | 0.07 | -98 |
+| penetration [mm] | 0.45 | 0.25 | 0.45 | 0.25 | -44 |
+| dilution, geometric [-] | 0.259 | 0.942 | 0.252 | 0.938 | +272 |
+| dilution, composition [-] | 0.310 | 0.994 | 0.336 | 0.991 | +195 |
+| melt pool length [mm] | 2.60 | 1.38 | 2.67 | 1.23 | -54 |
+| melt pool width [mm] | 1.70 | 1.18 | 1.83 | 1.10 | -40 |
+| T max [K] | 2363 | 2428 | 2353 | 2460 | +5 |

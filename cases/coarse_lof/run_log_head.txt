@@ -1,0 +1,120 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2412                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+Build  : v2412 OPENFOAM=2412 version=v2412
+Arch   : "LSB;label=32;scalar=64"
+Exec   : laserWireDEDFoam -parallel
+Date   : Oct 02 2026
+Time   : 11:32:43
+Host   : grok-bot-vm-346273436
+PID    : 222510
+I/O    : uncollated
+Case   : /workspace/laser_wire_ded/coarse_lof
+nProcs : 2
+Hosts  :
+(
+    (grok-bot-vm-346273436 2)
+)
+Pstream initialized with:
+    floatTransfer      : false
+    maxCommsSize       : 0
+    nProcsSimpleSum    : 0
+    nonBlockingExchange: 0 (tuning: 0)
+    exchange algorithm : 0
+    commsType          : nonBlocking
+    polling iterations : 0
+trapFpe: Floating point exception trapping enabled (FOAM_SIGFPE).
+fileModificationChecking : Monitoring run-time modified files using timeStampMaster (fileModificationSkew 5, maxFileModificationPolls 20)
+allowSystemOperations : Allowing user-supplied system call operations
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+Create time
+
+Create mesh for time = 0
+
+Selecting dynamicFvMesh staticFvMesh
+
+PIMPLE: Operating solver in PISO mode
+
+Reading field p_rgh
+
+Reading field U
+
+Reading/calculating face flux field phi
+
+Reading transportProperties
+
+Selecting incompressible transport model Newtonian
+Selecting incompressible transport model Newtonian
+Reading meltProperties
+
+    Tsolidus/Tliquidus  : 1673 / 1727 K
+    latent heat         : 260000 J/kg
+    k solid / liquid    : 22 / 30 W/m/K
+    mushy C, eps        : 1e+08, 0.001
+    solid (substrate) U : (0.01 0 0)
+    wire radius, feed U : 0.00045 m, (1.0409498e-18 0 -0.017)  (start 0.02 s)
+
+Two-metal model (wire / substrate):
+    cp 600 / 650
+    k  15,30 / 22,30
+    L  265000 / 260000
+    Ts,Tl 1700,1725 / 1673,1727
+    sigma, dsig/dT 1.84,-0.00035 / 1.8,-0.0004
+    absorptivity 0.42 / 0.42
+
+Reading field T
+
+Laser columns: 1044 vertical cell columns (cells 24012)
+
+Laser beam beam1_az60: P = 133.33333 W, focus (0 0 0.0005), direction (-0.21130913 0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 609
+Laser beam beam2_az-60: P = 133.33333 W, focus (0 0 0.0005), direction (-0.21130913 -0.36599815 -0.90630779), radius 0.0005 (gaussian), rays 609
+Laser beam beam3_az180: P = 133.33333 W, focus (0 0 0.0005), direction (0.42261826 5.175581e-17 -0.90630779), radius 0.0005 (gaussian), rays 609
+Laser rays: 1827 rays in the domain, 193662 samples, spacing 7.1558193e-05 m, step 4.7228407e-05 m
+
+Surface tension (CSF)
+    sigma0              : 1.8 N/m
+    sigma(T)            : true  dSigma/dT = -0.0004 N/m/K, Tref = 1727 K, sigmaMin = 0.54 N/m
+    liquid metal only   : true
+    Marangoni stress    : true
+    capillary dt limit  : 3.1386726e-05 s (dx_min = 0.00014311639 m), factor 0.8
+
+Selecting turbulence model type laminar
+Selecting laminar stress model Stokes
+
+Reading g
+
+Reading hRef
+Calculating field g.h
+
+No MRF models present
+
+No finite volume options present
+DICPCG:  Solving for pcorr, Initial residual = 1, Final residual = 8.5400483e-06, No Iterations 73
+time step continuity errors : sum local = 1.3917116e-13, global = -7.7948671e-15, cumulative = -7.7948671e-15
+Courant Number mean: 5.8331949e-06 max: 9.6583416e-06
+
+Starting time loop
+
+Courant Number mean: 5.8331949e-06 max: 9.6583416e-06
+Interface Courant Number mean: 0 max: 0
+deltaT = 1.2000048e-07
+Time = 1.2000048e-07
+
+PIMPLE: iteration 1
+smoothSolver:  Solving for alpha.metal, Initial residual = 1.6715847e-08, Final residual = 3.9806041e-16, No Iterations 1
+Phase-1 volume fraction = 0.45051221  Min(alpha.metal) = 0  Max(alpha.metal) = 1
+MULES: Correcting alpha.metal
+MULES: Correcting alpha.metal
+Phase-1 volume fraction = 0.45051221  Min(alpha.metal) = -2.7009032e-24  Max(alpha.metal) = 1
+DILUPBiCGStab:  Solving for T, Initial residual = 0.99998119, Final residual = 2.2978562e-09, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 5.1353186e-06, Final residual = 4.2012991e-12, No Iterations 1
+DILUPBiCGStab:  Solving for T, Initial residual = 4.405645e-06, Final residual = 4.2437404e-12, No Iterations 1
+T: min = 300 max = 300  laser: incident = 0.012000048 W absorbed = 0.00504002 W  surface loss = 2.3905827e-11 W
+DILUPBiCGStab:  Solving for Ux, Initial residual = 0.010780831, Final residual = 3.2812587e-10, No Iterations 1
+DILUPBiCGStab:  Solving for Uy, Initial residual = 1, Final residual = 2.8059959e-11, No Iterations 1
+DILUPBiCGStab:  Solving for Uz, Initial residual = 1, Final residual = 5.4481508e-11, No Iterations 1

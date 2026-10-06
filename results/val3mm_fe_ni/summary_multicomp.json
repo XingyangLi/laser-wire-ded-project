@@ -1,0 +1,9 @@
+{
+  "case": "val3mm_fe_ni",
+  "latest_time": 0.28,
+  "Fe_never_melted_fraction_domain_track_last": 0.23428033222005765,
+  "Fe_never_melted_fraction_deposit_last": 0.06114071875999315,
+  "Ni_never_melted_fraction_domain_track_last": 0.004203947611272421,
+  "Ni_never_melted_fraction_deposit_last": 0.04506829232485148,
+  "pool_tail_x95_mm": 1.04375
+}

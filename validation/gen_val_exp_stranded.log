@@ -1,0 +1,5 @@
+[generate] 3d config=transitional_r wire=Invar36 substrate=Invar36: P=600 W in 3 beam(s), A=0.42/0.42, end=3.7495 s, v_scan=2.7 mm/s, WFS=15.6 mm/s, d_wire=0.90 mm @ 90 deg (front feed)
+[generate] stranded wire: 7 strands d=0.273 mm (ring radius 0.313 mm, gap 0.040 mm), lay 9.00 mm right-hand, helix angle 12.3 deg, fill 0.646, 5.5 cells/strand; feed 10.1 -> 15.64 mm/s (metal basis)
+[generate] wire box +-0.75 mm refined 1x in x-y (256 columns) -> dx_min = 50 um; domain y: full
+[generate] mesh 87 x 52 x (13+22) = 158340 block cells -> 185220 cells, dx=100 um; capillary dt ~ 6.45e-06 s; expected bead area 2.41 mm^2; E_L = 225 J/mm
+[generate] wrote /workspace/laser_wire_ded/val_exp_600W_160mmpm_stranded

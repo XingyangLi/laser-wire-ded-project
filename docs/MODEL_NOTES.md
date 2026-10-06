@@ -1,0 +1,430 @@
+# laser_wire_ded: open-source single-track laser wire-feed DED in OpenFOAM
+
+This is a FLOW-3D AM/WELD-style melt-pool simulation of **laser wire-feed directed energy deposition**
+(LW-DED, also called wire-laser additive manufacturing, WLAM). It is built on
+**OpenFOAM.com (v2406/v2412)** and a custom solver, `laserWireDEDFoam`, which extends interFoam.
+It was developed from the `ded_wire_melt/wireMeltFoam` solver (same VOF + enthalpy-porosity core).
+
+```
+laser_wire_ded/
+  solver/laserWireDEDFoam/   C++ solver (wmake)       solver/Allwmake
+  generate_case.py           writes a complete case (all parameters on the command line)
+  materials.py               Invar36 / SS304 / 316L / Ti6Al4V / IN718 presets + paper configs
+  run_case.py                mesh -> decompose -> run -> render
+  visualize.py               3D renders, sections, track profile, time series, mp4/gif, wire close-up
+  compare_runs.py            side-by-side images + metrics table of two rendered runs
+  visualize_multicomp.py     multi-component (Fe/Ni strands) renders: composition, never-melted wire, build sections
+  box_ofenv.sh               box: source OpenFOAM v2412 (mamba env) incl. the conda compilers for wmake
+  launch_wsl_job.ps1         Windows: detached, keep-awake launcher for WSL jobs
+  run_production.sh          WSL: production run + automatic rendering
+  pc/run_stranded.sh         WSL: stranded-wire Transitional-R production run (+ pc/status_stranded.sh)
+```
+
+## Paper basis: Gao et al., Nat. Commun. 2026 (PMC13385772)
+
+The default case reproduces the process in **Gao, Mumm, Ren, Yu, Li, Chuang, Sun, "Operando X-ray scattering
+reveals ordering-mediated solidification in additive manufacturing", Nat. Commun. (2026),
+doi:10.1038/s41467-026-73647-3**. The setup is described in its SI (Sect. 1, 8, Table S1) and in ref. 14,
+Gao et al., Int. J. Mach. Tools Manuf. 194 (2024) 104089.
+
+| Paper (wire-laser DED, Additec μPrinter) | This model |
+|---|---|
+| 3 diode lasers at 120°, each ≈1 mm diameter, near-Gaussian, focused on the wire | 3 inclined ray-traced Gaussian beams, 1/e² radius 0.5 mm (`--beam-radius`), azimuths 120° apart |
+| Coaxial wire, 0.9 mm, fed vertically through the centre | vertical wire inlet patch (0.9 mm) at the top of the domain, fed at the WFS |
+| Substrate translates; head fixed | lab (Eulerian) frame: solid substrate is driven at +v_scan by the Carman–Kozeny sink; the wire is driven at the WFS |
+| "+" direction: 2 lasers in front of the wire, 1 behind; "–": 1 in front, 2 behind (SI Sect. 8) | `--beam-direction +/-` (set automatically per config) |
+| Table S1: **Normal** 600 W, 6.7 mm/s, WFS 11.4 mm/s, "+" | `--laser-config normal` |
+| Table S1: **Lack-of-Fusion** 400 W, 10 mm/s, WFS 17 mm/s, "+" | `--laser-config lof` |
+| Table S1: **Transitional-R** 600 W, 5.8 mm/s, WFS 29 mm/s, "–" | `--laser-config transitional_r` |
+| FLOW-3D AM: mesh 0.15 mm global, 0.075 mm in the pool; adiabatic walls; phase change, gravity, Marangoni, surface tension, conduction, laser absorption, viscosity | uniform 150 / 100 / 75 µm (`--resolution coarse/medium/fine`); adiabatic solid walls; the same physics, plus recoil pressure, evaporation and radiation losses (can be switched off) |
+| IN718, absorptivity 0.42 (calibrated in ref. 14) | A = 0.42 for both metals (`--absorptivity`) |
+
+**Not given in the paper (assumed, all CLI options):**
+- beam incidence angle 25° from vertical (`--beam-angle`);
+- beam focus 0.5 mm above the substrate on the wire axis (`--focus-height`);
+- beam radius 0.5 mm.
+
+The paper's material is IN718 on IN718 (also 316L and Ni on 316L). **Invar 36 wire on SS304 is the user's
+choice.** The three configurations therefore use the paper's IN718 process windows with a different alloy pair.
+`--material IN718` reproduces the paper's material exactly.
+
+## Protected baseline: Transitional-R with the solid wire
+
+The user wants to keep the solid-wire Transitional-R result. Its renders stay in
+`C:\Users\dukyo\laser_wire_ded\viz\full_transitional_r`. A full backup is in
+`C:\Users\dukyo\laser_wire_ded\results_keep\transitional_r_solid_wire\`, holding the renders, case_params.json,
+the regenerated case settings, the exact code bundle and REPRODUCE.md. It was made with:
+```bash
+python3 generate_case.py --laser-config transitional_r --case full_transitional_r --resolution medium --np 4
+```
+(Its raw OpenFOAM time folders were lost when `~/laser_wire_ded` in WSL was reused on Oct 2. Only the renders and
+summary.json survive.) The solid wire is still the default (`--wire-type solid`), so that command produces the
+same case as before.
+
+## Stranded wire (`--wire-type stranded`)
+
+The wire can be a twisted multi-strand wire instead of a solid rod. Its strands are real geometry in the VOF field.
+```bash
+python3 generate_case.py --laser-config transitional_r --wire-type stranded --case full_transitional_r_stranded --np 8
+cd full_transitional_r_stranded && ./Allrun 8
+```
+| Option | Default | Meaning |
+|---|---|---|
+| `--wire-type` | solid | `stranded` = 1 centre strand + a ring of strands, twisted |
+| `--strands` | 7 | 1 + 6 (the standard 7-wire strand); 2-3 = ring only, >7 = larger ring |
+| `--lay-length` | 10 x diameter = 9 mm | length of one full twist of the outer strands |
+| `--lay-direction` | right | right (Z) or left (S) hand |
+| `--strand-gap` | 0.04 mm | gas gap between neighbouring strands (centre-ring and ring-ring) |
+| `--strand-feed-basis` | metal | `metal`: feed speed raised by A_solid/A_strands so the metal fed per second equals the solid wire; `wfs`: keep the nominal feed speed |
+| `--wire-refine` | 1 (stranded) | number of times the cells in a vertical box around the wire are halved in x and y |
+| `--refine-halfwidth` | wire radius + 0.3 mm | half width of that box |
+| `--domain-y` | auto | `full` for stranded (a helix has no mirror symmetry), `half` (symmetry plane) otherwise |
+
+**Geometry (defaults, 0.9 mm wire).** There are 7 equal strands of 0.273 mm. The ring strand centres sit at a radius
+of 0.313 mm, so the outer envelope is exactly 0.9 mm, with 0.04 mm gas gaps between neighbouring strands. Metal fills
+0.646 of the 0.9 mm circle (touching strands would fill 7/9 = 0.78). The rest is the gas in the gaps and in the outer grooves.
+
+The **lay length of 9 mm (10 x d)** sits inside the 8-16 x d range used for concentric-lay stranded conductors
+(e.g. ASTM B8 / IEC 60228 practice) and for 1x7 stranded welding and spray wires. It gives the outer strands a helix
+angle of 12.3 deg, which is a tight, "well stranded" twist that is still clearly a strand and not a coil.
+It is also short enough that the pattern turns visibly in the 2.5 mm of wire inside the domain (100 deg) and at the
+inlet (about 1800 deg/s, or about 4 turns in the run).
+
+**Same metal feed.** With the default `metal` basis, the feed speed is raised from 29.0 to 44.9 mm/s
+(29 / 0.646). The metal volume fed per second is then the same as the solid 0.9 mm wire (18.4 mm^3/s), and so is
+the expected bead area (3.18 mm^2). Everything else is identical to Transitional-R: the laser, beams, travel speed,
+materials, domain size and the 100 um base mesh.
+
+**How the strands are made.**
+- The initial wire (`system/setExprFieldsDict`, run by `setExprFields`) is a frozen helix. Each strand is a disc in every
+  cross-section, centred on the ring at the angle `phi_k = 2 pi k/6 + 2 pi z / lay`. The metal fraction is anti-aliased
+  over one cell, so the discrete metal area equals the true strand area.
+- The wire inlet (`0/alpha.metal`, patch `wireInlet`, `exprFixedValue`) uses the same formula, with the axial
+  coordinate shifted by the length already fed, `s(t)`. As the wire moves down, the strand pattern on the inlet
+  therefore rotates exactly as a real twisted wire's cross-section does when it passes a fixed plane. Gas flows in
+  through the gaps at the feed speed.
+- Inside the domain, the wire is carried down rigidly by the solid-velocity (Carman-Kozeny) term. The strands then
+  heat, melt and merge individually: the beams hit the strand surfaces, the gaps cut conduction between the strands,
+  and the grooves let light reach the inner strand.
+
+**Mesh.** A 0.3 mm strand needs about 5 cells or more. The cells in a vertical box of +-0.75 mm around the wire
+(the whole height, from the bottom of the plate to the top of the gas) are halved in x and y (`topoSet` + `refineMesh`,
+x-y directions only), from 100 to 50 um. That gives 5.5 cells per strand diameter. Only x and y are split, so every
+cell still belongs to a complete vertical column of cells, which the laser columns and the bead measurement rely on.
+The rest of the domain is exactly the baseline mesh. The full width (no symmetry plane) doubles the base mesh to
+158,340 cells, and the refinement brings it to **181,842 cells**. The 50 um cells lower the capillary time-step limit
+from about 1.5e-5 s to about 5.1e-6 s, so a stranded run costs about 6 times as much as the solid-wire run.
+
+### Wire-pool contact fix (`full_transitional_r_stranded_contact`)
+The first stranded run (default geometry) failed. The beams focus 0.5 mm up the wire axis and are 25 deg from vertical,
+so their centre rays hit the side of the 0.9 mm wire about 1.5 mm above the plate. During the 20 ms preheat (wire held
+still), they melted a neck through the stranded wire there. The wire tip melted back into a ball at 1-2 mm that never
+reached the pool, so the bead was 0.05 mm high, against 1.4 mm for the solid wire.
+The fix is `--focus-height 0 --feed-start 0`:
+- the 3 beams cross the wire axis at the substrate surface, so they hit the wire side about 1 mm up and the pool next to it;
+- the wire is fed from t = 0 (no stationary preheat).
+In 0.22 s box tests (150/75 um mesh), the wire stays bridged into one continuous pool, the plate melts under it and a deposit
+trails behind. A focus of -0.5 mm also bridged, but left voids in the deposit.
+With the default (0.5 mm focus) but feeding from t = 0, the liquid still sat higher on the wire (1.2-1.7 mm).
+The run therefore differs from the solid-wire baseline in beam focus and feed start, as well as wire geometry and feed speed.
+A coarse solid-wire test with the same fix also bridges, and builds its bead faster than the coarse solid baseline
+(0.68 vs about 0.3 mm high at 0.25 s).
+
+`visualize.py` also writes `wire_closeup.png`, a 3D close-up of the wire and cross-sections of the metal fraction at
+5 heights (cell values, unsmoothed). Use `--wire-closeup-times 0,0.05,...` for given times, where 0 is the initial field.
+
+## Fe/Ni 5-strand wire on Invar 36 (`fe_ni_5strand_invar`, multi-component model)
+
+User case: a wire made of **3 pure-Fe + 2 pure-Ni strands, each 0.3 mm**, on an **Invar 36** substrate,
+**3 x 200 W = 600 W** (Transitional-R beam arrangement '-'), **5 mm track**. Question: can the model show the iron
+strands only partly melting and **unmelted wire fragments** ending up in the build?
+
+```bash
+ARGS="--laser-config transitional_r --wire-type stranded --strands 5 --strand-layout ring --strand-diameter 0.3e-3 \
+      --strand-materials Fe,Ni,Fe,Ni,Fe --substrate-material Invar36 --focus-height 0 --feed-start 0 --track-length 5e-3"
+python3 generate_case.py $ARGS --dx 1.2e-4 --refine-downstream 3e-3 --refine-halfwidth-y 1.3e-3 \
+        --uniform-downstream 5.6e-3 --write-interval 0.02 --np 8 --case fe_ni_5strand_invar      # full run
+python3 generate_case.py $ARGS --dx 1.5e-4 ... --case coarse_fe_ni_5strand_invar                  # coarse check
+cd fe_ni_5strand_invar && ./Allrun 8
+/workspace/vizenv/bin/python visualize_multicomp.py --case fe_ni_5strand_invar --out <viz dir>
+```
+
+**Wire.** All 5 strands sit on one ring around a small central gas gap (`--strand-layout ring`), order
+Fe, Ni, Fe, Ni, Fe (with an odd count two Fe strands are neighbours). With the 0.04 mm strand gap the ring radius is
+0.289 mm, the envelope 0.878 mm (close to the 0.9 mm paper wire) and the central gap 0.278 mm. Lay length
+10 x envelope = 8.78 mm, right hand, helix angle 11.7 deg. Metal fills 58 % of the envelope.
+Fe:Ni = 60:40 by area/volume, **57:43 by mass (Fe-43Ni wt%)** using room-temperature densities 7874 / 8908 kg/m3,
+so the fully mixed wire is a high-Ni Invar-type alloy.
+
+**Feed.** Same metal volume feed as Transitional-R: 29 mm/s x (0.9 mm solid wire, 0.636 mm^2) = 18.4 mm^3/s. The
+5 strands have 0.353 mm^2 of metal, so **WFS = 52.2 mm/s** (below the 100 mm/s cap, `--max-wfs`). Expected bead
+area 3.18 mm^2, as for Transitional-R. Travel speed 5.8 mm/s (TR); both are CLI options (`--scan-speed`,
+`--wire-feed-speed`). Beam focus on the substrate surface and feed from t = 0 (the contact fix of the 7-strand run).
+
+**Track length and domain.** 5 mm at 5.8 mm/s = 0.862 s (`--track-length 5e-3` sets the end time). The frame is
+still the laboratory frame (fixed laser and wire, substrate moving +x), so the domain does not need to "contain" the
+track: the deposit leaves through x-max. The default domain (x = -3.5 ... +6.5 mm, y = +-3 mm, z = -2 ... +2.5 mm)
+already holds the whole 5 mm track at the end time (material laid down at t = 0 is then at x = 5.0 mm, 1.5 mm from
+the outlet). To keep the track readable, the uniform-cell region is extended to x = +5.6 mm
+(`--uniform-downstream`).
+
+**Mesh.** Base 120 um, refined once in x and y (60 um, **5 cells per 0.3 mm strand**) in a vertical box
+x = -0.74 ... +3.74 mm, y = +-1.3 mm (`--refine-downstream 3e-3 --refine-halfwidth-y 1.3e-3`), so any strand piece
+carried out of the pool stays resolved until it passes the recording planes. **165,822 cells**; capillary time step
+about 6.8e-6 s. The coarse check uses 150 / 75 um (4 cells per strand, 87,768 cells).
+
+**Recording planes (full-length build at fine resolution).** Four y-z planes behind the pool (x = 1.97, 2.93, 4.01,
+4.97 mm) write the cell values (alpha, cFe, cNi, uFe, uNi, T, ...) every half fine cell of travel (5.2 ms).
+`visualize_multicomp.py` stacks the first plane that lies behind the pool tail into a 3D build volume with the part
+coordinate xi = v t - x_plane. That gives cross-sections at any position along the 5 mm build, taken after the track
+has solidified, and the never-melted fractions and fragment sizes.
+
+### Multi-component model (solver `components{}` block)
+- Tracers `cFe`, `cNi` (fraction of the cell's metal that is strand Fe / Ni). The substrate is the rest:
+  c_Invar = 1 - cFe - cNi. They are transported conservatively with the MULES metal flux, like `cWire`, but with
+  a bounded TVD (vanLeer) face value instead of upwind so strand fragments stay sharp. `cWire` = cFe + cNi is kept
+  for the old dilution statistics.
+- Properties per cell by rule of mixtures over (Invar, Fe, Ni): cp, k_s, k_l, L, sigma, dsigma/dT, absorptivity.
+- **Solidus/liquidus from the local composition** through the Fe-Ni phase diagram: local Ni content
+  w_Ni = 36 c_Invar + 100 cNi [wt%], interpolated in a table built from Swartzendruber et al. (1991) and recent
+  DSC data (`materials.FE_NI_LIQUIDUS`): pure Fe 1811 K, Fe-10Ni 1777 K, Fe-40Ni 1725 K, minimum about 1712 K near
+  60 % Ni, pure Ni 1728 K. So mixed Fe-Ni melt freezes around 1720-1730 K, while a pure Fe strand only melts at 1811 K.
+  `--liquidus mixture` uses the linear rule of mixtures instead.
+- **Unmelted-wire markers** `uFe`, `uNi`: start equal to cFe / cNi in the fed wire, are transported the same way,
+  and are set to 0 for good once the cell's liquid fraction exceeds 0.5. A pure-Fe cell only reaches that above
+  Fe's own liquidus. Any metal with u > 0 in the build is wire that **never melted** (an unmelted fragment).
+- **Solid motion.** The Carman-Kozeny sink drives solid metal to `Usolid`. Inside the wire zone (a cylinder of
+  1.5 wire radii above z = 0.06 mm) never-molten metal moves at the feed velocity. New (`meltedFollowsSubstrate`,
+  on by default for this case): metal in that zone that has already melted (re-solidified deposit) moves with the
+  substrate instead of being pushed down at the feed speed. Outside the zone all solid moves with the substrate. So a
+  solid strand piece that is pushed into the pool and then carried behind the wire zone **freezes into the deposit
+  and travels with it**. It does not vanish, and it keeps u = c until it is heated above its liquidus.
+- `wireStubbing` (on by default, `--no-wire-stubbing`): wire-zone cells in the first cell above the solid,
+  non-wire metal of their column are dragged with the substrate, not pushed into it. In practice this does the same
+  as the wire-zone floor `zoneMinZ` (0.5 dx). Tests showed that it does **not** stop over-fed solid strands from
+  being forced into the hot, still-solid substrate. That penetration is driven by mass conservation: the inlet
+  keeps feeding 52 mm/s of incompressible wire, and the Carman-Kozeny "solid" is only a velocity penalty that
+  pressure can overcome. See the limits below.
+- Pressure solver (multi-component cases): GAMG without the cheap coarsest-level solve and with a 10-cycle cap.
+  With the extended refined box the cheap coarsest solve made GAMG stall (1000 cycles per solve, 10x slower).
+- `postProcessing/meltPool/components.dat` logs, per component, the metal volume and the never-melted volume in the
+  wire, in the deposit + pool, and in the solid track behind the pool tail.
+
+Property sources (details and values in `materials.py`): JANAF / CRC (Tm, L, Tb, Lv), Ho, Powell & Liley 1972
+(k of solid Fe, Ni), Quested ASM Hb. 15 2008 / Mills et al. 1996 (liquid k), Assael et al. 2006 / 2012 (density,
+viscosity), Brillo & Egry 2005 (sigma(T) of Fe-Ni melts), Boley et al. 2015 (relative absorptivity Ni vs steel),
+Swartzendruber et al. 1991 + Tetsu-to-Hagane 2026 DSC data (Fe-Ni liquidus/solidus).
+
+### Limits of this model (please read)
+- No grain-scale or dissolution kinetics. "Melting" of a strand is decided only by the cell temperature against
+  the cell's liquidus. Mixing is VOF/tracer mixing at the cell level, with numerical diffusion over about 1-2 cells
+  at strand/melt boundaries. A strand surface cell that mixes with Ni-rich melt gets a lower liquidus, which
+  mimics dissolution only crudely.
+- Liquidus/solidus by rule of mixtures in the Ni content (binary Fe-Ni table). Invar's Mn/Si/C are ignored, and no
+  solute partitioning or microsegregation is modelled.
+- One density for all metals (incompressible VOF). A Fe fragment neither sinks nor floats in the melt, and a solid
+  fragment in the pool is pinned to the substrate velocity once outside the wire zone, instead of being moved by the
+  flow.
+- Pure metals melt isothermally in reality; the model uses a 10 K numerical freezing range (8 K minimum in the table).
+- Absorptivities of Fe (0.42) and Ni (0.34) are estimates scaled from the calibrated 0.42.
+- **Over-feeding / stubbing.** If the beams cannot melt the wire as fast as it is fed (the case here: about 240 W
+  absorbed against about 180 W needed just to melt 18.4 mm^3/s of wire), the unmelted strand tips pile up under the
+  wire. Because the feed is imposed and the metal is incompressible, they get pushed into the softened substrate
+  (seen down to z = -0.4 mm in the coarse run). A real wire would buckle, stub or lift the nozzle instead. The fact
+  that unmelted Fe/Ni ends up in the deposit is a real consequence of the energy balance. The exact location and
+  depth of those pieces is not reliable.
+- The end of the track (laser switch-off, crater) is not simulated; the run stops when 5 mm have been deposited.
+
+## Two-metal model (Invar 36 wire on SS304)
+
+A passive composition tracer `cWire` (1 = wire metal, 0 = substrate) is transported conservatively with the VOF
+flux. Every thermophysical property is mixed per cell by the rule of mixtures:
+cp, k_s, k_l, L, T_sol, T_liq, σ, dσ/dT and A.
+
+The liquid fraction uses the local T_sol/T_liq, and the Marangoni stress uses local σ(T) and dσ/dT.
+Density and viscosity are single-valued in the VOF (the mean of the wire and substrate values is used; Invar and 304 differ by about 3%).
+Composition-driven (solutal) Marangoni is not included.
+
+| Property (effective, used in the model) | Invar 36 (Fe-36Ni) | SS304 |
+|---|---|---|
+| ρ [kg/m³] (solid/liquid mean; single VOF density) | 7700 (RT 8050) | 7500 (RT 7900) |
+| cp [J/kg K] (effective high-T) | 600 (est.; RT 515) | 650 |
+| k solid / liquid [W/m K] | 15 (est.; RT 10.15) / 30 | 22 / 30 |
+| T_sol / T_liq [K] | 1700 / 1725 (approx.) | 1673 / 1727 |
+| L [J/kg] | 2.65e5 (Fe/Ni mixture) | 2.6e5 |
+| σ(T_liq) [N/m], dσ/dT [N/m K] | 1.84, −3.5e-4 | 1.80, −4.0e-4 |
+| μ [Pa s] | 5e-3 | 6e-3 |
+| absorptivity | 0.42 (assumed, as calibrated for IN718) | 0.42 |
+
+Values are taken from `materials.py`, which is authoritative. Sources are listed in its docstring:
+- Carpenter Invar 36 technical datasheet (ρ, cp, k, melting range);
+- Brillo & Egry, J. Mater. Sci. 40 (2005) 2213 (surface tension of Fe-Ni melts);
+- Mills, *Recommended Values of Thermophysical Properties for Selected Commercial Alloys* (2002) (304; Fe-Ni liquid estimates);
+- ref. 14 Table 1 (IN718).
+
+Values marked "est." are estimates and the main source of property uncertainty for Invar.
+
+**Track metrics** (`postProcessing/meltPool/meltPool.dat`, `viz/summary.json`) are measured in a y–z slab
+behind the pool tail, i.e. in solidified track:
+- bead height above the original substrate (z = 0);
+- bead width at z = 0;
+- bead area above z = 0;
+- fused area below z = 0 and penetration depth;
+- geometric dilution = fused/(fused + bead);
+- compositional dilution = 1 − (mean cWire in the track).
+
+## Quick start (Linux / WSL, OpenFOAM.com sourced)
+
+```bash
+cd ~/laser_wire_ded
+(cd solver && ./Allwmake)                                     # build the solver once
+python3 generate_case.py --case case_lwded --laser-config normal --np 8   # paper 'Normal' case, Invar36 on SS304
+# also: --laser-config lof | transitional_r | single (legacy single inclined beam + side-fed wire)
+python3 run_case.py --case case_lwded --np 8                  # mesh + run + render (case_lwded/viz)
+# or by hand:  cd case_lwded && ./Allrun 8
+~/vizenv/bin/python visualize.py --case case_lwded --out case_lwded/viz     # re-render anytime
+```
+
+Open `case_lwded/case.foam` in ParaView. Use "Decomposed Case" while the run is going, or after `reconstructPar`.
+
+Examples:
+```bash
+python3 generate_case.py --case p2500 --power 2500 --scan-speed 0.008 --wire-feed-speed 0.03
+python3 generate_case.py --case ti64 --material Ti6Al4V --feed-angle 35 --wire-diameter 1.2e-3
+python3 generate_case.py --case tophat --profile tophat --spot-radius 1.0e-3
+python3 generate_case.py --case q2d --dim 2d --np 4           # quasi-2D longitudinal section (minutes)
+python3 generate_case.py --case quick --resolution coarse --end-time 0.2
+python3 generate_case.py --print                              # derived numbers only
+python3 generate_case.py -h                                   # all options
+```
+
+## Model
+
+### Frame of reference (motion approach)
+The simulation uses a **laboratory frame: the laser and the wire nozzle are fixed, and the substrate moves**
+through the domain in +x at the scan speed. This is option (a) in the design brief. Cold substrate
+enters through `inletSubstrate` (x-min, alpha = 1, U = v_scan, T = T0), and the solidified bead and substrate
+leave through `outlet` (x-max). Solid metal is forced to move rigidly by the Carman–Kozeny momentum sink
+`-K(fl)(U - U_solid)`, with `U_solid = (v_scan, 0, 0)` everywhere except inside the wire, where
+`U_solid = wire feed velocity`. The wire enters through a fixed `wireInlet` patch cut out of the top boundary
+(topoSet `cylinderToFace` + createPatch).
+
+Why this approach:
+* The **wire inlet and the laser never move** relative to the mesh, so there's no moving inlet, no
+  mesh motion, and no remeshing. Fine cells are needed only around one fixed spot.
+* The melt pool becomes **truly steady** in a short domain. The track length that can be simulated is
+  limited only by simulated time, not by domain length: 0.6 s at 10 mm/s gives 6 mm of track.
+* The enthalpy-porosity sink already exists for the wire, so the substrate needs the same mechanism with a
+  different target velocity, and nothing new is needed for robustness.
+* A moving-source frame (option b) would need a long domain, refinement along the whole track, and a wire
+  inlet that moves along the top boundary. All of those are fragile or expensive in OpenFOAM.
+
+Consequences: the material and bead travel through the mesh, so their shape is carried by VOF advection
+(MULES with interface compression). Velocities in the plots are shown relative to the substrate.
+The ambient gas also moves at v_scan, which is physically consistent: the gas is at rest relative to the part.
+
+### Laser (ray-traced surface heat flux)
+The beam is vertical (−z). Its profile is Gaussian `I = 2P/(πw²) exp(−2r²/w²)` (w = 1/e² radius) or top-hat.
+Every vertical column of cells is a ray bundle carrying `P_col = I(x,y)·A_col`. Marching down the column,
+energy is absorbed where the running maximum of the metal fraction increases:
+`dE = A_abs · P_col · (α_cell − max α above)⁺`. So the energy goes **into the first metal surface the beam
+hits**, whatever its shape: wire, droplet, pool, or bead. Anything below is **shadowed**, including the
+substrate under the wire. `--no-shadowing` lets the beam pass through the solid wire.
+This is the same idea as FLOW-3D's single-reflection ray tracing with constant absorptivity.
+It needs a structured blockMesh mesh and a decomposition without cuts in z (`simple`, n = (nx ny 1)),
+and the generator ensures both. Incident and absorbed power are logged every step for a power balance check.
+
+### Physics included
+| Phenomenon | Implementation |
+|---|---|
+| Free surface | VOF (alpha.metal), MULES, interface compression (interFoam) |
+| Melting / solidification | Enthalpy-porosity (Voller–Prakash), linear fl(T) between Tsolidus–Tliquidus, latent heat source with iterative fl update |
+| Solid behaviour | Carman–Kozeny sink to U_solid (substrate: v_scan, wire: feed velocity) |
+| Surface tension | CSF on liquid metal only, σ(T) = σ0 + dσ/dT (T − Tliq) |
+| Marangoni | Tangential thermocapillary stress dσ/dT ∇_sT \|∇α\|, density-scaled to the metal side |
+| Recoil pressure | Clausius–Clapeyron, p_r = 0.54 p0 exp[L_v M/R (1/T_b − 1/T)], added to the balanced CSF face force (`--no-recoil`) |
+| Evaporative cooling | q = L_v · 0.82 p_sat(T) √(M/2πRT) (Hertz–Knudsen–Langmuir, β_r = 0.18) (`--no-evaporation`) |
+| Radiation, convection | εσ(T⁴ − T0⁴) + h(T − T0) at the free surface (`--no-radiation`, `--no-convection`) |
+| Gravity | yes; Boussinesq buoyancy in the liquid optional (`--buoyancy`) |
+| Conductivity | k_solid → k_liquid with the liquid fraction; argon conduction in the gas |
+| T clipping | T in [250 K, T_boil + 400 K] (evaporation keeps T near T_boil anyway) |
+| Fusion zone | Advected melt-history marker (`meltHistory` = 1 where metal has been liquid) |
+
+Free-surface source terms use the area density `2α|∇α|`. All losses are linearised implicitly,
+so T stays positive.
+
+Numerical choices: the argon viscosity is multiplied by 20 by default (`--gas-viscosity-factor`). This damps
+parasitic gas currents next to the interface, which would otherwise control the time step. The gas shear on
+the pool is still negligible next to the Marangoni stress. The time step is set by the Brackbill capillary
+limit `dt ≤ 0.8 √(ρ̄ dx³ / 2πσ)` and by Co ≤ 0.4.
+
+### Legacy single-beam process (`--laser-config single`, 316L)
+| Parameter | Default | Option |
+|---|---|---|
+| Laser power | 2000 W | `--power` |
+| Spot radius (1/e²) | 1.2 mm | `--spot-radius`, `--profile gaussian/tophat` |
+| Absorptivity | 0.35 | `--absorptivity` |
+| Scan speed | 10 mm/s | `--scan-speed` |
+| Wire | 1.0 mm, 25 mm/s (1.5 m/min) | `--wire-diameter`, `--wire-feed-speed` |
+| Feed | 45°, front feed, aimed at the laser centre | `--feed-angle`, `--feed-side`, `--wire-aim` |
+| Wire start | 20 ms after the laser (pre-heat) | `--feed-start` |
+| Domain (half, y ≥ 0 symmetry) | x −4.5…+7 mm, y 0…4 mm, z −2.5…+2.5 mm | `--upstream`, `--downstream`, `--half-width`, `--substrate-thickness`, `--gas-height` |
+| Mesh | coarse 150 µm (36k cells), medium 100 µm (117k), fine 75 µm (271k) | `--resolution`, `--dx` |
+| End time | 0.6 s (6 mm of track) | `--end-time` |
+
+The expected bead cross-section from mass balance is A_wire·v_wire/v_scan = 1.96 mm².
+
+### Quasi-2D option (`--dim 2d`)
+This is a longitudinal x–z section, one cell thick. The wire becomes a slab whose thickness gives the same
+bead height for a bead width of 2w. The laser power per unit depth is P/(2w). There's no lateral conduction or
+lateral flow, so the pool is hotter and longer than in 3D. Use it for trends and debugging only;
+`--power-2d-factor` can recalibrate the power.
+
+## Outputs
+* `postProcessing/meltPool/meltPool.dat`: time, pool length, width, depth, pool top, T_max, molten and metal
+  volume, incident, absorbed and lost power (full-beam equivalent), wire-tip height, bead height and width
+  at the probe x, and Δt.
+* Fields: `alpha.metal T liquidFraction U p_rgh Qheat zSurface pRecoil meltHistory`.
+* `visualize.py` writes `viz/`:
+  * `frames/` and `animation.mp4` / `.gif`
+  * `latest_3d.png` (free surface coloured by T, liquidus line, beam)
+  * `latest_top.png` (top view)
+  * `latest_section_long.png` (y = 0 section: T in metal, surface, liquid, fusion line, melt velocity)
+  * `latest_cross_section.png` (x = const sections: bead + fusion line)
+  * `track_profile.png/.csv` (centreline height z(x) and bead cross-section z(y))
+  * `timeseries.png`, `summary.json`
+
+## Comparison with FLOW-3D AM / FLOW-3D WELD
+| Feature | FLOW-3D AM/WELD | laser_wire_ded |
+|---|---|---|
+| Free surface | TruVOF, gas as void (pressure/thermal BC) | Two-phase VOF (MULES), argon resolved |
+| Melting/solidification | enthalpy, solid fraction, drag | same (enthalpy-porosity, Carman–Kozeny) |
+| Laser | ray tracing with multiple reflections, Fresnel absorption | single-hit vertical ray march, constant absorptivity (no Fresnel, no multiple reflections, no inclined beam) |
+| Surface tension, Marangoni | yes | yes (σ(T), liquid-only CSF) |
+| Recoil, evaporation | yes (incl. evaporative mass loss) | recoil + evaporative cooling (no mass loss) |
+| Wire feeding | moving solid component / mass source | wire inflow patch + Carman–Kozeny feed velocity |
+| Moving heat source | moving laser on a fixed part | fixed laser, moving substrate (equivalent kinematics) |
+| Shielding gas flow | usually not resolved | resolved (incompressible); no nozzle jet by default |
+| Temperature-dependent properties | full tables | constant ρ, cp; k(fl), σ(T) |
+| Multi-track, multi-layer | yes | single track (multi-track/layer not implemented) |
+| Microstructure (G, R, cooling rate) | built-in outputs | not yet (T, fl and the fusion zone are available to derive them) |
+| Mesh | FAVOR structured, adaptive | structured blockMesh; refinement by grading, optional x-y refinement box around the wire |
+| Parallel | SMP / MPI | MPI (decomposePar), Linux/WSL |
+| Cost | license | free (GPL) |
+
+Main limitations to keep in mind:
+* Incompressible phases with one metal density mean there is no shrinkage.
+* Constant cp (latent heat is handled separately).
+* Evaporation removes heat but not mass.
+* The vertical beam has no keyhole multiple reflections. LW-DED normally runs in conduction mode, so this is acceptable.
+* The wire is only "rigid" through the Carman–Kozeny sink, so a wire that hits the substrate unmelted bends
+  instead of stubbing.
+* The VOF bead shape diffuses slightly while it is advected to the outlet.
+
+## Local GUI (Windows)
+
+A tkinter control panel lives in `gui/`. On the PC open:
+
+`C:\Users\dukyo\laser_wire_ded\gui\launch_gui.bat`
+
+See `gui/README.md` for parameters, presets, and how jobs are launched through WSL.

@@ -1,0 +1,26 @@
+{
+  "case": "fe_ni_5strand_invar",
+  "latest_time": 0.86,
+  "Fe_never_melted_fraction_domain_track_last": 0.8900595151679218,
+  "Fe_never_melted_fraction_deposit_last": 0.12512660286561042,
+  "Ni_never_melted_fraction_domain_track_last": 0.8151876508053346,
+  "Ni_never_melted_fraction_deposit_last": 0.09974481140303133,
+  "pool_tail_x95_mm": 4.8257353,
+  "Fe_never_melted_fraction_build": 0.13707626258434377,
+  "Fe_volume_in_build_mm3": 4.7521452288449835,
+  "Ni_never_melted_fraction_build": 0.11439257821414388,
+  "Ni_volume_in_build_mm3": 3.2622224370552653,
+  "Fe_unmelted_fragments": 1,
+  "Fe_fragment_equiv_diam_mm_top10": [
+    0.9713095177394392
+  ],
+  "Ni_unmelted_fragments": 2,
+  "Ni_fragment_equiv_diam_mm_top10": [
+    0.4952929758436056,
+    0.35449300982748644
+  ],
+  "build_mean_cFe_above_z0": 0.38527273323546063,
+  "build_mean_cNi_above_z0": 0.2752826270388262,
+  "build_length_reconstructed_mm": 3.010000001999999,
+  "recording_plane_x_mm": 1.97
+}
