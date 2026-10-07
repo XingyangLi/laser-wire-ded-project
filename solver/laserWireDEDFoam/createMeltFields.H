@@ -335,6 +335,9 @@ labelList cellColumn(mesh.nCells(), -1);
 
 boolList inWireZone(mesh.nCells(), false);
 
+// optional rigid-wire stubbing model + wire-transfer diagnostics
+#include "createStubbing.H"
+
 #include "updateWireZone.H"
 
 #include "createLaserRays.H"

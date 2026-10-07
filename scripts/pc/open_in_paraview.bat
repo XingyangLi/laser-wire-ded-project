@@ -1,8 +1,14 @@
 @echo off
 REM Sync reconstructed times from a WSL case to a Windows folder, then open ParaView
+REM Usage: Open_in_ParaView.bat [caseName]   e.g.  Open_in_ParaView.bat gap_study_2mm
+REM No name given: asks (Enter = val3mm_fe_ni_v2). Cases live in ~/laser_wire_ded_stranded (WSL).
 title Laser Wire DED - ParaView
 set CASE=%~1
+if not "%CASE%"=="" goto have_case
+echo Which case?  e.g. val3mm_fe_ni_v2, gap_study_1mm, gap_study_2mm, gap_study_3mm
+set /p CASE=Case name (Enter = val3mm_fe_ni_v2): 
 if "%CASE%"=="" set CASE=val3mm_fe_ni_v2
+:have_case
 echo Syncing %CASE% for ParaView (about 10-30 s)...
 wsl -d Ubuntu-24.04 -u dukyong -- bash /mnt/c/Users/dukyo/laser_wire_ded_project/scripts/pc/sync_paraview_live.sh %CASE%
 if errorlevel 1 (

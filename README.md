@@ -56,6 +56,7 @@ laser_wire_ded_project/
 
 | case | what | status of the original run |
 |---|---|---|
+| `gap_study_1mm`, `gap_study_2mm`, `gap_study_3mm` | **wire-substrate gap study**: `val3mm_fe_ni_v2` with the wire tip 1 / 2 / 3 mm above the plate (`--wire-gap`) and the new rigid-wire **stubbing** model (`--stubbing`); 169,650 / 222,300 / 269,100 cells (gas layer raised for 2 and 3 mm). Metrics and run instructions: `cases/gap_study/README.md` | queued on the PC after v2 (`Gap_Study_Status.bat`) |
 | `val3mm_fe_ni_v2` | as `val3mm_fe_ni_defocus` + **`--rigid-substrate 100 --stub-floor`** (no wire pushed into the plate), `--feed-scale 1.0` (see its `FIXES.md`) | started on the PC 2026-10-06 11:30 CT (WSL `~/laser_wire_ded_stranded/val3mm_fe_ni_v2`, ~13-14 h); smoke test: wire metal below the plate 0.0006 vs 0.019 mm3 at 0.02 s |
 | `val3mm_fe_ni_defocus` | Fe+Ni 5-strand on Invar, **experiment settings** 600 W, 2.67 mm/s, WFS 18.2 mm/s, 3 mm track, **focus -1.5 mm, zR 1.2 mm**, tip touching plate, A_sub 0.35, A_wire 0.25, strand-k 0.4, unmelted-k 0.3, liquidusUnmixed 0.85 | was still running on the box at export (t = 0.69 / 1.125 s) |
 | `val3mm_fe_ni_focus03_balled` | same fixes but focus +0.3 mm, collimated, A_sub 0.30, 50 um gap | stopped at 0.30 s: wire tip hung ~1.5 mm up and **balled** (kept as reference) |
@@ -164,6 +165,18 @@ This reproduces `cases/val3mm_fe_ni_defocus` exactly (verified). Notes:
 * Negative values need `=` (`--focus-height=-1.5e-3`), otherwise argparse reads them as an option.
 * `case_params.json` in every case is the authoritative record of the options used.
 
+### Wire-substrate gap study (PC queue)
+
+`python3 scripts/pc/gap_study_generate.py` writes `~/laser_wire_ded_stranded/gap_study_{1,2,3}mm`
+(options copied from the v2 `case_params.json`, plus `--wire-gap`, `--stubbing`, `--write-interval 0.01`)
+and copies the setups to `cases/`. `scripts/pc/gap_study_queue.sh` (installed in
+`~/laser_wire_ded_stranded/gap_study_queue/`, launched hidden with `launch_wsl_job.ps1`) waits for v2,
+benchmarks 1 x 8 ranks against 3 x 5 ranks, runs the cases with `scripts/pc/run_gap_case.sh`
+(restart-safe), renders to `C:\Users\dukyo\laser_wire_ded\viz\gap_study_<n>mm` and runs
+`scripts/pc/compare_gap_study.py` -> `viz\gap_study_compare`. Status: `Gap_Study_Status.bat`
+(`scripts/pc/gap_study_status.py`); restart: `Gap_Study_Start_Queue.bat`. Smoke test of the stubbing
+model: `scripts/pc/smoke_stubbing.sh`.
+
 ---------------------------------------------------------------------------------------------
 
 ## 4. Main `generate_case.py` options
@@ -181,6 +194,7 @@ This reproduces `cases/val3mm_fe_ni_defocus` exactly (verified). Notes:
 | feed | `--feed-angle` (90 = vertical/coaxial), `--feed-side`, `--wire-aim`, `--wire-gap` (0 = tip touching the plate), `--feed-start` |
 | **multi-component Fe/Ni** | `--strand-materials Fe,Ni,Fe,Ni,Fe` turns on tracers cFe/cNi + unmelted markers uFe/uNi; `--liquidus table\|mixture`; **NEW** `--strand-k-factor` (scales solid k of the strands: weaker strand-to-strand conduction), **NEW** `--unmelted-k-factor` (solver further scales k in never-molten wire cells), **NEW** `--liquidus-unmixed-threshold` (cell dominated >thr by one component keeps that component's Tsol/Tliq, so pure Fe stays at 1811 K until mixed), `--no-melted-follow-substrate`, `--no-wire-stubbing` |
 | **NEW anti-sinking / feed** | `--rigid-substrate KFACTOR` (solver `rigidSubstrate{}`: Carman-Kozeny coefficient x KFACTOR, e.g. 100, in solid metal below the original plate surface, so the imposed feed cannot indent the solid plate with a cold wire tip), `--stub-floor` (components `stubFloorZ`: the original plate surface is always a support for the stubbing rule, so never-molten strands are not driven below the plate line), `--feed-scale` (multiplies the final WFS; default 1.0, check the metal mass balance before using it). All default off / 1.0 |
+| **NEW gap / stubbing** | `--wire-gap g` (vertical distance plate top -> lowest point of the wire tip at t = 0; the generator raises the gas layer to g + 1.5 mm when needed and prints the beam-axis offset at the tip), `--gas-uniform-height`, `--stubbing` (solver `stubbing{}`: never-molten wire landing on solid support stops the feed, see `docs/MODEL_NOTES.md`), `--stub-response-time` (5e-4 s), `--stub-min-length` (default 1.9 dx), `--no-stub-drag`, `--wire-transfer-stats` (only the diagnostics file, feed unchanged). Default off |
 | recording planes | `--record-x`, `--record-interval` (y-z planes stacked into a full-length build by `visualize_multicomp.py`) |
 | mesh | `--resolution coarse\|medium\|fine` or `--dx`, `--wire-refine`, `--refine-halfwidth`, `--refine-halfwidth-y`, `--refine-downstream`, `--uniform-downstream`, `--domain-y auto\|half\|full`, `--dim 3d\|2d`, `--upstream/--downstream/--half-width/--substrate-thickness/--gas-height` |
 | physics switches | `--no-marangoni`, `--no-recoil`, `--no-evaporation`, `--no-radiation`, `--no-convection`, `--buoyancy`, `--gas-viscosity-factor`, `--mushy-C`, `--preheat` |
@@ -189,7 +203,10 @@ This reproduces `cases/val3mm_fe_ni_defocus` exactly (verified). Notes:
 Solver-side dictionary keywords added recently (written by the generator):
 `laser{ beams{ ... rayleighLength } alphaHit }`, `wireMaterial{ absorptivity }`,
 `components{ liquidusUnmixedThreshold unmeltedKFactor stubFloorZ ... }`,
-`rigidSubstrate{ enabled zTop KFactor flMax }` (in `constant/meltProperties`).
+`rigidSubstrate{ enabled zTop KFactor flMax }`,
+`stubbing{ enabled writeStats wireFlMax supportFlMax contactDist minLength minContactCells responseTime dragContact useFloor diagRadius }`
+(in `constant/meltProperties`). With a `stubbing{}` block the solver writes
+`postProcessing/wireTransfer/wireTransfer.dat` (tip height, gap, bridging, hanging ball, stub events, stalled feed).
 
 ---------------------------------------------------------------------------------------------
 

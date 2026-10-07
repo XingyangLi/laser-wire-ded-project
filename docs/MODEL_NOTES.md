@@ -248,8 +248,67 @@ Swartzendruber et al. 1991 + Tetsu-to-Hagane 2026 DSC data (Fe-Ni liquidus/solid
   that unmelted Fe/Ni ends up in the deposit is a real consequence of the energy balance. The exact location and
   depth of those pieces is not reliable.
   `--rigid-substrate 100 --stub-floor` (above) removes the push into the solid plate; strands can still be
-  pushed into liquid pool.
+  pushed into liquid pool. `--stubbing` (below) additionally stops the feed when the solid wire stands on
+  solid support.
 - The end of the track (laser switch-off, crater) is not simulated; the run stops when 5 mm have been deposited.
+
+### Wire stubbing model (`--stubbing`, solver `stubbing{}`, 2026-10-06, default off)
+
+Why: with a gap between the wire tip and the plate the cold wire is fed down at 18 mm/s. If the beams
+have not melted it by the time it arrives and the plate under it is still solid, a real wire stubs:
+it cannot go through the plate, so it stops (and the feeder slips / the wire buckles or lifts the
+torch). The old rules (`wireStubbing`, `rigidSubstrate`, `stubFloorZ`) only stop the *tip cells*;
+the inlet keeps feeding incompressible metal, so the wire is squeezed sideways or into the plate.
+
+What the solver does each time step (`updateWireZone.H`, state in `createStubbing.H`):
+
+1. For every vertical cell column inside the wire zone it finds the **solid support**: the
+   contiguous solid metal (liquid fraction < `supportFlMax` 0.5) rising from the bottom of the plate,
+   not counting never-molten wire (so a molten plate under the tip is *not* a support; `useFloor`
+   would also count the original plate line).
+2. **Contact cells**: metal cells (alpha > 0.5) of *never-molten* wire (unmelted Fe/Ni markers or
+   wire tracer without melt history) with fl < `wireFlMax`, within `contactDist` (1.5 dx) above that
+   support, inside 1.5 wire radii of the axis, with at least `minLength` (1.9 dx) of solid unmelted
+   wire directly above them, i.e. a rod of solid wire standing on solid metal.
+3. If at least `minContactCells` such cells exist anywhere (summed over all processors) the wire
+   is **stubbed**: the feed factor relaxes to 0 with time constant `responseTime` (0.5 ms); when the
+   contact is gone (tip melted, plate melted, contact moved away) it relaxes back to 1. The whole
+   wire is a rigid rod: the feed velocity of every wire-zone cell **and** of the `wireInlet`
+   boundary is multiplied by the factor, so no metal is pushed in while the wire stands. Feed that
+   could not enter is lost (not caught up later) and reported as stalled feed.
+4. With `dragContact` (default) the contact cells move with the plate (+x, 2.67 mm/s), i.e. the
+   tip slides tangentially with the part instead of being pinned.
+
+Logged in `postProcessing/wireTransfer/wireTransfer.dat` (every statistics interval and at write
+times): `stubbed`, `stallFactor`, `nContactCells`, `contactArea`, `supportZ`, `nStubEvents`,
+`contactTime` (total time in contact), `firstStubTime`, `stalledLength/Volume`, `fedLength/Volume`,
+plus wire-transfer diagnostics for the gap study: `tipZ` (lowest solid never-molten wire),
+`hangMinZ`, `gapMin`, `bridged`, `nBridgedCols`, `bridgedArea`, and the hanging liquid "ball"
+(`ballVolume`, `ballDiamEq`, `ballWidthX/Y`, `ballHeight`, `ballBottomZ/TopZ`). The log prints
+`Stubbing: ...` when a contact starts/ends and a `WireTransfer:` summary line. On restart the
+counters are read back from the .dat file. Without a `stubbing{}` block nothing changes
+(`--wire-transfer-stats` writes the file but never stalls the feed).
+
+Smoke test (`scripts/pc/smoke_stubbing.sh`, 16k cells, 0.3 mm gap, 1 W so nothing melts): the solid
+tip landed on the plate at 21.0 ms; with `--stubbing` the feed factor fell to 4e-4 within 4 ms and the
+fed volume stayed at 0.130 mm3 (stalled 0.086 mm3 by 35 ms); diagnostics-only and stubbing-off runs
+kept feeding (0.216 mm3) and were identical to each other.
+
+Limits: no elastic buckling or feeder slip dynamics (instant rigid stop with a 0.5 ms ramp); the
+stall applies to the whole wire, also to strands not touching; the helical strand pattern at the
+inlet is a function of time, so after a stall it is offset from the wire already in the domain
+(far above the tip); contact detection is cell based (needs ~2 solid cells of wire on solid metal).
+
+### Wire-substrate gap study (`gap_study_1mm/2mm/3mm`)
+
+Same as `val3mm_fe_ni_v2` (600 W in 3 beams at 25 deg, focus 1.5 mm below the plate, zR 1.2 mm,
+2.67 mm/s, Fe/Ni 5-strand wire fed at 18.18 mm/s, Invar plate, rigid substrate x100, stub floor)
+but the tip starts 1, 2 or 3 mm above the plate and `--stubbing` is on. Geometry: the wire is on the
+axis of the beam cone; each beam axis is (z + 1.5 mm) tan 25 deg from the wire axis at height z, and
+the rays have 0.85 mm radius, so the tip at 1 mm is in the flank of the beams (beam axis 1.17 mm from
+the wire axis), at 2 mm hardly lit (1.63 mm), at 3 mm practically dark (2.10 mm). The feed is
+continuous: an unmelted tip would reach the plate after 56 / 111 / 166 ms. The question is whether
+it bridges into the pool, balls up and drips, or stubs. Metrics and outputs: `cases/gap_study/README.md`.
 
 ## Two-metal model (Invar 36 wire on SS304)
 

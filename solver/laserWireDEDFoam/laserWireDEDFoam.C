@@ -47,7 +47,11 @@ Description
         Clausius-Clapeyron recoil pressure, evaporative / radiative /
         convective free-surface heat loss, optional Boussinesq buoyancy,
       - an advected melt-history marker (fusion zone) and melt-pool / bead
-        statistics written to postProcessing/meltPool/meltPool.dat.
+        statistics written to postProcessing/meltPool/meltPool.dat,
+      - optional rigid-wire stubbing model (meltProperties/stubbing): the
+        feed of the solid wire and of the wireInlet stalls while solid,
+        never-molten wire rests on solid support; contact / stalled feed /
+        ball / bridge diagnostics in postProcessing/wireTransfer.
 
     Modifications (C) 2026 laser_wire_ded project, GPL-3.0-or-later.
 
@@ -71,6 +75,9 @@ Description
 #include <algorithm>
 #include <fstream>
 #include <cmath>
+#include <sstream>
+#include <string>
+#include <vector>
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -203,6 +210,7 @@ int main(int argc, char *argv[])
         #include "meltHistory.H"
         #include "meltPoolStats.H"
         #include "componentStats.H"
+        #include "wireTransferStats.H"
 
         runTime.write();
 

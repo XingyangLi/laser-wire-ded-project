@@ -119,7 +119,11 @@ def build_parser():
       help="front = wire from the leading side of the pool")
     a("--wire-aim", type=float, default=0.0,
       help="x offset of the wire-axis/substrate intersection from the laser centre [m]")
-    a("--wire-gap", type=float, default=None, help="initial gap wire tip - substrate [m]")
+    a("--wire-gap", type=float, default=None,
+      help="initial VERTICAL gap between the plate top (z = 0) and the lowest point of the wire tip [m] "
+           "(coaxial default 0.05 mm, side feed 0.3 mm). The wire is fed from t = --feed-start, so the gap "
+           "closes at the feed speed unless the tip melts back. The gas layer is raised to gap + 1.5 mm "
+           "when gap + 1 mm exceeds --gas-height")
     a("--feed-start", type=float, default=0.02, help="start of wire feeding [s] (pre-heat before)")
     # stranded wire
     a("--wire-type", default="solid", choices=["solid", "stranded"],
@@ -169,6 +173,25 @@ def build_parser():
       help="multi-component wireStubbing: use the original plate surface (centre of the top substrate cell) "
            "as the minimum support height, so never-molten solid strands are never driven below the plate "
            "line even when the plate under the tip is molten. Default off")
+    a("--stubbing", action="store_true",
+      help="solver stubbing{} model (rigid wire, default off): while SOLID never-molten wire rests on SOLID "
+           "substrate/deposit (also through a pool onto its solid bottom) the feed of the whole solid wire and "
+           "of the wireInlet stalls (no penetration); contact cells slide with the part. Stub events, contact "
+           "time/area, stalled feed, tip height, bridge/gap and hanging-ball size are written to "
+           "postProcessing/wireTransfer/wireTransfer.dat. The wireInlet U becomes a solver-set fixedValue")
+    a("--stub-response-time", type=float, default=5e-4,
+      help="stubbing: feed-drive response time [s]; the stall factor relaxes exponentially (default 0.5 ms)")
+    a("--stub-min-length", type=float, default=None,
+      help="stubbing: contiguous solid unmelted wire needed above a contact cell [m] (default 1.9 core cells; "
+           "ignores loose unmelted strand fragments lying on the deposit)")
+    a("--no-stub-drag", action="store_true",
+      help="stubbing: do not drag the contact cells with the moving part (default: they slide with it)")
+    a("--wire-transfer-stats", action="store_true",
+      help="write the stubbing{} dict with enabled false: wireTransfer.dat diagnostics (tip height, bridging, "
+           "gap, ball, would-be stub contacts) without stalling the feed")
+    a("--gas-uniform-height", type=float, default=None,
+      help="height of the uniform-dz gas layer above the plate [m] (default max(1.6 mm, wire gap + 0.6 mm), "
+           "capped at the gas height); above it the cells grow 2x up to the top")
     a("--track-length", type=float, default=None,
       help="deposited track length [m]: sets the end time = track length / scan speed (if --end-time not given)")
     a("--record-x", default=None,
@@ -343,6 +366,15 @@ class Case:
         self.R = (self.Aw / self.width2D) / 2 if self.d2 else Rw
         self.ywire = dx / 2 if self.d2 else 0.0
         self.origin = (a.laser_x + a.wire_aim, self.ywire, 0.0)
+        # wire gap: keep the tip and >= 1 mm of wire inside the domain, uniform (fine) cells around the tip
+        if a.wire_gap + 1.0e-3 > a.gas_height + 1e-12:
+            new_h = round(a.wire_gap + 1.5e-3, 7)
+            print(f"[generate] --wire-gap {a.wire_gap*1e3:.2f} mm: gas height {a.gas_height*1e3:.2f} -> "
+                  f"{new_h*1e3:.2f} mm (tip + 1.5 mm of wire inside the domain)")
+            a.gas_height = new_h
+        if getattr(a, "gas_uniform_height", None) is None:
+            a.gas_uniform_height = max(1.6e-3, a.wire_gap + 0.6e-3)
+        self.gas_uniform = min(a.gas_uniform_height, a.gas_height)
         # geometry
         self.x0, self.x1 = a.laser_x - a.upstream, a.laser_x + a.downstream
         self.zb, self.zt = -a.substrate_thickness, a.gas_height
@@ -519,7 +551,7 @@ class Case:
             zs.append((-self.zb - zf, graded(-self.zb - zf, dx, 4.0), 0.25))
         zs.append((zf, max(1, round(zf / dx)), 1.0))
         self.zsub = zs
-        zg = min(self.zt, 1.6e-3)
+        zg = min(self.zt, self.gas_uniform)
         zgs = [(zg, max(1, round(zg / dx)), 1.0)]
         if self.zt - zg > 1e-9:
             zgs.append((self.zt - zg, graded(self.zt - zg, dx, 2.0), 2.0))
@@ -1044,7 +1076,7 @@ mushyZone   // Carman-Kozeny: K = C alpha (1-fl)^2/(fl^3 + eps)
     C           {f(a.mushy_C)};
     eps         0.001;
 }}
-{self.rigid_substrate_block()}
+{self.rigid_substrate_block()}{self.stubbing_block()}
 solution
 {{
     nTCorr      3;
@@ -1146,6 +1178,27 @@ statistics
                 "    zTop        0;        // original plate surface\n"
                 f"    KFactor     {f(a.rigid_substrate)};\n"
                 "    flMax       0.05;     // only (nearly) solid cells\n}\n")
+
+    def stubbing_block(self):
+        a = self.a
+        on = bool(getattr(a, "stubbing", False))
+        if not (on or getattr(a, "wire_transfer_stats", False)):
+            return ""
+        ml = a.stub_min_length if getattr(a, "stub_min_length", None) else 1.9 * self.dx
+        drag = not getattr(a, "no_stub_drag", False)
+        return ("\nstubbing   // rigid-wire stubbing model + wire-transfer diagnostics (postProcessing/wireTransfer)\n{\n"
+                f"    enabled         {'true' if on else 'false'};   // stall the feed while solid wire rests on solid support\n"
+                "    wireFlMax       0.5;      // wire metal is solid below this liquid fraction\n"
+                "    supportFlMax    0.5;      // substrate / deposit / pool bottom is solid support below this\n"
+                f"    contactDist     {f(1.5 * self.dx)};   // contact: solid wire cell centre within this above the "
+                "support cell centre (= the next cell up)\n"
+                f"    minLength       {f(ml)};   // contiguous solid unmelted wire above a contact cell\n"
+                "    minContactCells 1;\n"
+                f"    responseTime    {f(getattr(a, 'stub_response_time', 5e-4))};   // feed-drive response [s]\n"
+                f"    dragContact     {'true' if drag else 'false'};   // contact cells slide with the part\n"
+                "    useFloor        false;    // only real solid supports (a molten plate under the tip is no stub)\n"
+                f"    diagRadius      {f(1.5e-3)};   // diagnostics: columns within this of the wire axis\n"
+                "}\n")
 
     def components_block(self):
         a = self.a
@@ -1277,6 +1330,10 @@ statistics
         u["wireInlet"] = ["type uniformFixedValue;",
                           f"uniformValue table ({tab} ({f(t1)} {vec(*feed)}) (1e3 {vec(*feed)}));",
                           "value uniform (0 0 0);"]
+        if getattr(a, "stubbing", False):
+            # stubbing model: laserWireDEDFoam sets this every step = feed ramp x stall factor x feed velocity
+            u["wireInlet"] = ["type fixedValue;   // set by the solver (stubbing: feed ramp x stall factor)",
+                              "value uniform (0 0 0);"]
         files["U.orig"] = ff("volVectorField", "U", "[0 1 -1 0 0 0 0]", f"uniform {U0}", u)
         p = {k: ["type fixedFluxPressure;", "value uniform 0;"] for k in moving + ["wireInlet"]}
         p["top"] = ["type totalPressure;", "p0 uniform 0;", "value uniform 0;"]
@@ -1381,6 +1438,39 @@ fi
         write(out / "case.foam", "")
         write(out / "case_params.json", json.dumps(self.summary(), indent=2))
 
+    def gap_geometry(self):
+        """wire tip vs plate and vs the (coaxial) beams; recorded in case_params.json["gap_geometry"]."""
+        a = self.a
+        zt = a.wire_gap                      # lowest point of the flat-cut tip (by construction)
+        o, u = self.origin, self.up
+        sa = zt / u[2] if abs(u[2]) > 1e-12 else 0.0
+        axis_at_tip = tuple(o[i] + sa * u[i] for i in range(3))
+        out = dict(wire_gap_m=a.wire_gap, wire_tip_lowest_z_m=zt, wire_axis_point_at_tip=axis_at_tip,
+                   gas_height_m=a.gas_height, gas_uniform_height_m=self.gas_uniform,
+                   feed_speed_m_s=a.wire_feed_speed, feed_start_s=a.feed_start,
+                   time_to_close_gap_if_unmelted_s=(a.feed_start + 0.001 + a.wire_gap / a.wire_feed_speed
+                                                    if a.wire_feed_speed > 0 else None),
+                   stubbing=bool(getattr(a, "stubbing", False)), beams=[])
+        for n, pw, F, d, w0, pr in self.beams():
+            zR = a.rayleigh_length
+            zp = abs(F[2] / d[2]) if abs(d[2]) > 1e-12 else 0.0
+            w = w0 * math.sqrt(1 + (zp / zR) ** 2) if zR else w0   # solver: parallel rays, radius at the plate
+            def at(z):
+                t = (z - F[2]) / d[2]
+                p = [F[i] + t * d[i] for i in range(3)]
+                q = [o[i] + (z / u[2]) * u[i] for i in range(3)] if abs(u[2]) > 1e-12 else list(o)
+                return math.hypot(p[0] - q[0], p[1] - q[1])
+            hz = math.sqrt(d[0] ** 2 + d[1] ** 2)
+            cosb = abs(d[2])
+            off_tip, off_plate = at(zt), at(0.0)
+            clear = off_tip * cosb - self.R               # beam axis -> wire surface, normal to the beam
+            out["beams"].append(dict(
+                name=n, model_radius_m=w, axis_offset_at_tip_m=off_tip, axis_offset_at_plate_m=off_plate,
+                axis_to_wire_surface_at_tip_m=clear, axis_to_wire_surface_at_tip_in_w=clear / w,
+                rel_intensity_at_wire_surface_at_tip=math.exp(-2 * (max(clear, 0) / w) ** 2),
+                horizontal_dir=hz))
+        return out
+
     def summary(self):
         a = self.a
         d = dict(vars(a))
@@ -1412,6 +1502,7 @@ fi
             bead_probe_x=self.bead_probe, material_props=self.mw, width2D=self.width2D,
             frame="laboratory: laser + wire fixed, substrate moves +x at scan speed",
         )
+        d.update(gap_geometry=self.gap_geometry())
         return d
 
 
@@ -1452,6 +1543,16 @@ def main(argv=None):
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
           f"capillary dt ~ {s['capillary_dt']:.2e} s; expected bead area {c.bead_area*1e6:.2f} mm^2; "
           f"E_L = {s['energy_per_length_J_per_mm']:.0f} J/mm")
+    gg = s.get("gap_geometry")
+    if gg and (a.wire_gap > 0.2e-3 or gg["stubbing"] or getattr(a, "wire_transfer_stats", False)):
+        b0 = gg["beams"][0] if gg["beams"] else None
+        print(f"[generate] wire tip at z = {gg['wire_tip_lowest_z_m']*1e3:.2f} mm (gas {a.gas_height*1e3:.2f} mm, "
+              f"uniform to {gg['gas_uniform_height_m']*1e3:.2f} mm); unmelted tip would reach the plate at "
+              f"t ~ {gg['time_to_close_gap_if_unmelted_s']*1e3:.0f} ms; stubbing {'ON' if gg['stubbing'] else 'off'}"
+              + (f"; beam axis {b0['axis_offset_at_tip_m']*1e3:.2f} mm from the wire axis at the tip "
+                 f"({b0['axis_to_wire_surface_at_tip_in_w']:.2f} w from the wire surface, rel. intensity "
+                 f"{b0['rel_intensity_at_wire_surface_at_tip']:.3f}), {b0['axis_offset_at_plate_m']*1e3:.2f} mm "
+                 f"at the plate" if b0 else ""))
     if a.print:
         return 0
     out = Path(a.case)

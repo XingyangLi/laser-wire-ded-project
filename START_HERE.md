@@ -68,7 +68,7 @@ Double-click **Status.bat**
 
 ## 5. Look at the result in ParaView
 
-Double-click **Open_in_ParaView.bat**
+Double-click **Open_in_ParaView.bat** (it asks for the case name; Enter = `val3mm_fe_ni_v2`)
 
 - Syncs the latest times to a Windows folder, then opens ParaView
 - In ParaView: **Case Type = Reconstructed Case**, check **internalMesh**, **Apply**
@@ -76,6 +76,34 @@ Double-click **Open_in_ParaView.bat**
 - For a smooth surface: **Filters → Contour**, array `alpha.metal`, value `0.5`
 
 More detail: `docs\PARAVIEW.md`
+
+---
+
+## 6. Wire-to-plate gap study (1, 2, 3 mm) — runs by itself
+
+Three new simulations, `gap_study_1mm`, `gap_study_2mm`, `gap_study_3mm`: the same as
+`val3mm_fe_ni_v2`, but the wire tip starts 1, 2 or 3 mm **above** the plate (v2 starts touching it),
+and a new "stubbing" rule is on: if the wire is still solid when it hits a still-solid plate, the
+feed stops instead of pushing the wire into the plate.
+
+- **Nothing to start.** A hidden queue waits until `val3mm_fe_ni_v2` has finished and made its
+  pictures, runs a 10-minute speed test (one case on 8 cores vs. three cases at once), then runs
+  the three cases and makes a comparison.
+- **Check it:** double-click **Gap_Study_Status.bat** (shows waiting / running, % done and the
+  expected finish time of each case).
+- **After a reboot or a WSL shutdown:** double-click **Gap_Study_Start_Queue.bat**. It continues
+  where it stopped and never starts a second copy.
+- **Look at one live:** `Open_in_ParaView.bat gap_study_2mm` (or double-click it and type the name).
+
+| What | Where |
+|------|-------|
+| Pictures per case | `C:\Users\dukyo\laser_wire_ded\viz\gap_study_1mm` (and `_2mm`, `_3mm`) |
+| Comparison figure + table | `C:\Users\dukyo\laser_wire_ded\viz\gap_study_compare` (`gap_study_compare.png`, `gap_study_table.md`) |
+| Solver files | WSL `~/laser_wire_ded_stranded/gap_study_<n>mm` |
+| What is measured | `cases\gap_study\README.md` |
+
+The gap cases use their own solver build `~/lwded_bin_gap` (with the stubbing rule); the v2 run
+keeps using `~/lwded_bin`.
 
 ---
 
@@ -91,6 +119,7 @@ Double-click `gui\launch_gui.bat` for a form to set laser / wire / mesh and laun
 - Do **not** point jobs at WSL `~/laser_wire_ded` or `~/laser_wire_ded_scan`
 - Do **not** re-run into the live name `val3mm_fe_ni_v2` while it is still computing (use a new name like `val3mm_fe_ni_v2b`)
 - Leave untracked `case_lwded\` alone unless you know you want it
+- Do **not** delete `~/laser_wire_ded_stranded/gap_study_*` or `gap_study_queue` while the gap study runs
 
 ---
 
