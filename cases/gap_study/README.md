@@ -7,7 +7,7 @@ Earlier runs with the tip ~1-1.5 mm up and the focus near the plate *balled up* 
 on the tip, no bridge: `val3mm_fe_ni_focus03_balled`), which is why the baseline
 `val3mm_fe_ni_v2` starts with the tip on the plate and a defocused beam.
 
-## Setup (all three identical to `val3mm_fe_ni_v2` except the gap, the stubbing model and output)
+## Setup (all three identical to `val3mm_fe_ni_v2` except the gap, the stubbing + buckling model and output)
 
 | | value |
 |---|---|
@@ -16,6 +16,7 @@ on the tip, no bridge: `val3mm_fe_ni_focus03_balled`), which is why the baseline
 | substrate | Invar 36, rigid substrate x100, stub floor, A_sub 0.35 / A_wire 0.25 |
 | `--wire-gap` | **1, 2, 3 mm** = vertical distance from the plate top (z = 0) to the lowest point of the flat-cut wire tip at t = 0 |
 | `--stubbing` | ON (new rigid-wire stubbing model, see `docs/MODEL_NOTES.md`) |
+| `--wire-buckling` | ON (added 2026-10-06 23:45 CT, before any gap solver started): while stalled, the solid wire column stub -> inlet bows sideways (+y, normal to the scan) once the stalled feed exceeds the Euler critical end shortening (~0.47 / 0.33 / 0.26 mm for the 1 / 2 / 3 mm cases); bow amplitude = elastica take-up of the excess feed, capped at 1.5 wire diameters / 0.2 x free length (0.48 / 0.68 / 0.88 mm); springs back when the contact is lost. Solver build `~/lwded_bin_gap_buckle` |
 | `--write-interval` | 0.01 s (v2: 0.02 s) |
 | mesh | 120 um core / 60 um in the wire box; gas layer raised so that the tip + 1.5 mm of wire are inside |
 
@@ -48,7 +49,10 @@ Solver output per case (`~/laser_wire_ded_stranded/gap_study_<n>mm/postProcessin
   `ballVolume`, `ballDiamEq`, `ballWidthX/Y`, `ballHeight`, `ballBottomZ/TopZ` (hanging liquid metal =
   **ball size**), and the stubbing record `stubbed`, `stallFactor`, `nContactCells`, `contactArea`,
   `nStubEvents`, `contactTime`, `firstStubTime`, `stalledLength`, `stalledVolume` (**stub events and
-  stalled feed**), `fedLength`, `fedVolume`.
+  stalled feed**), `fedLength`, `fedVolume`, and the **wire buckling** record `buckled`, `bkStall`,
+  `bkCritical`, `bkLength`, `bkAmp` (commanded bow), `bkTipOffB/T` (measured lateral tip offset along
+  +y / -x), `bkBow` + `bkBowXi` (measured peak bow of the solid wire from the tip-inlet chord and
+  where), `bkSeverity` (bow / wire diameter), `bkEvents`, `bkMaxAmp`, `bkDirX/Y/Z` (bow direction).
 * `meltPool/meltPool.dat`: pool size, bead height / width / area at the probe behind the pool,
   **penetration**, dilution, metal volume.
 * `meltPool/components.dat`: **unmelted Fe / Ni** (deposit and solid track).
@@ -84,7 +88,7 @@ throughput; otherwise the three cases run one after the other on 8 ranks (render
 next run). Then it writes the comparison.
 
 Regenerate the setups: `python3 scripts/pc/gap_study_generate.py` (options from the v2
-`case_params.json`, then `--wire-gap`, `--stubbing`, `--write-interval 0.01`).
+`case_params.json`, then `--wire-gap`, `--stubbing`, `--wire-buckling`, `--write-interval 0.01`).
 `python3 scripts/pc/gap_study_generate.py --verify-baseline` regenerates v2 and diffs it against
 `cases/val3mm_fe_ni_v2` (only `maxDeltaT` differs, from the newer `--capillary-dt-factor` option; it
 is not the binding limit).
@@ -99,11 +103,33 @@ support ... -> feed stalls`, stall factor 0.71 -> 4e-4 within 4 ms -> 7e-13, fed
 0.216 mm3; difference to A = A's stalled volume). B and C: identical meltPool / components output,
 i.e. with stubbing off nothing changes. No errors in any run.
 
+## Smoke test of the buckling response
+
+Smoke test (`scripts/pc/smoke_buckling.sh`, 26.7k cells at 200/100 um, 0.3 mm gap, 3.5 mm gas layer,
+1 W so nothing melts, 70 ms, serial, ~17 min each; results `~/lwded_gap/smoke_buckle/summary.txt`):
+both runs stub at t = 10 ms (tip z 0.10 mm, stall factor 0.02 at 12 ms, 1e-7 at 18 ms), free column
+L = 3.18 mm, Euler S_cr = 0.355 mm. **on** (`--stubbing --wire-buckling`): `Buckling: stalled wire
+column buckles at t = 30.0 ms` (S = 0.355 mm); commanded / measured bow 0.096 / 0.092 mm at 32.7 ms,
+0.283 / 0.271 mm at 37.8 ms, 0.471 / 0.450 mm at 43.0 ms, cap 0.636 mm (0.2 L) reached at ~49 ms,
+measured 0.62-0.645 mm until 70 ms, peak at xi = 0.38-0.43 (mode peak 0.40), along +y (e_b = (0 1 0));
+stub tip offset +0.01-0.04 mm in y. **off** (`--stubbing` only): same stub, same stalled feed
+(0.378 mm3 by 70 ms), measured |bow| <= 0.06 mm throughout (strand / cell noise). In both the
+stub tip slid ~0.2 mm in +x with the plate (bkTipOffT -0.20 mm). No errors; max Courant
+after 31 ms 0.007 (off: 0.0007), same 4907 time steps (capillary-limited).
+
 ## Caveats
 
 * The stubbing model treats the never-molten wire as a rigid rod: on solid-solid contact the whole
-  feed stops (no buckling / elastic energy); the feed that could not enter is reported as stalled
-  feed, it is *not* added later. Contact cells slide with the moving plate (no friction model).
+  feed stops; the feed that could not enter is reported as stalled feed, it is *not* added later.
+  Contact cells slide with the moving plate (no friction model).
+* The buckling response is a one-mode kinematic model, **not beam FEA**: the bow amplitude is a
+  geometric function of the stalled feed (Euler threshold + inextensible elastica, capped), applied
+  as a lateral target velocity of the solid wire; no bending stress, no wire inertia, the bent wire
+  does not feel other metal, the bow does not let extra wire in, r_g of a solid round section for
+  the 5-strand bundle, plasticity only as the springBack switch. See `docs/MODEL_NOTES.md`.
+* The benchmark of the queue (5 min from t = 0, throughput only) still runs with the stubbing-only
+  build `~/lwded_bin_gap` (the running queue fixed its PATH at start); the three gap solvers use
+  `~/lwded_bin_gap_buckle` through `run_gap_case.sh`.
 * After a stall the helical strand pattern entering at the top is offset by the stalled length
   (the inlet pattern is a function of time); this is a small mismatch far above the tip.
 * Ball / bridge / gap diagnostics are column based (vertical wire): "hanging" = metal above a gas gap

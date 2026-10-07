@@ -6,7 +6,7 @@
 #   C_0.3mm  no stubbing dict       : old behaviour; proves nothing breaks with the model off
 # Usage: bash smoke_stubbing.sh [endTime]      results in ~/lwded_gap/smoke/<X>_0.3mm
 source /usr/lib/openfoam/openfoam2406/etc/bashrc >/dev/null 2>&1
-export PATH=$HOME/lwded_bin_gap:$PATH
+export PATH=$HOME/lwded_bin_gap_buckle:$PATH
 REPO=/mnt/c/Users/dukyo/laser_wire_ded_project
 ROOT=$HOME/lwded_gap/smoke
 END=${1:-0.035}

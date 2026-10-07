@@ -84,7 +84,9 @@ More detail: `docs\PARAVIEW.md`
 Three new simulations, `gap_study_1mm`, `gap_study_2mm`, `gap_study_3mm`: the same as
 `val3mm_fe_ni_v2`, but the wire tip starts 1, 2 or 3 mm **above** the plate (v2 starts touching it),
 and a new "stubbing" rule is on: if the wire is still solid when it hits a still-solid plate, the
-feed stops instead of pushing the wire into the plate.
+feed stops instead of pushing the wire into the plate. If it keeps standing there, the stuck wire
+**buckles**: the solid wire between the plate and the nozzle bows sideways (more stalled feed = more
+bow, at most ~0.5-0.9 mm) and straightens again when the tip melts or slides off.
 
 - **Nothing to start.** A hidden queue waits until `val3mm_fe_ni_v2` has finished and made its
   pictures, runs a 10-minute speed test (one case on 8 cores vs. three cases at once), then runs
@@ -102,8 +104,8 @@ feed stops instead of pushing the wire into the plate.
 | Solver files | WSL `~/laser_wire_ded_stranded/gap_study_<n>mm` |
 | What is measured | `cases\gap_study\README.md` |
 
-The gap cases use their own solver build `~/lwded_bin_gap` (with the stubbing rule); the v2 run
-keeps using `~/lwded_bin`.
+The gap cases use their own solver build `~/lwded_bin_gap_buckle` (stubbing rule + wire buckling);
+the v2 run keeps using `~/lwded_bin` (the older stubbing-only build `~/lwded_bin_gap` is kept).
 
 ---
 

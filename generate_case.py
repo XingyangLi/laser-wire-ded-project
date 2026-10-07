@@ -186,6 +186,22 @@ def build_parser():
            "ignores loose unmelted strand fragments lying on the deposit)")
     a("--no-stub-drag", action="store_true",
       help="stubbing: do not drag the contact cells with the moving part (default: they slide with it)")
+    a("--wire-buckling", action="store_true",
+      help="with --stubbing: stubbing/buckling{} - while the feed is stalled the solid wire column between the stub "
+           "contact (pinned) and the wireInlet (clamped) bows sideways once the stalled feed exceeds the Euler "
+           "critical end shortening; the bow amplitude takes up the excess feed (inextensible elastica), capped. "
+           "Logged in wireTransfer.dat (bk* columns)")
+    a("--buckle-max-amplitude", type=float, default=1.5,
+      help="buckling: cap of the bow amplitude [wire diameters] (also <= 0.2 x free column length)")
+    a("--buckle-critical-stall", type=float, default=-1.0,
+      help="buckling: stalled feed [m] that buckles the column (<= 0: Euler, pi^2 r_g^2 pathFactor/(K^2 L))")
+    a("--buckle-path-factor", type=float, default=1.0,
+      help="buckling (Euler criterion): compressed wire length / free column length (1 = earliest buckling)")
+    a("--buckle-plane", default="auto", choices=["auto", "feed", "lateral"],
+      help="buckling bow direction: auto = inclined wire in its vertical plane (away from the plate), vertical "
+           "wire normal to the scan direction; feed / lateral force one of them")
+    a("--buckle-no-springback", action="store_true",
+      help="buckling: the bow stays when the contact releases (plastic); default: it springs back (elastic)")
     a("--wire-transfer-stats", action="store_true",
       help="write the stubbing{} dict with enabled false: wireTransfer.dat diagnostics (tip height, bridging, "
            "gap, ball, would-be stub contacts) without stalling the feed")
@@ -1198,7 +1214,29 @@ statistics
                 f"    dragContact     {'true' if drag else 'false'};   // contact cells slide with the part\n"
                 "    useFloor        false;    // only real solid supports (a molten plate under the tip is no stub)\n"
                 f"    diagRadius      {f(1.5e-3)};   // diagnostics: columns within this of the wire axis\n"
+                + self.buckling_block() +
                 "}\n")
+
+    def buckling_block(self):
+        a = self.a
+        if not (getattr(a, "stubbing", False) and getattr(a, "wire_buckling", False)):
+            return ""
+        return ("    buckling   // stalled solid wire column bows sideways (Euler threshold, elastica amplitude)\n    {\n"
+                "        enabled         true;\n"
+                f"        plane           {a.buckle_plane};   // auto: inclined wire in its vertical plane, "
+                "vertical wire normal to the scan\n"
+                "        endCondition    clampedPinned;   // feeder guide clamped, stub tip pinned (K 0.70)\n"
+                f"        criticalStall   {f(a.buckle_critical_stall)};   // stalled feed that buckles [m]; <= 0: Euler\n"
+                f"        gyrationRadius  {f(0.5 * self.R)};   // r_g = R/2 (solid round section)\n"
+                f"        pathFactor      {f(a.buckle_path_factor)};   // compressed length / free column length\n"
+                "        absorbFraction  1;   // part of the post-critical stalled feed that bows the in-domain column\n"
+                f"        maxAmplitude    {f(a.buckle_max_amplitude)};   // cap [wire diameters] (and maxSlope x L)\n"
+                "        maxSlope        0.2;   // and <= 0.2 x free length (axis slope at the stub <= 0.8)\n"
+                f"        maxLateralSpeed {f(max(2 * a.wire_feed_speed, 1e-3))};   // [m/s] (2 x feed)\n"
+                "        responseTime    0.0005;\n"
+                "        releaseTime     0.001;   // compression decay after contact loss [s]\n"
+                f"        springBack      {'false' if a.buckle_no_springback else 'true'};\n"
+                "    }\n")
 
     def components_block(self):
         a = self.a
@@ -1450,7 +1488,9 @@ fi
                    feed_speed_m_s=a.wire_feed_speed, feed_start_s=a.feed_start,
                    time_to_close_gap_if_unmelted_s=(a.feed_start + 0.001 + a.wire_gap / a.wire_feed_speed
                                                     if a.wire_feed_speed > 0 else None),
-                   stubbing=bool(getattr(a, "stubbing", False)), beams=[])
+                   stubbing=bool(getattr(a, "stubbing", False)),
+                   wire_buckling=bool(getattr(a, "stubbing", False) and getattr(a, "wire_buckling", False)),
+                   beams=[])
         for n, pw, F, d, w0, pr in self.beams():
             zR = a.rayleigh_length
             zp = abs(F[2] / d[2]) if abs(d[2]) > 1e-12 else 0.0
@@ -1549,6 +1589,7 @@ def main(argv=None):
         print(f"[generate] wire tip at z = {gg['wire_tip_lowest_z_m']*1e3:.2f} mm (gas {a.gas_height*1e3:.2f} mm, "
               f"uniform to {gg['gas_uniform_height_m']*1e3:.2f} mm); unmelted tip would reach the plate at "
               f"t ~ {gg['time_to_close_gap_if_unmelted_s']*1e3:.0f} ms; stubbing {'ON' if gg['stubbing'] else 'off'}"
+              + (" + wire buckling" if gg.get("wire_buckling") else "")
               + (f"; beam axis {b0['axis_offset_at_tip_m']*1e3:.2f} mm from the wire axis at the tip "
                  f"({b0['axis_to_wire_surface_at_tip_in_w']:.2f} w from the wire surface, rel. intensity "
                  f"{b0['rel_intensity_at_wire_surface_at_tip']:.3f}), {b0['axis_offset_at_plate_m']*1e3:.2f} mm "

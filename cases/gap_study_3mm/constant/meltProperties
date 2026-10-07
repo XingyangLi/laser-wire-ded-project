@@ -93,6 +93,22 @@ stubbing   // rigid-wire stubbing model + wire-transfer diagnostics (postProcess
     dragContact     true;   // contact cells slide with the part
     useFloor        false;    // only real solid supports (a molten plate under the tip is no stub)
     diagRadius      0.0015;   // diagnostics: columns within this of the wire axis
+    buckling   // stalled solid wire column bows sideways (Euler threshold, elastica amplitude)
+    {
+        enabled         true;
+        plane           auto;   // auto: inclined wire in its vertical plane, vertical wire normal to the scan
+        endCondition    clampedPinned;   // feeder guide clamped, stub tip pinned (K 0.70)
+        criticalStall   -1;   // stalled feed that buckles [m]; <= 0: Euler
+        gyrationRadius  0.00023662365;   // r_g = R/2 (solid round section)
+        pathFactor      1;   // compressed length / free column length
+        absorbFraction  1;   // part of the post-critical stalled feed that bows the in-domain column
+        maxAmplitude    1.5;   // cap [wire diameters] (and maxSlope x L)
+        maxSlope        0.2;   // and <= 0.2 x free length (axis slope at the stub <= 0.8)
+        maxLateralSpeed 0.03636;   // [m/s] (2 x feed)
+        responseTime    0.0005;
+        releaseTime     0.001;   // compression decay after contact loss [s]
+        springBack      true;
+    }
 }
 
 solution

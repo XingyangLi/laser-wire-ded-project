@@ -8,7 +8,7 @@
 #     'C:\Users\dukyo\laser_wire_ded_project\scripts\pc\launch_wsl_job.ps1','-Script',
 #     '/home/dukyong/laser_wire_ded_stranded/gap_study_queue/gap_study_queue.sh'
 source /usr/lib/openfoam/openfoam2406/etc/bashrc >/dev/null 2>&1
-export PATH=$HOME/lwded_bin_gap:$PATH
+export PATH=$HOME/lwded_bin_gap_buckle:$PATH
 REPO=/mnt/c/Users/dukyo/laser_wire_ded_project
 ROOT=$HOME/laser_wire_ded_stranded
 Q=$ROOT/gap_study_queue

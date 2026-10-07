@@ -294,16 +294,104 @@ tip landed on the plate at 21.0 ms; with `--stubbing` the feed factor fell to 4e
 fed volume stayed at 0.130 mm3 (stalled 0.086 mm3 by 35 ms); diagnostics-only and stubbing-off runs
 kept feeding (0.216 mm3) and were identical to each other.
 
-Limits: no elastic buckling or feeder slip dynamics (instant rigid stop with a 0.5 ms ramp); the
+Limits: no feeder slip dynamics (instant rigid stop with a 0.5 ms ramp; buckling of the stalled
+column: optional, next section); the
 stall applies to the whole wire, also to strands not touching; the helical strand pattern at the
 inlet is a function of time, so after a stall it is offset from the wire already in the domain
 (far above the tip); contact detection is cell based (needs ~2 solid cells of wire on solid metal).
+
+### Wire buckling under the stall (`--wire-buckling`, solver `stubbing{ buckling{} }`, 2026-10-06, default off)
+
+Why: with `--stubbing` alone a stalled wire simply stops; the feed the drive could not push in is
+only counted. A real stalled wire is a slender column under displacement-controlled compression: the
+free length between the contact tube and the stub tip bows sideways (and, off-model, the drive rolls
+slip). The buckling option lets the solid, never-molten wire column bend inside the domain, using the
+same machinery that feeds it (target velocity of the solid metal in the Carman-Kozeny sink), not a
+solid-mechanics solver.
+
+Each time step while the stubbing model reports solid-solid contact (`updateWireZone.H`, parameters
+and state in `createStubbing.H`):
+
+1. **Column.** Pinned end = lowest contact cell along the wire axis (`sTip`), clamped end = the
+   `wireInlet` (highest wire-zone cell, `sIn`, the wire is guided in the nozzle above the domain).
+   Free length `L = sIn - sTip` (~2.4 / 3.4 / 4.4 mm in the 1 / 2 / 3 mm gap cases once the tip
+   is on the plate).
+2. **Compression** `S` = stalled feed of the current contact (integral of `(1 - stallFactor) x feed`
+   while in contact; it decays with `releaseTime` 1 ms after the contact is lost).
+3. **Euler threshold.** Axial force of the shortened wire `P = E A S / (pathFactor L)` reaches
+   `P_cr = pi^2 E I / (K L)^2` at the critical stall
+   `S_cr = pi^2 r_g^2 pathFactor / (K^2 L)` with `r_g = R/2` (solid round section, R = 0.473 mm
+   envelope radius of the 5-strand wire) and `K = 0.70` (clamped-pinned): ~0.47 / 0.33 / 0.26 mm
+   for L = 2.4 / 3.4 / 4.4 mm, i.e. 26 / 18 / 14 ms of stalled feed at 18.18 mm/s. E cancels.
+   `criticalStall` overrides it; `pathFactor > 1` (compressed wire longer than the free column,
+   e.g. the conduit) delays it.
+4. **Bow amplitude.** Beyond `S_cr` the column bends in its first clamped-pinned mode
+   `phi(xi) = [sin(b xi) - xi sin b] / max` (xi = 0 at the stub, 1 at the inlet, tan b = b,
+   b = 4.493; peak at xi = 0.40) with the inextensible-elastica amplitude that takes up the excess
+   feed: `A_target = sqrt(absorbFraction (S - S_cr) L / c)`, `c = 1/2 int phi'^2 = 2.58`
+   (a 3.4 mm column takes up 0.1 mm of extra feed with a 0.36 mm bow). Caps:
+   `A <= min(maxAmplitude x 2R, maxSlope x L)` = min(1.5 diameters = 1.42 mm, 0.2 L) = 0.48 / 0.68 /
+   0.88 mm for L = 2.4 / 3.4 / 4.4 mm (axis slope at the stub ~4 A/L <= 0.8), and no
+   buckling for `L < minColumnLength` (4R). The commanded amplitude follows the target with
+   `responseTime` 0.5 ms and `|dA/dt| <= maxLateralSpeed` (2 x feed = 36 mm/s).
+5. **Motion.** Every wire-zone cell at height xi gets the extra target velocity
+   `dA/dt phi(xi) e_b` (a pure shear field, divergence free); the wire zone itself follows the bent
+   axis (union of the straight and the bent cylinder), so the solid never-molten metal is moved
+   sideways by the Carman-Kozeny sink exactly like it is fed. Contact cells keep sliding with the
+   plate, melted / liquid metal is unaffected (VOF + melting own the tip once it is liquid).
+6. **Plane.** `plane auto`: an inclined wire bows in its own vertical plane, away from the plate
+   (e_b = the upward normal of the axis in that plane); a vertical / coaxial wire (the gap cases)
+   bows horizontally, normal to the scan direction (e_b = axis x scan = +y). `direction (x y z)`
+   overrides. The sign is fixed (+), a real wire picks it from its imperfections.
+7. **Release.** When the contact is lost (tip or plate melted, tip slid off) `S` decays and the bow
+   springs back elastically at the same capped rate (`springBack true`); with `springBack false`
+   the bent strand stays where it is (plastic) until it melts.
+
+Logged in `wireTransfer.dat` (same file, new columns; an old file gets a new header block):
+`buckled`, `bkStall` (S), `bkCritical` (S_cr), `bkLength` (L), `bkAmp` / `bkAmpTarget` (commanded
+bow), `bkLatSpeed` (dA/dt), `bkTipS`, `bkEvents`, `bkMaxAmp`, and **measured** from the solid
+never-molten wire metal (volume-weighted centreline in 24 axial bins from the stub to the inlet):
+`bkTipOffB` / `bkTipOffT` (offset of the lowest bin from the original axis along e_b and along
+axis x e_b, i.e. y and -x for the vertical wire: the tip drag with the plate shows in -bkTipOffT),
+`bkBow` (largest offset along e_b from the tip-inlet chord = measured midspan bow), `bkBowXi`
+(where), `bkSeverity` (= bkBow / wire diameter), `bkDirX/Y/Z` (e_b; the buckling plane is axis +
+e_b). The log prints `Buckling: ... buckles` / `... released` and a `WireBuckling:` line with the
+statistics. The measured columns are also written with buckling off (reference). Restart: S, A,
+the pinned end, events and max amplitude are read back from the file.
+
+Generator: `--wire-buckling` (needs `--stubbing`), `--buckle-max-amplitude` (1.5 diameters),
+`--buckle-critical-stall` (-1 = Euler), `--buckle-path-factor` (1), `--buckle-plane auto|feed|lateral`,
+`--buckle-no-springback`. `scripts/pc/gap_study_generate.py` adds `--wire-buckling` to every gap
+case (`--no-buckling` to leave it out).
+
+Smoke test (`scripts/pc/smoke_buckling.sh`, 26.7k cells at 200/100 um, 0.3 mm gap, 3.5 mm gas layer,
+1 W so nothing melts, 70 ms, serial, ~17 min each; results `~/lwded_gap/smoke_buckle/summary.txt`):
+both runs stub at t = 10 ms (tip z 0.10 mm, stall factor 0.02 at 12 ms, 1e-7 at 18 ms), free column
+L = 3.18 mm, Euler S_cr = 0.355 mm. **on** (`--stubbing --wire-buckling`): `Buckling: stalled wire
+column buckles at t = 30.0 ms` (S = 0.355 mm); commanded / measured bow 0.096 / 0.092 mm at 32.7 ms,
+0.283 / 0.271 mm at 37.8 ms, 0.471 / 0.450 mm at 43.0 ms, cap 0.636 mm (0.2 L) reached at ~49 ms,
+measured 0.62-0.645 mm until 70 ms, peak at xi = 0.38-0.43 (mode peak 0.40), along +y (e_b = (0 1 0));
+stub tip offset +0.01-0.04 mm in y. **off** (`--stubbing` only): same stub, same stalled feed
+(0.378 mm3 by 70 ms), measured |bow| <= 0.06 mm throughout (strand / cell noise). In both the
+stub tip slid ~0.2 mm in +x with the plate (bkTipOffT -0.20 mm). No errors; max Courant
+after 31 ms 0.007 (off: 0.0007), same 4907 time steps (capillary-limited).
+
+Limits (this is **not** beam FEA): one prescribed mode shape whose amplitude is a kinematic
+function of the stalled feed (no bending stress, no axial wire stress, no dynamics / inertia of the
+wire, no higher modes, no snap-through); the bent wire does not feel other metal (it is the sink
+that moves it, so it would push through liquid; the bow is directed away from the plate or
+sideways); the bow does not let wire in: the inlet stays stalled and the bow is made by shearing
+the wire already in the domain sideways (volume conserved; the section normal to the bent axis
+thins by cos(slope), >= 0.78 at the cap; a real bowing column would draw in the excess feed); r_g of a solid round
+section is used for the twisted 5-strand bundle (loose strands would buckle earlier: r_g of one
+0.3 mm strand = 75 um, S_cr 9x smaller); plasticity only as the `springBack` switch; the column
+ends are idealised (clamped inlet at the domain top, pinned stub).
 
 ### Wire-substrate gap study (`gap_study_1mm/2mm/3mm`)
 
 Same as `val3mm_fe_ni_v2` (600 W in 3 beams at 25 deg, focus 1.5 mm below the plate, zR 1.2 mm,
 2.67 mm/s, Fe/Ni 5-strand wire fed at 18.18 mm/s, Invar plate, rigid substrate x100, stub floor)
-but the tip starts 1, 2 or 3 mm above the plate and `--stubbing` is on. Geometry: the wire is on the
+but the tip starts 1, 2 or 3 mm above the plate and `--stubbing` + `--wire-buckling` are on. Geometry: the wire is on the
 axis of the beam cone; each beam axis is (z + 1.5 mm) tan 25 deg from the wire axis at height z, and
 the rays have 0.85 mm radius, so the tip at 1 mm is in the flank of the beams (beam axis 1.17 mm from
 the wire axis), at 2 mm hardly lit (1.63 mm), at 3 mm practically dark (2.10 mm). The feed is

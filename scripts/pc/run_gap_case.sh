@@ -5,9 +5,10 @@
 #     has "ALL DONE" is skipped; an existing decomposition with time steps is kept as it is
 #   - nRanks only matters for a fresh start (re-decomposes if processor* has another count)
 #   - solve = solver only, render = renders only, all (default) = both
-# Uses the gap-study solver build ~/lwded_bin_gap (stubbing model).
+# Uses the gap-study solver build ~/lwded_bin_gap_buckle (stubbing + wire-buckling model; build:
+#   B=~/lwded_buckle/solver_build LWDED_APPBIN=~/lwded_bin_gap_buckle bash scripts/pc/build_solver_wsl.sh).
 source /usr/lib/openfoam/openfoam2406/etc/bashrc >/dev/null 2>&1
-export PATH=$HOME/lwded_bin_gap:$PATH
+export PATH=$HOME/lwded_bin_gap_buckle:$PATH
 REPO=/mnt/c/Users/dukyo/laser_wire_ded_project
 C=${1:?case dir}; NP=${2:-8}; OUT=${3:?viz out dir}; WHAT=${4:-all}
 cd $C || exit 1

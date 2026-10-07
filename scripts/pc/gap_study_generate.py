@@ -2,7 +2,7 @@
 """Generate the wire-substrate gap case study (gap_study_<n>mm) from the val3mm_fe_ni_v2 baseline.
 
 Every generator option is taken from the baseline case_params.json (so the cases are exactly
-val3mm_fe_ni_v2), then only the initial wire gap, the stubbing model and the write interval change.
+val3mm_fe_ni_v2), then only the initial wire gap, the stubbing model (+ wire buckling) and the write interval change.
 
     python3 scripts/pc/gap_study_generate.py                       # 1, 2, 3 mm into ~/laser_wire_ded_stranded
     python3 scripts/pc/gap_study_generate.py --gaps 1.5 --root /tmp/x --no-repo-copy
@@ -64,7 +64,7 @@ def copy_setup(src: Path, dst: Path):
 
 def fixes_md(n, prm, gg):
     b = gg["beams"][0] if gg.get("beams") else {}
-    return f"""# gap_study_{n}mm: initial wire-substrate gap {n} mm (val3mm_fe_ni_v2 + gap + stubbing)
+    return f"""# gap_study_{n}mm: initial wire-substrate gap {n} mm (val3mm_fe_ni_v2 + gap + stubbing + wire buckling)
 
 Everything as `cases/val3mm_fe_ni_v2` (600 W, 160 mm/min, WFS 18.2 mm/s metal basis, Fe/Ni 5-strand ring
 wire on Invar, focus -1.5 mm, zR 1.2 mm, A 0.25/0.35, rigid substrate x100, stub floor, 3 mm track,
@@ -75,6 +75,7 @@ end 1.1249 s, 120/60 um mesh) except:
 | `--wire-gap` | {gg['wire_gap_m']*1e3:.2f} mm: lowest point of the (flat-cut) wire tip at z = {gg['wire_tip_lowest_z_m']*1e3:.2f} mm above the plate top at t = 0 |
 | feed | starts at t = 0 at {prm['wire_feed_speed']*1e3:.2f} mm/s along the (vertical) wire axis; an unmelted tip would reach the plate at t ~ {gg['time_to_close_gap_if_unmelted_s']*1e3:.0f} ms |
 | `--stubbing` | ON: rigid-wire stall while solid unmelted wire rests on solid support, `postProcessing/wireTransfer/wireTransfer.dat` |
+| `--wire-buckling` | {'ON' if gg.get('wire_buckling') else 'off'}: while stalled, the solid wire column (stub contact pinned, wireInlet clamped) bows sideways (vertical wire: +y, normal to the scan) once the stalled feed exceeds the Euler critical end shortening (Euler S_cr = pi^2 r_g^2/(K^2 L): ~0.47 / 0.33 / 0.26 mm for the ~2.4 / 3.4 / 4.4 mm free columns of the 1 / 2 / 3 mm cases); amplitude = elastica take-up of the excess feed, capped at 1.5 wire diameters / 0.2 x free length (`bk*` columns in wireTransfer.dat) |
 | gas layer | {gg['gas_height_m']*1e3:.2f} mm (uniform 120 um cells up to {gg['gas_uniform_height_m']*1e3:.2f} mm) |
 | cells | {prm['cells']} ({prm['cells_xyz'][0]} x {prm['cells_xyz'][1]} x ({prm['cells_xyz'][2]}+{prm['cells_xyz'][3]}) block, wire box refined) |
 | `--write-interval` | {prm['write_interval']} s (v2: 0.02 s) to see the early transfer |
@@ -92,6 +93,7 @@ def main():
                     help="run directory root (WSL); cases go to <root>/gap_study_<n>mm")
     ap.add_argument("--prefix", default="gap_study_")
     ap.add_argument("--no-stubbing", action="store_true")
+    ap.add_argument("--no-buckling", action="store_true", help="stubbing without the wire-buckling response")
     ap.add_argument("--write-interval", type=float, default=0.01)
     ap.add_argument("--np", type=int, default=None)
     ap.add_argument("--no-repo-copy", action="store_true")
@@ -128,6 +130,8 @@ def main():
         argv = base + [f"--case={case}", f"--wire-gap={g*1e-3}", f"--write-interval={a.write_interval}"]
         if not a.no_stubbing:
             argv.append("--stubbing")
+            if not a.no_buckling:
+                argv.append("--wire-buckling")
         if a.np:
             argv.append(f"--np={a.np}")
         argv += a.extra

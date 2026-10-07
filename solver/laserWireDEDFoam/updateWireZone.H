@@ -2,6 +2,8 @@
 //   wire zone (cylinder about the wire axis, above zoneMinHeight/zoneMinZ):
 //       wire feed velocity (ramped from tFeedStart over tFeedRamp)
 //       x stall factor of the optional stubbing model (createStubbing.H)
+//       + lateral bow velocity of the optional buckling model (stubbing/buckling):
+//         the wire zone then follows the bent axis
 //   elsewhere: solidVelocity (substrate moving under the fixed laser)
 {
     const scalar tNow = runTime.value();
@@ -55,6 +57,7 @@
         stubNCells = 0;
         stubArea = 0;
         stubSupZ = -GREAT;
+        stubSTip = GREAT;
         forAll(colCells, ci)
         {
             const labelList& cl = colCells[ci];
@@ -126,6 +129,7 @@
                     if (len >= stubMinLength)
                     {
                         stubContact[c] = true;
+                        stubSTip = min(stubSTip, s);
                         ++stubNCells;
                         colHit = true;
                     }
@@ -140,6 +144,7 @@
         reduce(stubNCells, sumOp<label>());
         reduce(stubArea, sumOp<scalar>());
         reduce(stubSupZ, maxOp<scalar>());
+        reduce(stubSTip, minOp<scalar>());
 
         stubInletMetalArea = 0;
         if (stubInletPatch >= 0)
@@ -189,18 +194,97 @@
             stubFedLen += dt*feedFac*stubStallFac*vf;
             stubFedVol += dt*feedFac*stubStallFac*vf*stubInletMetalArea;
             stubWasOn = on;
+
+            // --- buckling of the free wire column under the stall
+            //     (pinned end / free length also tracked with buckling off: diagnostics)
+            if (on && stubSTip < 0.5*GREAT) bkSTip = stubSTip;
+            bkL = (bkSTip > -0.5*GREAT) ? max(bkSIn - bkSTip, 0.0) : 0.0;
+            if (bkEnabled)
+            {
+                bkCrit =
+                    (bkCritUser > 0)
+                  ? bkCritUser
+                  : (
+                        (bkL > SMALL)
+                      ? sqr(constant::mathematical::pi*bkGyr)*bkPathFactor/(sqr(bkK)*bkL)
+                      : 0.0
+                    );
+                if (on)
+                {
+                    bkS += dt*feedFac*(1 - stubStallFac)*vf;
+                }
+                else if (bkSpringBack)
+                {
+                    bkS *= (bkRelease > SMALL) ? Foam::exp(-dt/bkRelease) : 0.0;
+                }
+                const scalar Amax =
+                    (bkL >= bkMinLength)
+                  ? min(bkMaxAmpD*2*wireRadius, bkMaxSlope*bkL)
+                  : 0.0;
+                const scalar excess = bkAbsorb*max(bkS - bkCrit, 0.0);
+                bkATarget = min(Foam::sqrt(excess*bkL/max(bkArc, SMALL)), Amax);
+                if (!on && !bkSpringBack) bkATarget = bkA;     // plastic: stays bent
+                const bool bkWasOn = bkOn;
+                bkOn = on && excess > 0 && Amax > 0;
+                const scalar dA = bkATarget - bkA;
+                scalar rate = dA/max(bkResponse, dt);
+                rate = max(min(rate, bkMaxSpeed), -bkMaxSpeed);
+                if (mag(rate*dt) > mag(dA)) rate = dA/max(dt, VSMALL);
+                bkAdot = rate;
+                bkA = max(bkA + rate*dt, 0.0);
+                if (bkA < 1e-9 && bkATarget <= 0) { bkA = 0; bkAdot = 0; }
+                bkMaxA = max(bkMaxA, bkA);
+                if (bkOn && !bkWasOn)
+                {
+                    bkNEvents += 1;
+                    Info<< "Buckling: stalled wire column buckles at t = " << tNow
+                        << " s (free length " << bkL*1e3 << " mm, stalled "
+                        << bkS*1e3 << " mm > critical " << bkCrit*1e3
+                        << " mm, cap " << Amax*1e3 << " mm, e_b " << bkDir << ")"
+                        << endl;
+                }
+                else if (!bkOn && bkWasOn)
+                {
+                    Info<< "Buckling: compression released at t = " << tNow
+                        << " s, amplitude " << bkA*1e3 << " mm"
+                        << (bkSpringBack ? " (springs back)" : " (stays bent)") << endl;
+                }
+            }
         }
         if (stubEnabled) stubFeedFac = feedFac*stubStallFac;
     }
+    else
+    {
+        bkAdot = 0;
+    }
+    if (stubStartup) bkAdot = 0;
+    if (bkSTip > -0.5*GREAT)
+    {
+        bkL = max(bkSIn - bkSTip, 0.0);
+    }
+    const bool bkZone = bkEnabled && bkL > SMALL && (bkA > 0 || mag(bkAdot) > 0);
+    const scalar bkRz = wireZoneRadiusFactor*wireRadius;
 
     forAll(Us, celli)
     {
         const vector d = C[celli] - wireOrigin;
         const scalar s = (d & wireUp);
         const scalar r = mag(d - s*wireUp);
+        // buckling: mode-shape value and membership of the bent wire zone
+        scalar phi = 0;
+        bool inBent = false;
+        if (bkZone)
+        {
+            phi = bkShape((s - bkSTip)/bkL);
+            if (phi > 0)
+            {
+                const vector dB = d - bkA*phi*bkDir;
+                inBent = (mag(dB - (dB & wireUp)*wireUp) <= bkRz);
+            }
+        }
         if
         (
-            r <= wireZoneRadiusFactor*wireRadius
+            (r <= bkRz || inBent)
          && s >= wireZoneMinHeight
          && C[celli].z() >= wireZoneMinZ
         )
@@ -220,7 +304,7 @@
             }
             else
             {
-                Us[celli] = stubFeedFac*wireFeedVelocity;
+                Us[celli] = stubFeedFac*wireFeedVelocity + (bkAdot*phi)*bkDir;
             }
             inWireZone[celli] = true;
         }

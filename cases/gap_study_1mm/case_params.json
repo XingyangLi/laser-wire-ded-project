@@ -73,6 +73,12 @@
   "stub_response_time": 0.0005,
   "stub_min_length": null,
   "no_stub_drag": false,
+  "wire_buckling": true,
+  "buckle_max_amplitude": 1.5,
+  "buckle_critical_stall": -1.0,
+  "buckle_path_factor": 1.0,
+  "buckle_plane": "auto",
+  "buckle_no_springback": false,
   "wire_transfer_stats": false,
   "gas_uniform_height": 0.0016,
   "track_length": 0.003,
@@ -307,6 +313,7 @@
     "feed_start_s": 0.0,
     "time_to_close_gap_if_unmelted_s": 0.056005500550055,
     "stubbing": true,
+    "wire_buckling": true,
     "beams": [
       {
         "name": "beam1_az0",
