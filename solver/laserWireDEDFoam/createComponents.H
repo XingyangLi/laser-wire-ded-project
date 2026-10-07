@@ -37,6 +37,30 @@ const scalar liquidusUnmixedThr =
 // Extra conductivity reduction in solid unmelted-wire cells (strand contact).
 const scalar unmeltedKFactor =
     compDict.getOrDefault<scalar>("unmeltedKFactor", 1.0);
+// Tracer transport options (default off = legacy behaviour):
+//  conservativeTracers: the face values of c_i/u_i are interpolated from an
+//    extension field in which (near-)gas cells (alpha < tracerExtensionAlpha)
+//    carry the metal-weighted composition of their face neighbours instead of
+//    a stale value (gas cells otherwise keep c = 0 = "substrate"), and cells with
+//    almost no metal (alpha <= tracerAlphaMin) take that extension value. This
+//    stops wire metal being relabelled as substrate where it flows into gas
+//    cells (free surface, wire tip, strand gaps).
+//  tracerBudget: global budget of every component (sum alpha c V vs boundary
+//    in/outflow, clipping, low-alpha skip, sum>1 normalisation), written to
+//    postProcessing/meltPool/tracerBudget.dat (default: = conservativeTracers)
+const bool conservativeTracers =
+    compDict.getOrDefault<bool>("conservativeTracers", false);
+const scalar tracerExtAlpha =
+    compDict.getOrDefault<scalar>("tracerExtensionAlpha", 0.01);
+const scalar tracerAlphaMin =
+    compDict.getOrDefault<scalar>("tracerAlphaMin", conservativeTracers ? 1e-6 : 1e-3);
+const bool tracerBudget =
+    compDict.getOrDefault<bool>("tracerBudget", conservativeTracers);
+bool trBudgetInit = false;
+scalarList trS0, trBnd, trClip, trSkip, trNorm;
+scalarList trPatchMetal;   // cumulative metal (alpha) outflow per boundary patch [m3]
+scalar trMetal0 = 0;
+bool trHeaderDone = false;   // (re)write the column header once per solver run (restart = new segment)
 scalarList tabNi, tabTs, tabTl;
 bool useLiqTable = false;
 PtrList<volScalarField> cComp;
@@ -99,5 +123,10 @@ if (multiComp)
     {
         Info<< "    stubbing support floor stubFloorZ = " << stubFloorZ << " m" << nl;
     }
+    Info<< "    tracer transport: " << (conservativeTracers ? "conservative (gas-cell extension)" : "legacy")
+        << ", tracerAlphaMin " << tracerAlphaMin
+        << (conservativeTracers ? ", extension below alpha " : "")
+        << (conservativeTracers ? Foam::name(tracerExtAlpha) : word(""))
+        << ", budget " << tracerBudget << nl;
     Info<< endl;
 }

@@ -173,6 +173,15 @@ def build_parser():
       help="multi-component wireStubbing: use the original plate surface (centre of the top substrate cell) "
            "as the minimum support height, so never-molten solid strands are never driven below the plate "
            "line even when the plate under the tip is molten. Default off")
+    a("--conservative-tracers", action="store_true",
+      help="multi-component: components{conservativeTracers true} - interpolate the c_i/u_i face values from a "
+           "gas-cell extension (gas cells carry the composition of their metal neighbours, not a stale 0 = "
+           "'substrate') and give almost-empty cells that value; stops wire metal being relabelled as substrate "
+           "at the free surface / wire tip (val3mm_fe_ni_v2 lost 47%% of the fed wire tracer). Also turns on "
+           "the tracer budget. Default off")
+    a("--tracer-budget", action="store_true",
+      help="multi-component: write postProcessing/meltPool/tracerBudget.dat (global c_i budget: boundary "
+           "in/outflow, clipping, low-alpha skip, normalisation) without changing the transport")
     a("--stubbing", action="store_true",
       help="solver stubbing{} model (rigid wire, default off): while SOLID never-molten wire rests on SOLID "
            "substrate/deposit (also through a pool onto its solid bottom) the feed of the whole solid wire and "
@@ -1251,6 +1260,13 @@ statistics
         if a.stub_floor:
             out.append(f"    stubFloorZ {f(-0.5 * self.dx)};   // minimum support height (~ top substrate cell centre): "
                        "solid never-molten strands are not driven below the plate line")
+        if getattr(a, "conservative_tracers", False):
+            out.append("    conservativeTracers true;   // gas-cell extension of c_i/u_i for the face values "
+                       "(no relabelling of wire metal as substrate at the free surface)")
+            out.append("    tracerExtensionAlpha 0.01;  // cells below this metal fraction carry the neighbour composition")
+            out.append("    tracerAlphaMin 1e-6;        // c = (alpha c)/alpha above this, extension value below")
+        if getattr(a, "conservative_tracers", False) or getattr(a, "tracer_budget", False):
+            out.append("    tracerBudget true;          // postProcessing/meltPool/tracerBudget.dat")
         for c in self.comp_names:
             m = MATERIALS[c]
             if a.absorptivity_wire is not None:

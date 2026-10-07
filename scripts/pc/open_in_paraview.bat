@@ -5,7 +5,7 @@ REM No name given: asks (Enter = val3mm_fe_ni_v2). Cases live in ~/laser_wire_de
 title Laser Wire DED - ParaView
 set CASE=%~1
 if not "%CASE%"=="" goto have_case
-echo Which case?  e.g. val3mm_fe_ni_v2, gap_study_1mm, gap_study_2mm, gap_study_3mm
+echo Which case?  e.g. track10mm_fe_ni, val3mm_fe_ni_v2, gap_study_1mm
 set /p CASE=Case name (Enter = val3mm_fe_ni_v2): 
 if "%CASE%"=="" set CASE=val3mm_fe_ni_v2
 :have_case

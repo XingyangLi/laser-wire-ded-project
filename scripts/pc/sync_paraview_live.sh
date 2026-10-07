@@ -30,7 +30,15 @@ mkdir -p "$DST"
 : > "$DST/case.foam"
 rsync -a --delete "$SRC/constant" "$DST/"
 rsync -a "$SRC/system" "$DST/" 2>/dev/null || true
-for t in $(ls -d [0-9]* 2>/dev/null | grep -v orig || true); do
+# Long runs (> 40 written times, e.g. track10mm_fe_ni): mirror only the first and the latest
+# ${PV_LAST:-12} times (a full mirror would be several GB). PV_ALL=1 mirrors everything.
+TIMES=$(ls -d [0-9]* 2>/dev/null | grep -v orig | sort -g || true)
+NT=$(echo "$TIMES" | grep -c . || true)
+if [ "${PV_ALL:-0}" != 1 ] && [ "$NT" -gt 40 ]; then
+  TIMES="$(echo "$TIMES" | head -1) $(echo "$TIMES" | tail -${PV_LAST:-12})"
+  echo "Long run ($NT times): mirroring the first + latest ${PV_LAST:-12} (set PV_ALL=1 for all)"
+fi
+for t in $TIMES; do
   rsync -a "$SRC/$t" "$DST/"
 done
 

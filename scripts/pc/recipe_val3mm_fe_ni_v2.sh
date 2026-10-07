@@ -1,15 +1,17 @@
 #!/bin/bash
 # Print generate_case.py argv for the 3 mm Fe+Ni defocus + anti-sinking recipe.
 # Usage: recipe_val3mm_fe_ni_v2.sh <caseName>
-# Then: python3 generate_case.py $(recipe...)  -- but prefer generate_from_recipe.sh
+# NOTE (2026-10-07): --wire-feed-speed is the NOMINAL 0.9 mm solid-wire speed (0.0101); the metal basis raises it
+# to 18.18 mm/s for the 5 x 0.3 mm strands. The earlier 0.01818 here gave 32.7 mm/s (1.8x the v2 feed).
+# Then: python3 generate_case.py $(recipe...)
 CASE="${1:?case name required}"
 cat <<ARGS
 --case $CASE
 --laser-config transitional_r
 --power 600
 --scan-speed 0.002667
---wire-feed-speed 0.01818
---focus-height -0.0015
+--wire-feed-speed 0.0101
+--focus-height=-0.0015
 --rayleigh-length 0.0012
 --beam-radius 0.0005
 --spot-radius 0.0012
