@@ -17,8 +17,10 @@
 // where z_plate is the distance along the beam from the focus to the substrate
 // top (z = 0). That makes a defocused waist below the plate illuminate a larger
 // spot on the plate (paraxial / collimated-ray approximation of a caustic).
-// Each ray carries a fixed power. The rays are sampled once at start-up: the
-// cells crossed (in order) are stored per processor.
+// Each ray carries a fixed power. The cells crossed (in order) are stored per
+// processor. A weave rebuilds the rays when the head has moved sideways by
+// about a quarter of a fine cell (retraceLaser, called from updateWeave.H).
+// The focus read from the dictionary is shifted by weaveY.
 // ---------------------------------------------------------------------------
 DynamicList<scalar> rayPower;          // W (full ray power, before ramp/absorption)
 DynamicList<label>  rayBeam;
@@ -27,6 +29,7 @@ List<DynamicList<label>> raySampDyn;   // global sample index of each local cell
 wordList beamNames;
 scalarList beamPower;
 List<labelList> rayCells, raySamp;
+retraceLaser = [&]()
 {
     const dictionary& ld = meltProperties.subDict("laser");
     const bool planar = ld.getOrDefault<bool>("planar2D", false);
@@ -50,6 +53,8 @@ List<labelList> rayCells, raySamp;
     const PtrList<entry> beamEntries(ld.lookup("beams"));
     beamNames.setSize(beamEntries.size());
     beamPower.setSize(beamEntries.size());
+    rayPower.clear();
+    rayBeam.clear();
 
     DynamicList<List<label>> cellsAll, sampAll;
     label nSamplesTot = 0;
@@ -60,6 +65,7 @@ List<labelList> rayCells, raySamp;
         const scalar P = bd.get<scalar>("power");
         beamPower[bi] = P;
         point F(bd.get<point>("focus"));
+        F.y() += weaveY;   // head zigzag (0 when the weave is off)
         vector d(bd.get<vector>("direction"));
         if (planar) { d.y() = 0; F.y() = yMid; }
         d /= mag(d) + VSMALL;
@@ -168,5 +174,8 @@ List<labelList> rayCells, raySamp;
     forAll(cellsAll, i) { rayCells[i] = cellsAll[i]; raySamp[i] = sampAll[i]; }
     Info<< "Laser rays: " << rayPower.size() << " rays in the domain, "
         << nSamplesTot << " samples, spacing " << hRay << " m, step " << dsRay
-        << " m" << nl << endl;
-}
+        << " m, focus shifted in y by " << weaveY << " m" << nl << endl;
+    weaveRetraceDy = 0.25*dxMin;
+    weaveYTraced = weaveY;
+};
+retraceLaser();

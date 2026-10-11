@@ -119,6 +119,13 @@ def build_parser():
       help="front = wire from the leading side of the pool")
     a("--wire-aim", type=float, default=0.0,
       help="x offset of the wire-axis/substrate intersection from the laser centre [m]")
+    a("--weave-width", type=float, default=0.0,
+      help="side-to-side width of a triangular zigzag of the laser and the wire [m], peak to peak "
+           "(the bracket on a high-speed wiggle picture). 0 = straight track. The head moves in y; "
+           "the plate still travels in +x. Needs a full-width domain")
+    a("--weave-wavelength", type=float, default=None,
+      help="along-track length of one full zigzag [m] (down and back). "
+           "Default: 4 x --weave-width, so both wiggle sizes have the same leg angle")
     a("--wire-gap", type=float, default=None,
       help="initial VERTICAL gap between the plate top (z = 0) and the lowest point of the wire tip [m] "
            "(coaxial default 0.05 mm, side feed 0.3 mm). The wire is fed from t = --feed-start, so the gap "
@@ -267,6 +274,9 @@ def build_parser():
     a("--end-time", type=float, default=None)
     a("--write-interval", type=float, default=0.01)
     a("--max-co", type=float, default=0.4)
+    a("--capillary-dt-factor", type=float, default=0.8,
+      help="multiplies the capillary time-step ceiling sqrt(rho dx^3 / (2 pi sigma)). "
+           "Lower is more stable and slower. The solver will not take a larger step than this.")
     a("--np", type=int, default=8, help="MPI ranks for decomposeParDict")
     a("--print", action="store_true", help="print derived values only")
     return ap
@@ -365,6 +375,29 @@ class Case:
             a.wire_refine = 1 if a.wire_type == "stranded" else 0
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
+        # weave: the laser focus and the wire axis travel a triangular zigzag in y.
+        # amplitude is centre-to-peak; --weave-width is the full side-to-side span.
+        self.weave_amp = 0.0
+        self.weave_wavelength = 0.0
+        if a.weave_width and a.weave_width > 0:
+            if self.d2 or not self.full:
+                raise SystemExit(
+                    "--weave-width needs a 3D full-width domain (a stranded wire already uses one; "
+                    "otherwise pass --domain-y full). A side-to-side wiggle cannot sit on the y = 0 symmetry plane.")
+            self.weave_amp = 0.5 * a.weave_width
+            self.weave_wavelength = a.weave_wavelength if a.weave_wavelength else 4.0 * a.weave_width
+            if self.weave_wavelength <= 0:
+                raise SystemExit("--weave-wavelength must be positive")
+            extra = self.weave_amp
+            if a.refine_halfwidth_y is None:
+                a.refine_halfwidth_y = a.refine_halfwidth + extra
+            else:
+                a.refine_halfwidth_y = a.refine_halfwidth_y + extra
+            need = self.weave_amp + Rw + 1.5e-3
+            if a.half_width < need:
+                print(f"[generate] weave: domain half-width {a.half_width*1e3:.2f} -> {need*1e3:.2f} mm "
+                      "so the zigzag stays inside the mesh")
+                a.half_width = need
         self.dx_min = self.dx / 2 ** a.wire_refine
         # stranded wire geometry
         a.wire_feed_speed_nominal = a.wire_feed_speed
@@ -500,6 +533,26 @@ class Case:
         e1 = (u[2], 0.0, -u[0])
         return e1, e2, u
 
+    def round_wire_vars(self, t_expr):
+        """OpenFOAM variables for a solid round wire, shifted sideways when a weave is on."""
+        a = self.a
+        e1, e2, u = self.wire_basis()
+        o = self.origin
+        def lin(e):
+            return (f"({f(e[0])})*(pos().x() - ({f(o[0])})) + ({f(e[1])})*(pos().y() - ({f(o[1])})) "
+                    f"+ ({f(e[2])})*(pos().z() - ({f(o[2])}))")
+        y_lin = lin(e2)
+        var = []
+        if self.weave_amp > 0:
+            var.append(f"sTravel = {f(a.scan_speed)}*max({t_expr}, 0)")
+            var.append(f"wFrac = sTravel/{f(self.weave_wavelength)} - floor(sTravel/{f(self.weave_wavelength)})")
+            var.append(f"yw = {f(self.weave_amp)}*(1 - 4*sqrt(sqr(wFrac - 0.5)))")
+            y_lin = f"({y_lin}) - yw"
+        h = self.dx_min
+        var += [f"X = {lin(e1)}", f"Y = {y_lin}", f"Z = {lin(u)}"]
+        var.append(f"m = max(0, min(1, 0.5 + ({f(self.R)} - sqrt(X*X + Y*Y))/{f(h)}))")
+        return var
+
     def strand_vars(self, t_expr):
         """OpenFOAM expression variables: wire-local X, Y, axial Z, helix phase ph and metal fraction m."""
         a, st = self.a, self.strands
@@ -514,7 +567,16 @@ class Case:
         k = hand * 2 * math.pi / st["lay_length"]
         h = self.dx_min
         r, Rc = st["strand_radius"], st["ring_radius"]
-        var = [f"X = {lin(e1)}", f"Y = {lin(e2)}", f"Z = {lin(u)}"]
+        y_lin = lin(e2)
+        var = []
+        if self.weave_amp > 0:
+            # triangular zigzag, same formula as the solver: yw in [-amplitude, +amplitude]
+            # t = 0 starts at -amplitude (one corner of the zigzag)
+            var.append(f"sTravel = {f(a.scan_speed)}*max({t_expr}, 0)")
+            var.append(f"wFrac = sTravel/{f(self.weave_wavelength)} - floor(sTravel/{f(self.weave_wavelength)})")
+            var.append(f"yw = {f(self.weave_amp)}*(1 - 4*sqrt(sqr(wFrac - 0.5)))")
+            y_lin = f"({y_lin}) - yw"
+        var += [f"X = {lin(e1)}", f"Y = {y_lin}", f"Z = {lin(u)}"]
         # fed length s(t) (linear ramp of the feed speed between t0 and t1, as the U inlet table)
         var.append(f"sf = {f(v)}*(pow(max({t_expr} - {f(t0)}, 0), 2) - pow(max({t_expr} - {f(t1)}, 0), 2))"
                    f"/{f(2*(t1-t0))}")
@@ -687,7 +749,9 @@ writeMesh       no;
 
     def topo_set(self):
         s_top = self.zt / math.sin(self.th)
-        p1, p2, r = self.wire_cyl(s_top - 10 * self.dx, s_top + 10 * self.dx, self.R + 1e-9)
+        # weave: the inlet slot has to cover the whole side-to-side sweep, not only the wire
+        r_in = self.R + self.weave_amp + (2 * self.dx if self.weave_amp > 0 else 0.0) + 1e-9
+        p1, p2, r = self.wire_cyl(s_top - 10 * self.dx, s_top + 10 * self.dx, r_in)
         return header("dictionary", "topoSetDict", "system") + f"""actions
 (
     {{
@@ -731,6 +795,10 @@ patches
         R = self.R
         s_tip = (a.wire_gap + R * math.cos(self.th)) / math.sin(self.th)
         p1, p2, r = self.wire_cyl(s_tip, self.zt / math.sin(self.th) + 20 * self.dx, R)
+        if self.weave_amp > 0:
+            # t = 0 sits on the -amplitude corner, matching the inlet expression
+            p1 = (p1[0], p1[1] - self.weave_amp, p1[2])
+            p2 = (p2[0], p2[1] - self.weave_amp, p2[2])
         big = 1.0
         wire = f"""    cylinderToCell  // wire (held at rest until tFeedStart)
     {{
@@ -805,7 +873,8 @@ regions
     def control_dict(self):
         a = self.a
         rho_avg = 0.5 * (self.m["rho"] + ARGON["rho"])
-        dt_cap = math.sqrt(rho_avg * self.dx_min ** 3 / (2 * math.pi * max(self.mw["sigma"], self.ms["sigma"])))
+        dt_cap = (a.capillary_dt_factor
+                  * math.sqrt(rho_avg * self.dx_min ** 3 / (2 * math.pi * max(self.mw["sigma"], self.ms["sigma"]))))
         return header("dictionary", "controlDict", "system") + f"""application     laserWireDEDFoam;
 
 startFrom       latestTime;
@@ -1074,7 +1143,7 @@ wireMaterial    // {a.wire_material} wire (mixed with cWire, rule of mixtures)
         if self.comp_names:
             wire_block = "\nwireMaterial { enabled false; }   // replaced by components{}\n" + self.components_block()
         return header("dictionary", "meltProperties", "constant") + f"""// wire {a.wire_material} on substrate {a.substrate_material}, laser config '{a.laser_config}'
-// laboratory frame (laser + wire fixed, substrate moving +x)
+// laboratory frame (substrate moving +x; laser + wire fixed, or weaving in y — see weave{{}})
 // metal{{}}, Tsolidus/Tliquidus/L, surfaceTension{{}}, laser.absorptivity = SUBSTRATE material
 {wire_block}
 metal
@@ -1095,6 +1164,13 @@ Tliquidus   {f(m['Tliq'])};
 L           {f(m['L'])};
 
 solidVelocity {vec(a.scan_speed, 0, 0)};   // substrate velocity = scan speed
+
+weave   // triangular zigzag of the laser focus and the wire axis in y (0 = straight track)
+{{
+    enabled     {'true' if self.weave_amp > 0 else 'false'};
+    amplitude   {f(self.weave_amp)};     // centre to peak [m]; the path spans -amplitude to +amplitude
+    wavelength  {f(self.weave_wavelength if self.weave_wavelength else 1)};  // one full zigzag along the track [m]
+}}
 
 mushyZone   // Carman-Kozeny: K = C alpha (1-fl)^2/(fl^3 + eps)
 {{
@@ -1121,7 +1197,7 @@ surfaceTension
     marangoni           {'false' if a.no_marangoni else 'true'};
     liquidOnly          true;
     alphaMin            1e-3;
-    capillaryDtFactor   0.8;
+    capillaryDtFactor   {f(a.capillary_dt_factor)};
 }}
 
 vaporisation
@@ -1375,6 +1451,11 @@ statistics
             var = self.strand_vars("time()")
             al["wireInlet"] = (["type exprFixedValue;", "value uniform 1;", "variables", "("]
                                + [f'    "{v}"' for v in var] + [");", "valueExpr \"m\";"])
+        elif self.weave_amp > 0:
+            # wide inlet slot: metal only inside the moving round wire, not across the whole sweep
+            var = self.round_wire_vars("time()")
+            al["wireInlet"] = (["type exprFixedValue;", "value uniform 1;", "variables", "("]
+                               + [f'    "{v}"' for v in var] + [");", "valueExpr \"m\";"])
         if not self.d2:
             al["side"] = ["type zeroGradient;"]
         files["alpha.metal.orig"] = ff("volScalarField", "alpha.metal", "[0 0 0 0 0 0 0]", "uniform 0", al)
@@ -1387,6 +1468,10 @@ statistics
         if getattr(a, "stubbing", False):
             # stubbing model: laserWireDEDFoam sets this every step = feed ramp x stall factor x feed velocity
             u["wireInlet"] = ["type fixedValue;   // set by the solver (stubbing: feed ramp x stall factor)",
+                              "value uniform (0 0 0);"]
+        if self.weave_amp > 0:
+            # wide slot: the solver sets the feed (+ sideways weave speed) only on faces that are wire
+            u["wireInlet"] = ["type fixedValue;   // set every step by the solver (weave)",
                               "value uniform (0 0 0);"]
         files["U.orig"] = ff("volVectorField", "U", "[0 1 -1 0 0 0 0]", f"uniform {U0}", u)
         p = {k: ["type fixedFluxPressure;", "value uniform 0;"] for k in moving + ["wireInlet"]}
@@ -1411,6 +1496,11 @@ statistics
         cw["inletSubstrate"] = ["type fixedValue;", "value uniform 0;"]
         cw["inletGas"] = ["type fixedValue;", "value uniform 0;"]
         cw["wireInlet"] = ["type fixedValue;", "value uniform 1;"]
+        if self.weave_amp > 0:
+            # the inlet slot is wider than the wire; gas faces in the slot are not wire metal
+            var = self.strand_vars("time()") if self.strands is not None else self.round_wire_vars("time()")
+            cw["wireInlet"] = (["type exprFixedValue;", "value uniform 0;", "variables", "("]
+                               + [f'    "{v}"' for v in var] + [");", 'valueExpr "m";'])
         cw["top"] = ["type inletOutlet;", "inletValue uniform 0;", "value uniform 0;"]
         files["cWire.orig"] = ff("volScalarField", "cWire", "[0 0 0 0 0 0 0]", "uniform 0", cw)
         files["meltHistory"] = ff("volScalarField", "meltHistory", "[0 0 0 0 0 0 0]", "uniform 0", mh)
@@ -1555,8 +1645,16 @@ fi
             energy_per_length_J_per_mm=a.power / (a.scan_speed * 1e3),
             wire_mass_rate_kg_s=self.m["rho"] * (self.strands["area"] if self.strands else self.Aw) * a.wire_feed_speed,
             capillary_dt=math.sqrt(rho_avg * self.dx_min ** 3 / (2 * math.pi * self.m["sigma"])),
+            capillary_dt_factor=a.capillary_dt_factor,
+            capillary_dt_limit=a.capillary_dt_factor * math.sqrt(
+                rho_avg * self.dx_min ** 3 / (2 * math.pi * self.m["sigma"])),
             bead_probe_x=self.bead_probe, material_props=self.mw, width2D=self.width2D,
-            frame="laboratory: laser + wire fixed, substrate moves +x at scan speed",
+            weave_width_m=(2 * self.weave_amp if self.weave_amp else 0.0),
+            weave_amplitude_m=self.weave_amp,
+            weave_wavelength_m=self.weave_wavelength,
+            frame=("laboratory: substrate moves +x at scan speed; laser + wire zigzag in y"
+                   if self.weave_amp > 0 else
+                   "laboratory: laser + wire fixed, substrate moves +x at scan speed"),
         )
         d.update(gap_geometry=self.gap_geometry())
         return d
@@ -1593,9 +1691,16 @@ def main(argv=None):
                   + f" -> Fe-{c.wire_Ni_wt:.1f}Ni wt%; envelope {st['envelope_diameter']*1e3:.3f} mm, "
                   f"central gap {st['central_gap_diameter']*1e3:.3f} mm; recording planes x = "
                   + ", ".join(f"{x*1e3:.3f}" for x in c.record_planes()) + " mm")
-    if a.wire_refine:
-        print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm refined {a.wire_refine}x in x-y "
-              f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+        if c.weave_amp > 0:
+            nzig = a.scan_speed * a.end_time / c.weave_wavelength
+            print(f"[generate] weave: side-to-side {a.weave_width*1e3:.2f} mm "
+                  f"(centre to peak {c.weave_amp*1e3:.2f} mm), one zigzag every "
+                  f"{c.weave_wavelength*1e3:.2f} mm of travel ({nzig:.1f} zigzags over the track)")
+        if a.wire_refine:
+            hwy = a.refine_halfwidth_y or a.refine_halfwidth
+            print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
+                  f"refined {a.wire_refine}x "
+                  f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
           f"capillary dt ~ {s['capillary_dt']:.2e} s; expected bead area {c.bead_area*1e6:.2f} mm^2; "
           f"E_L = {s['energy_per_length_J_per_mm']:.0f} J/mm")

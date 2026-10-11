@@ -53,9 +53,40 @@ const vector solidVelocity
 
 // --- Wire (feeding) definition
 const dictionary& wireDict = meltProperties.subDict("wire");
-const point wireOrigin(wireDict.get<point>("origin"));      // point on axis (aim point)
+point wireOrigin(wireDict.get<point>("origin"));            // point on axis (aim point); y follows a weave
+const point wireOrigin0(wireOrigin);
 vector wireUp(wireDict.get<vector>("axis"));                // unit vector, tip -> feeder
 wireUp /= mag(wireUp) + VSMALL;
+
+// Side-to-side triangular zigzag of the whole head (laser focus + wire axis).
+// amplitude is centre-to-peak; the path spans -amplitude .. +amplitude once per wavelength
+// of plate travel. Off unless weave{ enabled true }.
+scalar weaveAmplitude = 0;
+scalar weaveWavelength = 1;
+scalar weaveY = 0;
+scalar weaveYDot = 0;
+scalar weaveYTraced = GREAT;
+scalar weaveRetraceDy = 0;
+bool weaveOn = false;
+bool weaveReported = false;
+label weaveInletPatch = -1;
+std::function<void()> retraceLaser;
+{
+    const dictionary weaveDict(meltProperties.subOrEmptyDict("weave"));
+    weaveOn = weaveDict.getOrDefault<bool>("enabled", false);
+    weaveAmplitude = weaveDict.getOrDefault<scalar>("amplitude", 0);
+    weaveWavelength = weaveDict.getOrDefault<scalar>("wavelength", 1);
+    if (!weaveOn || weaveAmplitude < SMALL || weaveWavelength < SMALL)
+    {
+        weaveOn = false;
+    }
+    else
+    {
+        weaveInletPatch = mesh.boundaryMesh().findPatchID("wireInlet");
+        Info<< "    weave               : peak-to-peak " << 2*weaveAmplitude
+            << " m, wavelength " << weaveWavelength << " m" << nl;
+    }
+}
 const scalar wireRadius = wireDict.get<scalar>("radius");
 const scalar wireZoneRadiusFactor =
     wireDict.getOrDefault<scalar>("zoneRadiusFactor", 1.5);

@@ -6,6 +6,7 @@
 //         the wire zone then follows the bent axis
 //   elsewhere: solidVelocity (substrate moving under the fixed laser)
 {
+    #include "updateWeave.H"
     const scalar tNow = runTime.value();
     scalar feedFac = 1.0;
     if (tNow < wireFeedStart) feedFac = 0.0;
@@ -304,7 +305,10 @@
             }
             else
             {
-                Us[celli] = stubFeedFac*wireFeedVelocity + (bkAdot*phi)*bkDir;
+                // unmelted wire follows the nozzle: feed along the axis, plus the
+                // sideways speed of the zigzag (0 when the weave is off)
+                Us[celli] = stubFeedFac*wireFeedVelocity + (bkAdot*phi)*bkDir
+                    + vector(0, weaveYDot, 0);
             }
             inWireZone[celli] = true;
         }
@@ -316,8 +320,25 @@
     }
     Usolid.correctBoundaryConditions();
 
-    // stubbing model: the feeder (wireInlet patch) stalls with the wire
-    if (stubEnabled && stubInletControlled)
+    // stubbing model: the feeder (wireInlet patch) stalls with the wire.
+    // A weave uses a slot wider than the wire: only the faces that are currently
+    // metal get the feed plus the sideways speed. Gas faces in the slot stay still.
+    if (weaveOn && weaveInletPatch >= 0)
+    {
+        alpha1.boundaryFieldRef()[weaveInletPatch].evaluate();
+        const scalarField& ab = alpha1.boundaryField()[weaveInletPatch];
+        vectorField Uw(ab.size(), Zero);
+        const vector Uwire
+        (
+            stubFeedFac*wireFeedVelocity + vector(0, weaveYDot, 0)
+        );
+        forAll(ab, fi)
+        {
+            if (ab[fi] > 0.5) Uw[fi] = Uwire;
+        }
+        U.boundaryFieldRef()[weaveInletPatch] == Uw;
+    }
+    else if (stubEnabled && stubInletControlled)
     {
         U.boundaryFieldRef()[stubInletPatch] == stubFeedFac*wireFeedVelocity;
     }
