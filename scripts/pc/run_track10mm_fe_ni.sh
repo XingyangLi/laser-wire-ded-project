@@ -7,10 +7,11 @@
 # Launch hidden + keep-awake from Windows: Track10mm_Start.bat (or launch_wsl_job.ps1 -Script <this file>)
 source /usr/lib/openfoam/openfoam2406/etc/bashrc >/dev/null 2>&1
 export PATH=$HOME/lwded_bin_track10mm:$PATH      # solver with conservativeTracers / tracerBudget
-NAME=${NAME:-track10mm_fe_ni}
+# (not NAME: WSL sets NAME to the Windows host name)
+CASE_NAME=${TRACK_CASE:-track10mm_fe_ni}
 REPO=/mnt/c/Users/dukyo/laser_wire_ded_project
-C=$HOME/laser_wire_ded_stranded/$NAME
-OUT=/mnt/c/Users/dukyo/laser_wire_ded/viz/$NAME
+C=$HOME/laser_wire_ded_stranded/$CASE_NAME
+OUT=/mnt/c/Users/dukyo/laser_wire_ded/viz/$CASE_NAME
 ST=$C/run.status
 mkdir -p $OUT
 if [ ! -f $C/Allrun ]; then
@@ -18,7 +19,7 @@ if [ ! -f $C/Allrun ]; then
     (cd $REPO && git show :generate_case.py > $G/generate_case.py && git show :materials.py > $G/materials.py) || exit 1
     python3 $G/generate_case.py $(bash $REPO/scripts/pc/recipe_track10mm_fe_ni.sh $C) > $OUT/gen.log 2>&1 || { echo "GENERATE FAILED"; cat $OUT/gen.log; exit 1; }
     rm -rf $G
-    cp -f $REPO/cases/$NAME/FIXES.md $C/ 2>/dev/null
+    cp -f $REPO/cases/$CASE_NAME/FIXES.md $C/ 2>/dev/null
     cp -f $REPO/scripts/pc/check_below_plate.py $REPO/scripts/pc/bead_volume_audit.py $C/ 2>/dev/null
 fi
 cd $C || exit 1
@@ -39,7 +40,7 @@ fi
 reconstructPar -newTimes > log.reconstructPar 2>&1
 cp case_params.json FIXES.md postProcessing/meltPool/*.dat $OUT/ 2>/dev/null
 cp postProcessing/wireTransfer/wireTransfer.dat $OUT/ 2>/dev/null
-python3 $REPO/scripts/pc/status_track10mm.py $NAME > $OUT/final_status.txt 2>&1
+python3 $REPO/scripts/pc/status_track10mm.py $CASE_NAME > $OUT/final_status.txt 2>&1
 ~/vizenv/bin/python $REPO/scripts/pc/bead_volume_audit.py $C 0,1,2,3,$END > $OUT/bead_volume_audit.txt 2>&1
 ~/vizenv/bin/python $C/check_below_plate.py $C 1,2,3,$END > $OUT/below_plate.txt 2>&1
 ~/vizenv/bin/python $REPO/visualize_multicomp.py --case . --out $OUT --build-xs 0.5,1.5,3,4.5,6 > log.viz 2>&1

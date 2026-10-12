@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Laser wire DED — model setup</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <div class="mark"></div>
+    <div>
+      <div class="title">Laser wire DED</div>
+      <div class="subtitle">Model setup · solver stays laserWireDEDFoam</div>
+    </div>
+  </div>
+  <label class="preset">
+    <span>Preset</span>
+    <select id="preset"></select>
+  </label>
+  <label class="casename">
+    <span>New case name</span>
+    <input id="caseName" spellcheck="false" value="studio_case">
+  </label>
+  <div class="headline" id="headline">Building the picture…</div>
+</header>
+
+<div class="workspace">
+  <nav class="tree" id="tree"></nav>
+
+  <section class="stage">
+    <div class="viewbar">
+      <button type="button" data-view="iso" class="on">Iso</button>
+      <button type="button" data-view="side">Side</button>
+      <button type="button" data-view="front">Front</button>
+      <button type="button" data-view="top">Top</button>
+      <span class="hint">Drag to rotate · scroll to zoom · click a part</span>
+    </div>
+    <canvas id="view"></canvas>
+    <div class="legend" id="legend"></div>
+    <div class="section-inset">
+      <canvas id="section" width="180" height="180"></canvas>
+      <div class="inset-label">Wire cross-section</div>
+    </div>
+    <div class="banner" id="banner" hidden></div>
+  </section>
+
+  <aside class="props">
+    <h2 id="groupTitle">Process</h2>
+    <p class="blurb" id="groupBlurb"></p>
+    <form id="fields"></form>
+  </aside>
+</div>
+
+<footer class="dock">
+  <div class="derived" id="derived"></div>
+  <div class="actions">
+    <button type="button" id="btnCheck">Check model</button>
+    <button type="button" id="btnWrite">Write case</button>
+    <button type="button" id="btnMesh">Mesh</button>
+    <button type="button" class="primary" id="btnRun">Run solver</button>
+  </div>
+  <div class="status" id="status">Looking for a run on this PC…</div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

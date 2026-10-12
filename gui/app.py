@@ -423,57 +423,43 @@ echo "$(date) visualize done" >> "$ST"
         body += f'echo "$(date) ALL DONE steps={steps}" >> "$ST"\n'
         return self.write_job_script(f"job_{case}_{steps}.sh", body)
 
-    def status_text(self, case: str) -> str:
-        paths = self.case_paths(case)
-        wd = self.wsl_workdir
-        script = f"""
-C={shlex.quote(paths['case_dir'])}
-ST={shlex.quote(paths['status'])}
-L={shlex.quote(paths['log'])}
-date
-echo "=== status file ==="
-cat "$ST" 2>/dev/null || echo "(no status yet)"
-echo "=== solver ==="
-pgrep -af laserWireDEDFoam 2>/dev/null | head -5 || echo "solver not running"
-echo "=== latest sim time ==="
-if [ -f "$L" ]; then
-  END=$(grep -m1 '^endTime' "$C/system/controlDict" 2>/dev/null | awk '{{print $2}}' | tr -d ';')
-  python3 - "$L" "$END" <<'PY'
-import re, sys
-L, end = sys.argv[1], sys.argv[2]
-end = float(end) if end not in ("", "None") else 0.0
-t, c = [], []
-cur = None
-for line in open(L, errors="replace"):
-    if line.startswith("Time = "):
-        cur = float(line.split()[2])
-    elif line.startswith("ExecutionTime") and cur is not None:
-        t.append(cur); c.append(float(re.search(r"ClockTime = ([0-9.]+)", line).group(1)))
-if len(t) < 2:
-    print("not enough steps yet; last Time lines:")
-    print("".join(open(L, errors="replace").read().splitlines(True)[-8:]))
-else:
-    i0 = max(0, len(t) - 400)
-    rate = (t[-1] - t[i0]) / max(c[-1] - c[i0], 1e-9)
-    eta = (end - t[-1]) / max(rate, 1e-12) if end else 0
-    print(f"sim {{t[-1]*1e3:.1f}} / {{end*1e3:.0f}} ms, wall {{c[-1]/3600:.2f}} h, steps {{len(t)}}, "
-          f"speed {{rate*3600*1e3:.1f}} ms-sim/h, ETA {{eta/3600:.1f}} h")
-PY
-  echo "=== log tail ==="
-  tail -n 25 "$L"
-else
-  echo "(no solver log yet)"
-  ML={shlex.quote(paths['mesh_log'])}
-  [ -f "$ML" ] && {{ echo "=== mesh log tail ==="; tail -n 20 "$ML"; }}
-  GL="$C/../gen_{case}.log"
-  [ -f "$GL" ] && {{ echo "=== generate log ==="; tail -n 30 "$GL"; }}
-  [ -f "{expand_user_wsl(wd)}/gen_{case}.log" ] && tail -n 30 "{expand_user_wsl(wd)}/gen_{case}.log"
-fi
-"""
+    def probe_status(self, case: str, prefer_running: bool) -> dict:
+        """Ask WSL for a plain-language summary of the run that is actually on disk."""
+        probe = HERE / "wsl_status_probe.py"
+        probe_wsl = win_to_wsl(probe) if IS_WIN else str(probe)
+        flag = " --prefer-running" if prefer_running else ""
+        cmd = (
+            f"python3 {shlex.quote(probe_wsl)} --case {shlex.quote(case)} "
+            f"--workdir {shlex.quote(self.wsl_workdir)}{flag}"
+        )
         try:
-            return self.run_wsl(script, timeout=60)
-        except Exception as e:
-            return f"status failed: {e}"
+            raw = self.run_wsl(cmd, timeout=40)
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+        for line in reversed(raw.splitlines()):
+            line = line.strip()
+            if line.startswith("{") and line.endswith("}"):
+                try:
+                    return json.loads(line)
+                except json.JSONDecodeError:
+                    break
+        return {"ok": False, "error": (raw or "WSL returned no status").strip()[:1500]}
+
+    def render_latest(self, case_dir: str, case_name: str, multicomp: bool) -> str:
+        """Render the newest saved snapshot of a case. Does not start the solver."""
+        viz_win = self.win_root / "viz" / case_name
+        viz_win.mkdir(parents=True, exist_ok=True)
+        viz_wsl = win_to_wsl(viz_win) if IS_WIN else str(viz_win)
+        script = "visualize_multicomp.py" if multicomp else "visualize.py"
+        py_script = win_to_wsl(PROJECT / script) if IS_WIN else str(PROJECT / script)
+        cmd = (
+            f"source {shlex.quote(self.of_bashrc)} >/dev/null 2>&1 || true; "
+            'if [ -x "$HOME/vizenv/bin/python" ]; then PY="$HOME/vizenv/bin/python"; else PY=python3; fi; '
+            f'"$PY" {shlex.quote(py_script)} --case {shlex.quote(case_dir)} '
+            f"--out {shlex.quote(viz_wsl)} --only-latest"
+        )
+        out = self.run_wsl(cmd, check=True, timeout=300)
+        return (out or "render finished") + f"\nPictures: {viz_win}"
 
     def generate_print(self, params: Params) -> str:
         """Validate by running generate_case --print (no files written beyond sync)."""
@@ -506,8 +492,14 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Laser Wire DED — Run Control")
-        self.geometry("980x780")
-        self.minsize(860, 640)
+        self.geometry("1000x920")
+        self.minsize(900, 740)
+        self._status_busy = False
+        self._watch_pinned = False
+        self._pinned_dir = ""
+        self._watch_dirs: dict[str, str] = {}
+        self._watched_case: dict = {}
+        self._status_after = None
 
         self.params = Params()
         win_root = DEFAULT_WIN_ROOT if IS_WIN else HERE.parent
@@ -521,10 +513,12 @@ class App(tk.Tk):
         self._vars: dict[str, tk.Variable] = {}
         self._build()
         self.apply_preset("Transitional-R solid")
-        self._log("Ready. Choose a preset, adjust parameters, then Validate / Generate.")
+        self._log("Ready. The panel under the buttons follows whatever run is actually going, including one started from a terminal.")
         self._log(f"Project scripts: {PROJECT}")
         self._log(f"Windows root: {self.win_root_var.get()}")
         self._log(f"WSL workdir: {self.wsl_wd_var.get()} (solver + cases)")
+        self.after(600, self.refresh_status)
+        self._status_after = self.after(8000, self._schedule_status)
 
     def backend(self) -> Backend:
         return Backend(
@@ -635,15 +629,91 @@ class App(tk.Tk):
         ttk.Button(act, text="Mesh only", command=self.on_mesh).pack(side=tk.LEFT, padx=2)
         ttk.Button(act, text="Run solver", command=self.on_solve).pack(side=tk.LEFT, padx=2)
         ttk.Button(act, text="Generate+Mesh+Solve", command=self.on_all).pack(side=tk.LEFT, padx=2)
-        ttk.Button(act, text="Status", command=self.on_status).pack(side=tk.LEFT, padx=2)
+        ttk.Button(act, text="Refresh status", command=self.refresh_status).pack(side=tk.LEFT, padx=2)
         ttk.Button(act, text="Visualize", command=self.on_viz).pack(side=tk.LEFT, padx=2)
         ttk.Button(act, text="Open viz folder", command=self.on_open_viz).pack(side=tk.LEFT, padx=2)
         ttk.Button(act, text="Show CLI", command=self.on_show_cli).pack(side=tk.LEFT, padx=2)
 
-        # Log
-        logf = ttk.LabelFrame(top, text="Log / status", padding=4)
-        logf.pack(fill=tk.BOTH, expand=True, pady=4)
-        self.log = scrolledtext.ScrolledText(logf, height=14, wrap=tk.WORD, font=("Consolas", 9))
+        dash = ttk.LabelFrame(top, text="What is happening", padding=8)
+        dash.pack(fill=tk.BOTH, expand=True, pady=4)
+        self._dash = dash
+
+        head_row = ttk.Frame(dash)
+        head_row.pack(fill=tk.X)
+        self.status_headline = tk.Label(
+            head_row, text="Looking for a simulation…",
+            font=("Segoe UI", 14, "bold"), anchor="w", justify=tk.LEFT,
+        )
+        self.status_headline.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        self.status_updated = ttk.Label(head_row, text="")
+        self.status_updated.pack(side=tk.RIGHT)
+
+        self.status_banner = tk.Label(
+            dash, text="", anchor="w", justify=tk.LEFT, wraplength=920,
+            bg="#fff4cc", padx=6, pady=4,
+        )
+        self.status_progress = ttk.Progressbar(dash, maximum=100, mode="determinate")
+        self.status_progress.pack(fill=tk.X, pady=(6, 0))
+        self.status_progress_label = ttk.Label(dash, text="")
+        self.status_progress_label.pack(anchor="w")
+        self.status_explain = tk.Label(
+            dash, text="", anchor="w", justify=tk.LEFT, wraplength=920,
+            font=("Segoe UI", 10),
+        )
+        self.status_explain.pack(fill=tk.X, pady=4)
+
+        grid = ttk.Frame(dash)
+        grid.pack(fill=tk.X, pady=2)
+        self.status_facts = {}
+        fact_rows = [
+            ("where", "Case folder"),
+            ("clock", "Simulation clock"),
+            ("wall", "Computer time"),
+            ("eta", "Time left"),
+            ("pool", "Melt pool"),
+            ("temp", "Hottest point"),
+            ("bead", "Bead so far"),
+            ("cores", "Cores"),
+        ]
+        for i, (key, label) in enumerate(fact_rows):
+            r, c = divmod(i, 2)
+            ttk.Label(grid, text=label, width=18).grid(row=r, column=c * 2, sticky=tk.W, pady=1)
+            lab = ttk.Label(grid, text="—")
+            lab.grid(row=r, column=c * 2 + 1, sticky=tk.W, padx=(0, 12))
+            self.status_facts[key] = lab
+        grid.columnconfigure(1, weight=1)
+        grid.columnconfigure(3, weight=1)
+
+        self.status_next = tk.Label(
+            dash, text="", anchor="w", justify=tk.LEFT, wraplength=920,
+            font=("Segoe UI", 10, "italic"),
+        )
+        self.status_next.pack(fill=tk.X, pady=(4, 2))
+
+        controls = ttk.Frame(dash)
+        controls.pack(fill=tk.X, pady=2)
+        ttk.Label(controls, text="Watch:").pack(side=tk.LEFT)
+        self.watch_var = tk.StringVar(value="")
+        self.watch_combo = ttk.Combobox(controls, textvariable=self.watch_var, width=48, state="readonly")
+        self.watch_combo.pack(side=tk.LEFT, padx=4)
+        self.watch_combo.bind("<<ComboboxSelected>>", self._on_watch_selected)
+        ttk.Button(controls, text="Refresh", command=self.refresh_status).pack(side=tk.LEFT, padx=2)
+        self.auto_status = tk.BooleanVar(value=True)
+        ttk.Checkbutton(controls, text="Auto-refresh", variable=self.auto_status).pack(side=tk.LEFT, padx=4)
+        ttk.Button(controls, text="Watch the case named above", command=self.watch_form_case).pack(side=tk.LEFT, padx=2)
+        ttk.Button(controls, text="Picture of latest save", command=self.on_picture).pack(side=tk.LEFT, padx=2)
+
+        dash.bind("<Configure>", self._reflow_status)
+
+        tailf = ttk.LabelFrame(dash, text="Last lines from the solver", padding=4)
+        tailf.pack(fill=tk.BOTH, expand=True, pady=(4, 0))
+        self.solver_tail = scrolledtext.ScrolledText(tailf, height=6, wrap=tk.WORD, font=("Consolas", 9))
+        self.solver_tail.pack(fill=tk.BOTH, expand=True)
+        self.solver_tail.configure(state=tk.DISABLED)
+
+        logf = ttk.LabelFrame(top, text="Activity", padding=4)
+        logf.pack(fill=tk.BOTH, expand=False, pady=4)
+        self.log = scrolledtext.ScrolledText(logf, height=5, wrap=tk.WORD, font=("Consolas", 9))
         self.log.pack(fill=tk.BOTH, expand=True)
 
     def _path_row(self, parent, row, label, var):
@@ -922,12 +992,149 @@ class App(tk.Tk):
     def on_all(self):
         self._launch_steps("all")
 
-    def on_status(self):
-        p = self._checked()
-        if not p:
+    def _reflow_status(self, event):
+        width = max(420, event.width - 28)
+        for lab in (self.status_explain, self.status_next, self.status_banner, self.status_headline):
+            lab.configure(wraplength=width)
+
+    def _schedule_status(self):
+        if self.auto_status.get():
+            self.refresh_status()
+        self._status_after = self.after(8000, self._schedule_status)
+
+    def _on_watch_selected(self, _event=None):
+        label = self.watch_var.get().strip()
+        self._pinned_dir = self._watch_dirs.get(label, "")
+        self._watch_pinned = True
+        self.refresh_status()
+
+    def watch_form_case(self):
+        name = str(self._vars["case"].get()).strip()
+        if not name:
+            messagebox.showinfo("Case name", "Type a case name on the Case tab first.")
+            return
+        self._watch_pinned = True
+        self._pinned_dir = ""
+        self.watch_var.set(name)
+        self.refresh_status()
+
+    def refresh_status(self):
+        if self._status_busy:
+            return
+        self._status_busy = True
+        if self._watch_pinned and self._pinned_dir:
+            chosen = self._pinned_dir
+        else:
+            label = self.watch_var.get().strip()
+            chosen = self._watch_dirs.get(label, label)
+        if not chosen:
+            case_var = self._vars.get("case")
+            chosen = str(case_var.get()).strip() if case_var is not None else ""
+        prefer = not self._watch_pinned
+        be = self.backend()
+
+        def work():
+            data = be.probe_status(chosen, prefer)
+            self.after(0, lambda: self._show_status(data))
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def _show_status(self, data: dict):
+        self._status_busy = False
+        self.status_updated.configure(text=datetime.now().strftime("updated %H:%M:%S"))
+        if not data.get("ok", False):
+            self.status_headline.configure(text="Could not read the run.", fg="#8a1c1c")
+            self.status_explain.configure(
+                text="Status lives in WSL, not in this Windows window. "
+                + str(data.get("error") or "No details.")[:500]
+            )
+            self.status_next.configure(text="Check that Ubuntu-24.04 is installed and that `wsl` works from PowerShell.")
+            self.status_banner.pack_forget()
+            return
+
+        focus = data.get("focus") or {}
+        self._watched_case = focus
+        banner = (data.get("banner") or "").strip()
+        if banner:
+            self.status_banner.configure(text=banner)
+            if not self.status_banner.winfo_ismapped():
+                self.status_banner.pack(fill=tk.X, pady=(4, 0), before=self.status_progress)
+        else:
+            self.status_banner.pack_forget()
+
+        colors = {
+            "running": "#0b6a3c",
+            "meshing": "#8a5a00",
+            "finished": "#0b4f8a",
+            "stopped": "#8a1c1c",
+            "failed": "#8a1c1c",
+        }
+        self.status_headline.configure(
+            text=focus.get("headline") or "No simulation.",
+            fg=colors.get(focus.get("stage"), "#222222"),
+        )
+        self.status_explain.configure(text=focus.get("explain") or "")
+        self.status_next.configure(text=focus.get("next_step") or "")
+        self.status_progress_label.configure(text=focus.get("progress_caption") or "")
+        percent = focus.get("percent")
+        if isinstance(percent, (int, float)):
+            self.status_progress.configure(mode="determinate", value=float(percent))
+        else:
+            self.status_progress.configure(mode="determinate", value=0)
+        facts = focus.get("facts") or {}
+        for key, lab in self.status_facts.items():
+            lab.configure(text=str(facts.get(key) or "—"))
+
+        self._watch_dirs = {}
+        labels = []
+        focus_dir = focus.get("dir") or ""
+        focus_label = ""
+        for item in data.get("cases") or []:
+            label = item.get("label") or item.get("dir") or ""
+            directory = item.get("dir") or ""
+            if not label:
+                continue
+            labels.append(label)
+            self._watch_dirs[label] = directory
+            if directory and directory == focus_dir:
+                focus_label = label
+        self.watch_combo.configure(values=labels)
+        if focus_label and not self._watch_pinned:
+            self.watch_var.set(focus_label)
+        elif self._watch_pinned and self._pinned_dir:
+            pinned_label = next((lb for lb, d in self._watch_dirs.items() if d == self._pinned_dir), "")
+            if pinned_label:
+                self.watch_var.set(pinned_label)
+
+        self.solver_tail.configure(state=tk.NORMAL)
+        self.solver_tail.delete("1.0", tk.END)
+        self.solver_tail.insert(tk.END, focus.get("log_tail") or "(no solver log yet)")
+        self.solver_tail.configure(state=tk.DISABLED)
+
+    def on_picture(self):
+        case = self._watched_case or {}
+        if not case.get("dir"):
+            messagebox.showinfo("No run", "Status has not found a case yet. Wait for the panel to update.")
+            return
+        if not messagebox.askyesno(
+            "Picture of the pool",
+            f"Render the newest saved moment of {case.get('name')}?\n\n"
+            "The solver keeps running. One picture usually takes a minute or two.",
+        ):
             return
         be = self.backend()
-        self._bg("Status", lambda: be.status_text(p.case))
+        case_dir = case["dir"]
+        name = case.get("name") or "case"
+        multicomp = bool(case.get("multicomp"))
+
+        def work():
+            out = be.render_latest(case_dir, name, multicomp)
+            png = be.win_root / "viz" / name / "latest_3d.png"
+            if png.is_file() and IS_WIN:
+                self.after(0, lambda p=png: os.startfile(str(p)))
+            return out
+
+        self._bg("Picture", work)
 
     def on_viz(self):
         p = self._checked()

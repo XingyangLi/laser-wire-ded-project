@@ -7,16 +7,21 @@ VOF + enthalpy-porosity + ray-traced laser + multi-component Fe/Ni tracers), a P
 generator, post-processing scripts, a Windows GUI, the case setups of every run so far, and the
 X-ray / EDS validation data for the Invar stranded-wire experiment (600 W, 160 mm/min).
 
-Quick Windows buttons (also on the Desktop):
+Windows buttons live in `launch\` (double-click, or `.\launch\Name.bat` from this folder):
 
 | Double-click | Does |
 |---|---|
-| `Build_Solver.bat` | Rebuild solver → WSL `~/lwded_bin` |
-| `Run_Case.bat` | Start a **new** case (default recipe = 3 mm Fe+Ni v2; will not touch the live v2 run) |
-| `Status.bat` | Progress / ETA |
-| `Open_in_ParaView.bat` | Sync + open ParaView |
-| `Open_in_Cursor.bat` | Open this folder in Cursor |
-| `gui\launch_gui.bat` | Point-and-click run panel |
+| `launch\Build_Solver.bat` | Rebuild solver → WSL `~/lwded_bin` |
+| `launch\Build_Wiggle_Solver.bat` | Rebuild the zigzag solver → WSL `~/lwded_bin_wiggle` |
+| `launch\Run_Case.bat` | Start a **new** case (default recipe = 3 mm Fe+Ni v2; will not touch the live v2 run) |
+| `launch\Status.bat` | Progress / ETA |
+| `launch\Open_in_ParaView.bat` | Sync + open ParaView |
+| `launch\Open_in_Cursor.bat` | Open this folder in Cursor |
+| `launch\Open_Studio.bat` | Model screen: geometry and parameters |
+| `launch\Wiggle05_Start.bat` | 0.5 mm zigzag, 10 mm of travel |
+| `launch\Wiggle10_Start.bat` | 1.0 mm zigzag, 10 mm of travel |
+| `launch\Wiggle_Status.bat` | Progress of the two zigzag tracks |
+| `gui\launch_gui.bat` | Older point-and-click run panel |
 
 Solver binary after build: WSL `~/lwded_bin/laserWireDEDFoam` (see `scripts/pc/build_solver_wsl.sh`).
 
@@ -35,6 +40,7 @@ laser_wire_ded_project/
                             full-length build from the recording planes)
   compare_runs.py           side-by-side metrics of several runs
   requirements.txt          python packages for the viz scripts
+  launch/                   Windows double-click buttons (each one calls scripts\pc or gui)
   solver/
     Allwmake, Allwclean
     laserWireDEDFoam/       solver source (*.C, *.H) + Make/{files,options}

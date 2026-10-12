@@ -10,7 +10,8 @@ set /p CASE=Case name (Enter = val3mm_fe_ni_v2):
 if "%CASE%"=="" set CASE=val3mm_fe_ni_v2
 :have_case
 echo Syncing %CASE% for ParaView (about 10-30 s)...
-wsl -d Ubuntu-24.04 -u dukyong -- bash /mnt/c/Users/dukyo/laser_wire_ded_project/scripts/pc/sync_paraview_live.sh %CASE%
+if "%PV_ALL%"=="" set PV_ALL=0
+wsl -d Ubuntu-24.04 -u dukyong -- env PV_ALL=%PV_ALL% bash /mnt/c/Users/dukyo/laser_wire_ded_project/scripts/pc/sync_paraview_live.sh %CASE%
 if errorlevel 1 (
   echo Sync failed.
   pause

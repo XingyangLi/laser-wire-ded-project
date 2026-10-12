@@ -37,6 +37,8 @@ vizenv/
 *~
 # --- local output --------------------------------------------------------
 viz/
+# Case generated on Windows for a first try. Live runs live in WSL, not here.
+local/
 gui/jobs/*
 !gui/jobs/.gitkeep
 *.mp4

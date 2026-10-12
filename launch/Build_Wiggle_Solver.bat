@@ -7,6 +7,6 @@ echo.
 if errorlevel 1 (
   echo Build failed. The log is in WSL: ~/lwded_wiggle/solver_build/build.log
 ) else (
-  echo Build finished. Start a track with Wiggle05_Start.bat or Wiggle10_Start.bat
+  echo Build finished. Start a track with launch\Wiggle05_Start.bat or launch\Wiggle10_Start.bat
 )
 pause
