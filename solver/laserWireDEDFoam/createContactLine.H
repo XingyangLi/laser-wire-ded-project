@@ -15,8 +15,14 @@
 //     [0, 180 deg]. Fully solid metal is pinned at whatever angle it froze
 //     at, and is carried with the substrate. That is the deposited-bead pin.
 //
-// Unmelted wire is not a solid support, so the feed is left alone.
-// Nothing is added to the momentum equation unless enabled = true.
+// Unmelted wire is not a solid support unless pinWire is true. With pinWire,
+// the melt/gas/unmelted-wire line has its own hysteresis window
+// (thetaRecedingWire, thetaAdvancingWire). Inside that window the line is
+// held in the head frame (wireVelocity head, the default: the kink stays at
+// a fixed height while the wire feeds through it) or on the feed velocity
+// (wireVelocity wire: stuck to a material point of the wire). Freezing the
+// meniscus hands the line to the substrate velocity. Nothing is added to
+// the momentum equation unless enabled = true.
 // ---------------------------------------------------------------------------
 
 const dictionary contactDict(meltProperties.subOrEmptyDict("contactLine"));
@@ -34,6 +40,19 @@ const scalar contactKpin = contactDict.getOrDefault<scalar>("Kpin", 1e7);
 const scalar contactGradMin = contactDict.getOrDefault<scalar>("gradMin", 0.25);
 const scalar contactForceFactor = contactDict.getOrDefault<scalar>("forceFactor", 1.0);
 const scalar contactZSub = contactDict.getOrDefault<scalar>("zSubstrate", 0.0);
+const bool contactPinWire = contactDict.getOrDefault<bool>("pinWire", false);
+const scalar contactThetaRwire =
+    contactDict.getOrDefault<scalar>("thetaRecedingWire", 25.0)*contactDeg;
+const scalar contactThetaAwire =
+    contactDict.getOrDefault<scalar>("thetaAdvancingWire", 70.0)*contactDeg;
+const word contactWireVelocity(contactDict.getOrDefault<word>("wireVelocity", "head"));
+// head: pinned wire line is stationary in the lab/head frame (default).
+// wire: pinned wire line moves at the instantaneous feed velocity.
+const bool contactWireHeadFrame = (contactWireVelocity != "wire");
+// Highest / lowest wire-line cell this step (-GREAT / GREAT if there is none).
+// The cavity report reads these after the contact-line pass.
+scalar contactWireZMax = -GREAT;
+scalar contactWireZMin = GREAT;
 const label contactInterval = contactDict.getOrDefault<label>
 (
     "interval",
@@ -68,12 +87,43 @@ volVectorField Fcontact
     dimensionedVector(dimForce/dimVolume, Zero)
 );
 
+// Velocity the contact sink drives toward. Equals Usolid except on a molten
+// wire line (see contactLine.H). Unused while Kcontact is zero.
+volVectorField Ucontact
+(
+    IOobject
+    (
+        "Ucontact",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    Usolid
+);
+
 // 0 none, 1 hysteresis pin, 2 solidification pin, 3 advancing, 4 receding
+// wire line: 5 hysteresis pin, 6 solidification pin, 7 advancing, 8 receding
 volScalarField contactState
 (
     IOobject
     (
         "contactState",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero)
+);
+
+// 0 none, 1 substrate or deposit, 2 unmelted wire
+volScalarField contactSupport
+(
+    IOobject
+    (
+        "contactSupport",
         runTime.timeName(),
         mesh,
         IOobject::READ_IF_PRESENT,
@@ -91,5 +141,15 @@ if (contactEnabled)
         << " deg  thetaA " << contactThetaA0/contactDeg
         << " deg  Kpin " << contactKpin
         << "  flPin/flFree " << contactFlPin << "/" << contactFlFree;
+    if (contactPinWire)
+    {
+        Info<< nl << "    wire line: thetaR " << contactThetaRwire/contactDeg
+            << " deg  thetaA " << contactThetaAwire/contactDeg
+            << " deg  velocity " << (contactWireHeadFrame ? "head" : "wire");
+    }
+    else
+    {
+        Info<< "  (unmelted wire is not a support)";
+    }
 }
 Info<< nl << endl;

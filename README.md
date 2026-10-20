@@ -196,10 +196,65 @@ In ParaView, open `case.foam` (Decomposed Case if you used `mpirun`), colour by 
 ### Assumptions that matter
 
 - Default angles (20° / 90°) are a wide hysteresis window for liquid steel on solid steel, not a measurement for one alloy pair. Change them with `--theta-receding` / `--theta-advancing`.
-- Pinning acts where the free surface meets solid substrate or already-deposited metal. It does not pin the unmelted wire.
+- Pinning acts where the free surface meets solid substrate or already-deposited metal. It does not pin the unmelted wire unless the case sets `pinWire` (`--pin-wire`), which is what `cases/wire_cavity` does.
 - A pore has to be topologically closed. An open keyhole depression is not a pore; this solver's recoil does not bore a vapour channel by removing mass.
 - Locking a pore deletes the metal that numerical diffusion had pushed into it. That is intentional, and it is a small mass error equal to that diffusion.
 - 2-D demo "volumes" are the extruded cell volumes (one cell in y). Use `cases/single_wire` for a 3-D bead.
+
+## 2c. Running on a workstation
+
+`cases/wire_cavity` is the three-laser, vertical-wire track aimed at the side-view radiograph (scale bar 1000 µm): a ~1 mm wire feeds straight down into a dome a few millimetres long and about 1.5–2 mm tall, with the wire near the trailing edge. Two beams heat the plate in front of the wire and one heats the wake behind it. The melt/argon/solid-wire contact line is pinned with its own hysteresis window, and the cavity report follows the gas behind and around the wire.
+
+The case is meant to be run on a multi-core Linux workstation (the one used here is `taosun01`). One script sources OpenFOAM, builds the solver, writes the case, decomposes it, runs it and prints the pore and cavity summary:
+
+```bash
+./scripts/run_wire_cavity.sh                 # all cores reported by nproc
+./scripts/run_wire_cavity.sh --np 16         # choose the core count
+./scripts/run_wire_cavity.sh --generate-only # write the case, do not solve
+./scripts/run_wire_cavity.sh --smoke         # optional coarse 3D case, end time 8 ms
+```
+
+If OpenFOAM.com v2406 or v2412 is not installed, the script stops and prints the Ubuntu commands (`openfoam2406-dev` or `openfoam2412-dev` from `dl.openfoam.com`). Details, the default beam table, what to watch in the log, and how to read the cavity file are in that script's header and in `AGENTS.md`.
+
+A local Cursor agent opened in this repo should follow `AGENTS.md` (and `.cursor/rules/wire-cavity.mdc`): build with the script, do not launch the full track on a small machine, and post-process with `scripts/quantify_pores.py`.
+
+### Default process (override any of it from the command line)
+
+Laboratory frame: the substrate moves in +x, the head is fixed, so the travel direction of the head is −x. Azimuth 0° is in front of the wire, 180° is behind it.
+
+| beam | azimuth | inclination from vertical | aim from the wire axis | aim height | power | 1/e² radius |
+|---|---|---|---|---|---|---|
+| front-left | +55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| front-right | −55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| rear | 180° | 22° | 0.9 mm | 0.3 mm | 450 W | 0.55 mm |
+
+The beam axis is aimed at that point and continues down to the plate, so the plate spot sits a little further out (`aim height × tan(inclination)`): about 1.65 mm in front of the wire for the front pair and about 1.0 mm behind it for the rear beam. Total power 1850 W. Wire: solid 316L, diameter 1.0 mm, vertical, feed 30 mm/s, initial gap 0.15 mm. Scan speed 6 mm/s over 4 mm. The wire cross-section times WFS/scan speed is about 3.9 mm², the area of a dome a few millimetres wide and roughly 1.5–2 mm tall. 316L is a stand-in; the radiograph does not name the alloy.
+
+Substrate contact angles stay 20° / 90°. The wire line uses 25° / 70° (`--theta-receding-wire`, `--theta-advancing-wire`). Inside that window the line is held still in the head frame (`--wire-pin-frame head`) so a kink can stay part-way up the wire while the wire feeds through it. `--wire-pin-frame wire` sticks the line to the feed velocity instead. These angles are a starting hysteresis band, not a measured pair.
+
+Lists accepted by `generate_case.py`: `--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`. One value is copied to every beam. `--power` rescales the default 700/700/450 split. `--laser-config normal|lof|transitional_r` is unchanged unless you pass one of those lists.
+
+### While it runs, and afterwards
+
+```bash
+tail -f cases/wire_cavity/log.laserWireDEDFoam
+grep -E 'ContactLine:|WireCavity:|Porosity:|End' cases/wire_cavity/log.laserWireDEDFoam
+python3 scripts/quantify_pores.py --case cases/wire_cavity
+```
+
+| file / field | meaning |
+|---|---|
+| `postProcessing/contactLine/contactLine.dat` | substrate line, then `nWire`, `nWirePinned`, `zWireMax` / `zWireMin` (contact-line height on the wire), `thetaMeanWire` |
+| `postProcessing/wireCavity/wireCavity.dat` | status 0 none / 1 open / 2 closed / 3 mixed, contact-line height, cavity volume (open and closed), depth below the contact line, downstream length, centroid |
+| `contactState` | 5 wire hysteresis, 6 wire solidification, 7 wire advancing, 8 wire receding (1–4 remain the substrate line) |
+| `contactSupport` | 1 substrate or deposit, 2 unmelted wire |
+| `cavityMarker` | 1 open wire cavity, 2 closed wire cavity |
+
+`cases/single_wire` and `cases/single_wire_demo` do not set `pinWire` or `wireCavity`. Re-running them uses the previous substrate-only pin and the enclosed-pore counter.
+
+The full track is a half-domain mesh (y ≥ 0, symmetry plane): about 30 000 cells at 0.15 mm, end time 0.67 s. The capillary time-step ceiling is about 2.7×10⁻⁵ s, so the run is on the order of 25 000 steps. That is hours on a workstation (use the `ExecutionTime` printed each step to scale it); memory stays well under the size of a desktop. The −55° beam is the mirror of the +55° beam and is folded onto the meshed half by the solver's `symmetryY` (the same rule as the paper configs). Reported laser power is doubled back by `statistics/powerFactor`. Pass `--domain-y full` to mesh both sides explicitly.
+
+The optional `--smoke` case is the same beams on about 400 cells for 8 ms, with `--wire-cavity-seed`, and only checks that the wire-line and cavity files are written. It is not part of `cases/wire_cavity`.
 
 ## 3. Generate, mesh, run, visualize a case
 

@@ -47,6 +47,15 @@ const label porInterval = porosityDict.getOrDefault<label>
     "interval",
     meltProperties.subOrEmptyDict("statistics").getOrDefault<label>("interval", 10)
 );
+// Gas tucked against the unmelted wire, below the wire contact line, in the
+// trailing sector. Open (still vented) and closed (a real pore) are both
+// reported. Off unless wireCavity is true, so older porosity cases are unchanged.
+const bool porWireCavity = porosityDict.getOrDefault<bool>("wireCavity", false);
+const scalar porCavityOuter = porosityDict.getOrDefault<scalar>("cavityOuter", 2.0e-3);
+const scalar porCavityHalfAngle =
+    porosityDict.getOrDefault<scalar>("cavityHalfAngle", 110.0)
+   *constant::mathematical::pi/180.0;
+const scalar porCavityCos = std::cos(porCavityHalfAngle);
 
 // poreMarker: 1 = solidification-locked pore. poreType: 1 entrapment,
 // 2 lack-of-fusion, 3 keyhole (0 = not a locked pore).
@@ -78,6 +87,21 @@ volScalarField poreType
     dimensionedScalar(dimless, Zero)
 );
 
+// 1 = open wire-associated cavity, 2 = closed wire-associated cavity.
+volScalarField cavityMarker
+(
+    IOobject
+    (
+        "cavityMarker",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        IOobject::AUTO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero)
+);
+
 Info<< "Porosity (enclosed-gas lock): " << (porosityEnabled ? "on" : "off");
 if (porosityEnabled)
 {
@@ -87,5 +111,11 @@ if (porosityEnabled)
         << "  lofBand " << porLofBand << " m"
         << "  keyhole T/Tboil " << porKeyholeTfrac
         << " or pRecoil " << porKeyholeRecoil << " Pa";
+    if (porWireCavity)
+    {
+        Info<< nl << "    wire cavity: outer " << porCavityOuter
+            << " m, trailing half-angle " << porCavityHalfAngle*180.0/constant::mathematical::pi
+            << " deg";
+    }
 }
 Info<< nl << endl;

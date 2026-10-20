@@ -52,13 +52,16 @@ Description
         feed of the solid wire and of the wireInlet stalls while solid,
         never-molten wire rests on solid support; contact / stalled feed /
         ball / bridge diagnostics in postProcessing/wireTransfer,
-      - optional substrate contact-line pinning (meltProperties/contactLine,
-        default off): contact-angle hysteresis at the metal/gas/solid
-        triple line, widened to a full pin once that metal solidifies,
+      - optional contact-line pinning (meltProperties/contactLine, default
+        off): contact-angle hysteresis where the free surface meets solid
+        substrate or, if pinWire is set, the unmelted wire. The window
+        opens to a full pin once the metal at the line solidifies,
       - optional porosity (meltProperties/porosity, default off): enclosed
         gas is classified as entrapment, lack-of-fusion or keyhole and,
         once the metal shell freezes, locked against numerical filling.
         Counts, sizes and locations go to postProcessing/porosity.
+        wireCavity also reports the open or closed gas cavity behind the
+        wire (volume, depth, contact-line height),
 
     Modifications (C) 2026 laser_wire_ded project, GPL-3.0-or-later.
 

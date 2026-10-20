@@ -47,19 +47,23 @@ def main(argv=None):
     ap.add_argument("--expect-demo", action="store_true",
                     help="exit 1 unless the short demo produced a locked entrapment pore, "
                          "a locked lack-of-fusion pore, and a contact-line sample")
+    ap.add_argument("--expect-wire-smoke", action="store_true",
+                    help="exit 1 unless some sample has a wire contact line and a non-zero wire cavity")
     a = ap.parse_args(argv)
     case = Path(a.case)
     por_path = case / "postProcessing" / "porosity" / "porosity.dat"
     pores_path = case / "postProcessing" / "porosity" / "pores.dat"
     cl_path = case / "postProcessing" / "contactLine" / "contactLine.dat"
+    cav_path = case / "postProcessing" / "wireCavity" / "wireCavity.dat"
 
     por = _rows(por_path)
     pores = _rows(pores_path)
     cl = _rows(cl_path)
+    cav = _rows(cav_path)
 
     print(f"case: {case.resolve()}")
-    if not por and not pores and not cl:
-        print("no contact-line or porosity output found")
+    if not por and not pores and not cl and not cav:
+        print("no contact-line, porosity or wire-cavity output found")
         print(f"  looked for {por_path}")
         print(f"  looked for {cl_path}")
         return 1
@@ -97,11 +101,28 @@ def main(argv=None):
               f"nReceding: {c[4]}  nFrozenSolidification: {c[5]}")
         print(f"  thetaMean_deg: {c[6]}  thetaMin_deg: {c[7]}  thetaMax_deg: {c[8]}")
         print(f"  lengthPinned_m: {c[9]}  lengthMobile_m: {c[10]}")
+        if len(c) >= 22:
+            print(f"  nWire: {c[15]}  nWirePinned: {c[16]}  nWireAdvancing: {c[17]}  "
+                  f"nWireReceding: {c[18]}")
+            print(f"  zWireMax_m: {c[19]}  zWireMin_m: {c[20]}  thetaMeanWire_deg: {c[21]}")
     else:
         print("contactLine.dat: not written")
 
-    print("ParaView: colour by contactState (1 pin, 2 frozen pin, 3 advancing, 4 receding), "
-          "poreMarker (1 = locked) and poreType (1 entrapment, 2 lack-of-fusion, 3 keyhole).")
+    if cav:
+        # time status zMax zMin V Vopen Vclosed depth length cx cy cz nOpen nClosed
+        w = cav[-1]
+        status = {0: "none", 1: "open", 2: "closed", 3: "mixed"}.get(int(float(w[1])), w[1])
+        print("wire cavity (last sample):")
+        print(f"  time_s: {w[0]}  status: {status}")
+        print(f"  zContactMax_m: {w[2]}  zContactMin_m: {w[3]}")
+        print(f"  cavityVolume_m3: {w[4]}  open_m3: {w[5]}  closed_m3: {w[6]}")
+        print(f"  depthBelowContact_m: {w[7]}  lengthDownstream_m: {w[8]}")
+        print(f"  centre_m: ({w[9]}, {w[10]}, {w[11]})  nOpenCells: {w[12]}  nClosedCells: {w[13]}")
+    else:
+        print("wireCavity.dat: not written (wireCavity is off, or the run has not sampled yet)")
+
+    print("ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport "
+          "(1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).")
 
     if a.expect_demo:
         # The pool can remelt a shell and vent a cavity before the end time, so the
@@ -126,6 +147,24 @@ def main(argv=None):
             return 1
         print("demo check passed (history has a locked entrapment pore, a locked "
               "lack-of-fusion pore, a molten contact line and a frozen one)")
+    if a.expect_wire_smoke:
+        problems = []
+        wire_n = 0
+        if cl and len(cl[0]) >= 16:
+            wire_n = sum(int(float(r[15])) for r in cl)
+        elif cl:
+            problems.append("contactLine.dat has no wire columns (solver built without pinWire output)")
+        else:
+            problems.append("no contact-line samples")
+        if wire_n <= 0:
+            problems.append("wire contact line was never flagged")
+        vols = [float(r[4]) for r in cav] if cav else []
+        if not vols or max(vols) <= 0:
+            problems.append("wire cavity volume was never positive")
+        if problems:
+            print("wire-smoke check failed: " + "; ".join(problems))
+            return 1
+        print("wire-smoke check passed (history has a wire contact line and a wire cavity)")
     return 0
 
 

@@ -69,8 +69,10 @@ def build_parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a = ap.add_argument
     a("--case", default="case_lwded", help="output case directory")
-    a("--laser-config", default="single", choices=["single"] + sorted(PAPER_CONFIGS),
+    a("--laser-config", default="single", choices=["single", "triple"] + sorted(PAPER_CONFIGS),
       help="single = one vertical Gaussian beam with an inclined side-fed wire; "
+           "triple = three beams, two in front of a vertical wire and one behind "
+           "(radiograph-scale defaults, every beam overridable); "
            "normal | lof | transitional_r = Gao et al. (Nat. Commun. 2026) triple-beam coaxial "
            "conditions (Table S1: power, scan speed, feed rate and beam arrangement '+'/'-')")
     a("--material", default=None, choices=sorted(MATERIALS), help="sets both wire and substrate material")
@@ -87,6 +89,26 @@ def build_parser():
            "enlarges the spot on z=0. Default None = collimated (fixed radius).")
     a("--beam-direction", default=None, choices=["+", "-"],
       help="coaxial head: '+' two spots in front of the wire + one behind, '-' one in front + two behind")
+    a("--beam-azimuths", default=None,
+      help="comma list of beam azimuths [deg] from the travel direction "
+           "(0 = in front, -x; 180 = behind the wire, +x). "
+           "triple default: 55,-55,180 (two in front, one behind)")
+    a("--beam-inclinations", default=None,
+      help="comma list of beam inclinations from vertical [deg], one value or one per beam. "
+           "triple default: 32,32,22. --beam-angle is the shared paper-head angle")
+    a("--beam-powers", default=None,
+      help="comma list of beam powers [W]. triple default: 700,700,450 "
+           "(scaled to --power when --power is set and this is omitted)")
+    a("--beam-radii-each", default=None,
+      help="comma list of 1/e^2 beam radii [m]. triple default: 0.7e-3,0.7e-3,0.55e-3. "
+           "--beam-radius remains the shared paper-head radius")
+    a("--beam-aim-radii", default=None,
+      help="comma list: horizontal distance [m] from the wire axis to each beam axis "
+           "at the aim height. 0 = the beam crosses the wire axis. "
+           "triple default: 1.4e-3,1.4e-3,0.9e-3")
+    a("--beam-aim-heights", default=None,
+      help="comma list: height [m] above the substrate where each beam axis is aimed. "
+           "triple default: 0.4e-3,0.4e-3,0.3e-3. The axis continues to the plate")
     # laser
     a("--power", type=float, default=None, help="laser power [W] (total of all beams)")
     a("--spot-radius", type=float, default=1.2e-3, help="beam radius [m] (1/e^2 radius for Gaussian)")
@@ -270,6 +292,18 @@ def build_parser():
       help="contact-line pinning: receding angle through the metal [deg] (default 20)")
     a("--theta-advancing", type=float, default=90.0,
       help="contact-line pinning: advancing angle through the metal [deg] (default 90)")
+    a("--pin-wire", action="store_true",
+      help="with --contact-pinning: also pin the melt/argon/unmelted-wire triple line, "
+           "with its own hysteresis window. Default off, so the feed is not a wall "
+           "and existing single-wire cases are unchanged")
+    a("--theta-receding-wire", type=float, default=25.0,
+      help="wire contact line: receding angle through the metal [deg] (default 25)")
+    a("--theta-advancing-wire", type=float, default=70.0,
+      help="wire contact line: advancing angle through the metal [deg] (default 70)")
+    a("--wire-pin-frame", default="head", choices=["head", "wire"],
+      help="pinned wire line: 'head' holds it still in the lab/head frame so a kink "
+           "stays at a fixed height while the wire feeds through (default); "
+           "'wire' sticks the line to the feed velocity")
     a("--porosity", action="store_true",
       help="solver porosity{}: enclosed shielding gas is classified as gas entrapment, "
            "lack-of-fusion (gas on the plate under deposited metal) or keyhole (a hot "
@@ -280,6 +314,14 @@ def build_parser():
       help="initial condition for the short demo only: one subsurface gas bubble and one "
            "lack-of-fusion cavity under a solid metal cap, so pore quantification runs "
            "without waiting for the pool to fold a bubble in. Not for production tracks")
+    a("--wire-cavity", action="store_true",
+      help="with --porosity and --pin-wire: report the gas cavity behind and around the "
+           "unmelted wire (open or closed), its volume, depth below the wire contact line "
+           "and downstream length. Writes postProcessing/wireCavity/wireCavity.dat")
+    a("--wire-cavity-seed", action="store_true",
+      help="smoke-test initial condition: hot metal wetting the leading side of the wire "
+           "and a gas wake behind it, so the wire line and the cavity report are non-zero "
+           "on the first steps. Not for the production three-laser track")
     # domain / mesh
     a("--dim", default="3d", choices=["3d", "2d"], help="3d half-domain (symmetry y=0) or quasi-2D x-z")
     a("--resolution", default="medium", choices=sorted(RES), help="coarse 150um, medium 100um, fine 75um")
@@ -304,6 +346,29 @@ def build_parser():
 
 
 # ----------------------------------------------------------------------------
+def csv_floats(text, name):
+    """Comma-separated floats, or None if text is None."""
+    if text is None:
+        return None
+    try:
+        vals = [float(p) for p in str(text).split(",") if p.strip()]
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be a comma-separated list of numbers, got {text!r}") from exc
+    if not vals:
+        raise SystemExit(f"{name} is empty")
+    return vals
+
+
+def fit_list(vals, n, name):
+    if vals is None:
+        return None
+    if len(vals) == 1 and n > 1:
+        return vals * n
+    if len(vals) != n:
+        raise SystemExit(f"{name} has {len(vals)} values for {n} beams")
+    return vals
+
+
 def graded(length, dx, ratio):
     """cells for a section starting at dx and growing by 'ratio' (last/first)."""
     n = max(1, round(length / (dx * (1 + ratio) / 2.0)))
@@ -315,16 +380,23 @@ class Case:
         self.a = a
         coax = a.laser_config != "single"
         self.coax = coax
+        self.triple = a.laser_config == "triple"
         a.wire_diameter_given = a.wire_diameter is not None
         a.wfs_capped = False
         cfg = PAPER_CONFIGS.get(a.laser_config, {})
+        # triple: radiograph-scale vertical wire. Two beams in front, one behind.
+        # Powers below are the unscaled defaults; --power rescales them.
         dflt = dict(
-            power=cfg.get("power", 2000.0), scan_speed=cfg.get("scan_speed", 0.010),
-            wire_feed_speed=cfg.get("wire_feed_speed", 0.025),
-            wire_diameter=0.9e-3 if coax else 1.0e-3, feed_angle=90.0 if coax else 45.0,
-            wire_gap=0.05e-3 if coax else 0.3e-3,
-            upstream=3.5e-3 if coax else 4.5e-3, downstream=6.5e-3 if coax else 7.0e-3,
-            half_width=3.0e-3 if coax else 4.0e-3, substrate_thickness=2.0e-3 if coax else 2.5e-3,
+            power=cfg.get("power", 1850.0 if self.triple else 2000.0),
+            scan_speed=cfg.get("scan_speed", 0.006 if self.triple else 0.010),
+            wire_feed_speed=cfg.get("wire_feed_speed", 0.030 if self.triple else 0.025),
+            wire_diameter=1.0e-3 if (self.triple or not coax) else 0.9e-3,
+            feed_angle=90.0 if coax else 45.0,
+            wire_gap=0.15e-3 if self.triple else (0.05e-3 if coax else 0.3e-3),
+            upstream=5.0e-3 if self.triple else (3.5e-3 if coax else 4.5e-3),
+            downstream=5.0e-3 if self.triple else (6.5e-3 if coax else 7.0e-3),
+            half_width=3.5e-3 if self.triple else (3.0e-3 if coax else 4.0e-3),
+            substrate_thickness=2.0e-3 if coax else 2.5e-3,
             beam_direction=cfg.get("direction", "+"),
         )
         for k, v in dflt.items():
@@ -343,8 +415,14 @@ class Case:
             a.strand_material_list = mats
             self.comp_names = list(dict.fromkeys(mats))
             a.wire_material = a.wire_material or "+".join(self.comp_names)
-        wm = a.wire_material or a.material or ("Invar36" if coax else "316L")
-        sm = a.substrate_material or a.material or ("SS304" if coax else wm)
+        if self.triple:
+            # Alloy of the radiograph is not in the image. 316L is the single-wire
+            # stand-in (not the paper Invar/SS304 pair).
+            wm = a.wire_material or a.material or "316L"
+            sm = a.substrate_material or a.material or wm
+        else:
+            wm = a.wire_material or a.material or ("Invar36" if coax else "316L")
+            sm = a.substrate_material or a.material or ("SS304" if coax else wm)
         a.wire_material, a.substrate_material = wm, sm
         if a.end_time is None and a.track_length:
             a.end_time = round(a.track_length / a.scan_speed, 4)
@@ -357,6 +435,40 @@ class Case:
         self.m = self.mw if self.mw is not None else self.ms
         self.dx = a.dx or RES[a.resolution]
         self.d2 = a.dim == "2d"
+        self.custom_beams = False
+        self.beam_specs = None
+        beam_flags = any((
+            a.beam_azimuths, a.beam_inclinations, a.beam_powers,
+            a.beam_radii_each, a.beam_aim_radii, a.beam_aim_heights,
+        ))
+        if self.triple or beam_flags:
+            if not coax:
+                raise SystemExit(
+                    "per-beam aim points need --laser-config triple "
+                    "(or normal/lof/transitional_r)")
+            if self.d2:
+                raise SystemExit(
+                    "--laser-config triple needs --dim 3d "
+                    "(the two front beams are aimed out of the x-z plane)")
+            self.custom_beams = True
+            self.beam_specs = self.resolve_beams()
+            listed = sum(b["power"] for b in self.beam_specs)
+            if a.beam_powers is not None and abs(listed - a.power) > 1.0:
+                print(f"[generate] --beam-powers sum to {listed:.0f} W; "
+                      f"using that as the total (was --power {a.power:.0f} W)")
+            a.power = listed
+        if a.pin_wire and not a.contact_pinning:
+            raise SystemExit("--pin-wire needs --contact-pinning")
+        if a.wire_cavity and not a.porosity:
+            raise SystemExit("--wire-cavity needs --porosity")
+        if a.wire_cavity and not a.pin_wire:
+            raise SystemExit("--wire-cavity needs --pin-wire (the depth is measured from the wire contact line)")
+        if a.wire_cavity_seed and not a.wire_cavity:
+            raise SystemExit("--wire-cavity-seed needs --wire-cavity")
+        if self.triple and abs(a.gas_height - 2.5e-3) < 1e-12:
+            print("[generate] triple-beam: gas height 2.50 -> 3.50 mm so a ~2 mm bead and the "
+                  "vertical wire fit (pass --gas-height to choose another value)")
+            a.gas_height = 3.5e-3
         def _abs_sub():
             if a.absorptivity_substrate is not None:
                 return a.absorptivity_substrate
@@ -378,7 +490,13 @@ class Case:
         self.liquidus_unmixed = a.liquidus_unmixed_threshold
         th = math.radians(a.feed_angle)
         sgn = -1.0 if a.feed_side == "front" else 1.0
-        self.up = (sgn * math.cos(th), 0.0, math.sin(th))   # tip -> feeder
+        ux, uz = sgn * math.cos(th), math.sin(th)
+        # cos(90 deg) is a few ulps, which would tilt a "vertical" wire by ~1e-16.
+        if abs(ux) < 1e-12:
+            ux = 0.0
+        if abs(uz) < 1e-12:
+            uz = 0.0
+        self.up = (ux, 0.0, uz)   # tip -> feeder
         self.th = th
         dx = self.dx
         if a.wire_type == "stranded" and a.strand_diameter:
@@ -830,10 +948,14 @@ patches
         (
             volScalarFieldValue alpha.metal 1
             volScalarFieldValue cWire 1
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue T {f(a.preheat)}
             volVectorFieldValue U (0 0 0)
         );
     }}
 """ if self.strands is None else "    // stranded wire: written by setExprFields (system/setExprFieldsDict)\n"
+        # The wire cylinder is last so a cavity seed that overlaps the wire
+        # cannot mark the unmelted core as already molten.
         return header("dictionary", "setFieldsDict", "system") + f"""defaultFieldValues
 (
     volScalarFieldValue alpha.metal 0
@@ -851,7 +973,7 @@ regions
             volScalarFieldValue alpha.metal 1
         );
     }}
-{wire}{self.pore_seed_regions()});
+{self.pore_seed_regions()}{self.wire_cavity_seed_regions()}{wire});
 """ + FOOT
 
     def pore_seed_regions(self):
@@ -917,6 +1039,50 @@ regions
             volScalarFieldValue alpha.metal 0
             volScalarFieldValue meltHistory 0
             volScalarFieldValue cWire 0
+        );
+    }}
+"""
+
+    def wire_cavity_seed_regions(self):
+        """Smoke initial condition: hot metal on the leading side of the wire and a wake behind it.
+
+        The wire cylinder is applied after this region, so the unmelted core stays cold
+        wire (cWire 1, meltHistory 0). Gas is left against the trailing side of the wire.
+        Production tracks omit --wire-cavity-seed.
+        """
+        if not getattr(self.a, "wire_cavity_seed", False):
+            return ""
+        xw = self.origin[0]
+        R = self.R
+        dx = self.dx
+        x_lead0 = xw - max(1.6e-3, 4 * dx)
+        x_lead1 = xw + 0.2 * R
+        z_lead = max(1.3e-3, 3.5 * dx)
+        x_tr0 = xw + R + 0.75 * dx
+        x_tr1 = xw + max(2.0e-3, 5 * dx)
+        z_hug = max(0.45e-3, 1.25 * dx)
+        Tm = min(self.mw["Tliq"] + 250.0, 0.5 * (self.mw["Tliq"] + self.mw["Tboil"]))
+        y0, y1 = -1.0, 1.0
+        return f"""    boxToCell       // wire-cavity seed: hot metal wetting the leading side of the wire
+    {{
+        box ({f(x_lead0)} {f(y0)} 0) ({f(x_lead1)} {f(y1)} {f(z_lead)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue cWire 0
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue T {f(Tm)}
+        );
+    }}
+    boxToCell       // wire-cavity seed: trailing metal on the plate; gas stays against the wire
+    {{
+        box ({f(x_tr0)} {f(y0)} 0) ({f(x_tr1)} {f(y1)} {f(z_hug)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue cWire 0
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue T {f(Tm)}
         );
     }}
 """
@@ -1156,12 +1322,80 @@ argon
 sigma           {f(self.ms['sigma'])};   // not used: see constant/meltProperties surfaceTension
 """ + FOOT
 
+    def resolve_beams(self):
+        """Per-beam aim, power and size. Paper configs keep the shared focus unless a list is set."""
+        a = self.a
+        if a.beam_azimuths:
+            az = csv_floats(a.beam_azimuths, "--beam-azimuths")
+        elif self.triple:
+            az = [55.0, -55.0, 180.0]
+        elif a.beam_direction == "+":
+            az = [60.0, -60.0, 180.0]
+        else:
+            az = [0.0, 120.0, -120.0]
+        n = len(az)
+        if a.beam_inclinations:
+            angles = fit_list(csv_floats(a.beam_inclinations, "--beam-inclinations"), n, "--beam-inclinations")
+        elif self.triple and n == 3:
+            angles = [32.0, 32.0, 22.0]
+        else:
+            angles = [a.beam_angle] * n
+        if a.beam_powers:
+            powers = fit_list(csv_floats(a.beam_powers, "--beam-powers"), n, "--beam-powers")
+        elif self.triple and n == 3:
+            base = [700.0, 700.0, 450.0]
+            scale = a.power / sum(base)
+            powers = [p * scale for p in base]
+        else:
+            powers = [a.power / n] * n
+        if a.beam_radii_each:
+            radii = fit_list(csv_floats(a.beam_radii_each, "--beam-radii-each"), n, "--beam-radii-each")
+        elif self.triple and n == 3:
+            radii = [0.70e-3, 0.70e-3, 0.55e-3]
+        else:
+            radii = [a.beam_radius] * n
+        if a.beam_aim_radii:
+            aim_r = fit_list(csv_floats(a.beam_aim_radii, "--beam-aim-radii"), n, "--beam-aim-radii")
+        elif self.triple and n == 3:
+            aim_r = [1.40e-3, 1.40e-3, 0.90e-3]
+        else:
+            aim_r = [0.0] * n
+        if a.beam_aim_heights:
+            aim_z = fit_list(csv_floats(a.beam_aim_heights, "--beam-aim-heights"), n, "--beam-aim-heights")
+        elif self.triple and n == 3:
+            aim_z = [0.40e-3, 0.40e-3, 0.30e-3]
+        else:
+            aim_z = [a.focus_height] * n
+        return [
+            dict(azimuth=az[i], angle=angles[i], power=powers[i], radius=radii[i],
+                 aim_r=aim_r[i], aim_z=aim_z[i])
+            for i in range(n)
+        ]
+
     def beams(self):
         """list of (name, power, focus, direction, radius, profile)."""
         a = self.a
         P = a.power * (a.power_2d_factor if self.d2 else 1.0)
         if not self.coax:
             return [("main", P, (a.laser_x, self.ywire, 0.0), (0.0, 0.0, -1.0), a.spot_radius, a.profile)]
+        if self.custom_beams:
+            out = []
+            for i, b in enumerate(self.beam_specs):
+                phi = math.radians(b["azimuth"])
+                thb = math.radians(b["angle"])
+                # 0 deg = travel direction of the head (-x); 180 deg = behind the wire (+x)
+                sx, sy = -math.cos(phi), math.sin(phi)
+                d = (math.sin(thb) * sx, math.sin(thb) * sy, -math.cos(thb))
+                mag = math.sqrt(sum(c * c for c in d)) or 1.0
+                d = tuple(c / mag for c in d)
+                aim = (
+                    self.origin[0] + b["aim_r"] * sx,
+                    self.ywire + b["aim_r"] * sy,
+                    b["aim_z"],
+                )
+                name = f"beam{i+1}_az{int(round(b['azimuth']))}"
+                out.append((name, b["power"], aim, d, b["radius"], "gaussian"))
+            return out
         th = math.radians(a.beam_angle)
         F = (a.laser_x, self.ywire, a.focus_height)
         # spot azimuths measured from the travel direction of the head (= -x, the substrate moves +x)
@@ -1363,19 +1597,37 @@ statistics
         if not getattr(a, "contact_pinning", False):
             return ""
         every = 1 if a.end_time <= 0.05 else 10
+        pin_wire = bool(getattr(a, "pin_wire", False))
+        if pin_wire:
+            wire_txt = (
+                "    pinWire         true;    // melt/gas/unmelted-wire line, own angles\n"
+                f"    thetaRecedingWire  {f(a.theta_receding_wire)};   // deg, through the metal\n"
+                f"    thetaAdvancingWire {f(a.theta_advancing_wire)};   // deg, through the metal\n"
+                f"    wireVelocity    {a.wire_pin_frame};   // head: kink fixed in the lab frame; "
+                "wire: stuck to the feed\n"
+            )
+            comment = (
+                "// pinWire: the unmelted wire is a second wall, with its own window.\n"
+                "// wireVelocity head holds that line still while the wire feeds through it.\n"
+            )
+        else:
+            wire_txt = "    pinWire         false;   // unmelted wire is not a support\n"
+            comment = "// Unmelted wire is not a support (pinWire false).\n"
         return (
-            "\ncontactLine   // triple-line pinning on the substrate (postProcessing/contactLine)\n"
-            "// Molten window [thetaReceding, thetaAdvancing] measured through the metal.\n"
+            "\ncontactLine   // triple-line pinning (postProcessing/contactLine)\n"
+            "// Substrate window [thetaReceding, thetaAdvancing] through the metal.\n"
             "// Inside the window the line is pinned to the substrate velocity. Freezing opens\n"
-            "// the window to [0, 180] deg (contactState 2). Unmelted wire is not a support.\n"
+            "// the window to [0, 180] deg (contactState 2).\n"
+            + comment +
             "{\n"
             "    enabled         true;\n"
-            f"    thetaReceding   {f(a.theta_receding)};   // deg\n"
-            f"    thetaAdvancing  {f(a.theta_advancing)};   // deg\n"
+            f"    thetaReceding   {f(a.theta_receding)};   // deg, substrate / deposit\n"
+            f"    thetaAdvancing  {f(a.theta_advancing)};   // deg, substrate / deposit\n"
+            + wire_txt +
             "    flPin           0.15;    // at/below this liquid fraction the window is fully open\n"
             "    flFree          0.60;    // at/above this the molten window is used as written\n"
-            "    flSolid         0.20;    // solid support: metal below this, and not unmelted wire\n"
-            "    Kpin            1e7;     // kg/m3/s, Darcy sink toward the substrate velocity\n"
+            "    flSolid         0.20;    // solid support: metal below this\n"
+            "    Kpin            1e7;     // kg/m3/s\n"
             "    gradMin         0.25;    // |grad alpha| * dx above this is an interface cell\n"
             "    forceFactor     1;       // scale of the Young force outside the window\n"
             "    zSubstrate      0;\n"
@@ -1390,6 +1642,14 @@ statistics
         every = 1 if a.end_time <= 0.05 else 10
         lof = max(6 * self.dx, 8e-4)
         depth = max(2 * self.dx, 2e-4)
+        cavity = ""
+        if getattr(a, "wire_cavity", False):
+            outer = max(3.0 * self.R, 1.8e-3)
+            cavity = (
+                "    wireCavity      true;     // open or closed gas behind/around the wire\n"
+                f"    cavityOuter     {f(outer)};   // radial extent from the wire axis [m]\n"
+                "    cavityHalfAngle 110;      // deg, half-width of the trailing (+x) sector\n"
+            )
         return (
             "\nporosity   // enclosed gas: entrapment / lack-of-fusion / keyhole (postProcessing/porosity)\n"
             "// Locked (shell liquid fraction < flLock) pores are held at alpha <= alphaLock.\n"
@@ -1408,6 +1668,7 @@ statistics
             "    zSubstrate      0;\n"
             f"    Tboil           {f(self.mw['Tboil'])};\n"
             f"    interval        {every};\n"
+            + cavity +
             "}\n"
         )
 
@@ -1809,7 +2070,18 @@ def main(argv=None):
           f"P={a.power:.0f} W in {len(c.beams())} beam(s), A={c.Awire}/{c.A}, end={a.end_time} s, "
           f"v_scan={a.scan_speed*1e3:.1f} mm/s, WFS={a.wire_feed_speed*1e3:.1f} mm/s, "
           f"d_wire={a.wire_diameter*1e3:.2f} mm @ {a.feed_angle:.0f} deg ({a.feed_side} feed)")
-    if a.laser_config != "single" or True:
+    if c.custom_beams:
+        print("[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):")
+        for n, pw, F, d, r, _pr in c.beams():
+            # where the axis meets the plate
+            if abs(d[2]) > 1e-12:
+                t = (0.0 - F[2]) / d[2]
+                hit = (F[0] + t * d[0], F[1] + t * d[1])
+            else:
+                hit = (F[0], F[1])
+            print(f"    {n}: {pw:.0f} W, 1/e^2 {r*1e3:.2f} mm, aim ({F[0]*1e3:.2f}, {F[1]*1e3:.2f}, {F[2]*1e3:.2f}) mm, "
+                  f"plate hit ({hit[0]*1e3:.2f}, {hit[1]*1e3:.2f}) mm")
+    else:
         w_plate, z_plate = c.spot_size_at_z(0.0)
         w_1mm, z_1mm = c.spot_size_at_z(0.001)
         zR = getattr(a, "rayleigh_length", None)
@@ -1860,8 +2132,12 @@ def main(argv=None):
         print(f"[generate] single-track extras: contact-line pinning "
               f"{'ON' if a.contact_pinning else 'off'}"
               f" (thetaR {a.theta_receding:.0f} / thetaA {a.theta_advancing:.0f} deg)"
-              f", porosity {'ON' if a.porosity else 'off'}"
-              + (", pore seed ON" if getattr(a, "pore_seed", False) else ""))
+              + (f", wire pin ON (thetaR {a.theta_receding_wire:.0f} / thetaA {a.theta_advancing_wire:.0f} deg, "
+                 f"frame {a.wire_pin_frame})" if getattr(a, "pin_wire", False) else "")
+              + f", porosity {'ON' if a.porosity else 'off'}"
+              + (", wire cavity ON" if getattr(a, "wire_cavity", False) else "")
+              + (", pore seed ON" if getattr(a, "pore_seed", False) else "")
+              + (", wire-cavity seed ON" if getattr(a, "wire_cavity_seed", False) else ""))
     if a.print:
         return 0
     out = Path(a.case)

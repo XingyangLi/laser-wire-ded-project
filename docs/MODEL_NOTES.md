@@ -654,6 +654,21 @@ Outputs: `postProcessing/porosity/porosity.dat` (counts, volume, volume fraction
 `pores.dat` (id, type, locked flag, volume, equivalent diameter `(6V/π)^(1/3)`, centroid).
 `scripts/quantify_pores.py` prints the last sample. Half-domain runs are not mirrored.
 
+### Wire-surface pinning and the wake cavity (`--pin-wire`, `--wire-cavity`)
+
+`cases/wire_cavity` turns on a second triple line: liquid metal, argon, and **unmelted** wire. It is off unless `contactLine{ pinWire true; }`, so `cases/single_wire` and the 2-D demo keep the old rule (the feed is not a wall).
+
+The apparent angle uses the same definition as the plate, with the solid normal equal to the outward radial direction of the wire. The window is `thetaRecedingWire` / `thetaAdvancingWire` (defaults 25° / 70°, separate from the plate's 20° / 90°). Inside the window the Young force is zero and the same Darcy sink acts. The target velocity depends on `wireVelocity`:
+
+- `head` (default) — the line is held at zero velocity in the lab frame. The kink stays at a fixed height while the wire, still driven at the feed speed by the Carman–Kozeny term inside the wire, slides through it. That is the quasi-steady shape in the radiograph.
+- `wire` — the line is stuck to a material point of the wire and is carried downward at the feed speed. A kink then falls into the pool on the feed timescale (tens of milliseconds at 30 mm/s).
+
+As the metal at the line freezes, the window opens and the target velocity becomes the substrate velocity, so a solidified bead can leave with the plate. Fully solid cells are still owned by the mushy-zone sink; the contact sink does not replace it. `contactState` 5/6/7/8 are the wire line; `contactSupport` is 2 on those cells. The contact-line file appends `nWire`, pin/advance/recede counts, `zWireMax`, `zWireMin` and `thetaMeanWire`.
+
+The wire cavity is not required to be a closed pore. After the atmosphere flood, gas that touches the unmelted wire, lies below `zWireMax`, and sits in the trailing sector (default half-angle 110° about +x, out to `cavityOuter`) is the wake. If every cell of that component is enclosed, the status is closed; if any cell still reaches the atmosphere, it is open; both at once is mixed. Open gas is not locked. Volume, depth below the contact line, and the downstream extent are written to `postProcessing/wireCavity/wireCavity.dat`. `cavityMarker` is 1 (open) or 2 (closed). Half-domain volumes are not mirrored. The report needs a wire contact line, so `--wire-cavity` is tied to `--pin-wire`.
+
+`--laser-config triple` places three beams from lists (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). The defaults are two beams in front of the wire and one behind, aimed off the axis so the front spots heat the dome and the rear spot heats the wake. The Gao et al. configs are unchanged unless those lists are passed. See README section "Running on a workstation".
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:
