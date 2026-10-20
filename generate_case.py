@@ -259,6 +259,27 @@ def build_parser():
       help="multiplies the argon viscosity (damps parasitic gas currents, raises dt; "
            "gas shear on the pool stays negligible). 1 = physical")
     a("--mushy-C", type=float, default=1e8, help="Carman-Kozeny constant [kg/m3/s]")
+    a("--contact-pinning", action="store_true",
+      help="solver contactLine{}: pin the metal/gas/solid triple line on the substrate. "
+           "While the metal there is liquid the contact angle (through the metal) may sit "
+           "anywhere between --theta-receding and --theta-advancing; inside that window the "
+           "line is pinned to the substrate velocity. As it freezes the window opens to "
+           "0-180 deg, so the deposited bead stays where it solidified. Default off, so "
+           "stranded / multi-wire cases are unchanged")
+    a("--theta-receding", type=float, default=20.0,
+      help="contact-line pinning: receding angle through the metal [deg] (default 20)")
+    a("--theta-advancing", type=float, default=90.0,
+      help="contact-line pinning: advancing angle through the metal [deg] (default 90)")
+    a("--porosity", action="store_true",
+      help="solver porosity{}: enclosed shielding gas is classified as gas entrapment, "
+           "lack-of-fusion (gas on the plate under deposited metal) or keyhole (a hot "
+           "recoil cavity that has closed). Once the metal shell freezes, the pore is "
+           "locked so numerical diffusion cannot fill it. Writes postProcessing/porosity/. "
+           "Default off")
+    a("--pore-seed", action="store_true",
+      help="initial condition for the short demo only: one subsurface gas bubble and one "
+           "lack-of-fusion cavity under a solid metal cap, so pore quantification runs "
+           "without waiting for the pool to fold a bubble in. Not for production tracks")
     # domain / mesh
     a("--dim", default="3d", choices=["3d", "2d"], help="3d half-domain (symmetry y=0) or quasi-2D x-z")
     a("--resolution", default="medium", choices=sorted(RES), help="coarse 150um, medium 100um, fine 75um")
@@ -830,8 +851,75 @@ regions
             volScalarFieldValue alpha.metal 1
         );
     }}
-{wire});
+{wire}{self.pore_seed_regions()});
 """ + FOOT
+
+    def pore_seed_regions(self):
+        """Demo initial condition: a subsurface bubble and a lack-of-fusion cavity.
+
+        Both are ordinary gas in the VOF field. The bubble is inside the plate, so the
+        porosity model classes it as gas entrapment. The cavity sits on the plate under a
+        solid cap (meltHistory 1) and is classed as lack-of-fusion. Neither is a physical
+        start to a production track; --pore-seed is for the short pipeline demo.
+        """
+        if not getattr(self.a, "pore_seed", False):
+            return ""
+        dx = self.dx
+        margin = 4 * dx
+        usable0 = self.x0 + margin
+        usable1 = self.x1 - margin
+        if usable1 - usable0 < 8 * dx:
+            raise SystemExit("--pore-seed needs a longer domain in x (raise --downstream)")
+        width_bub = min(1.0e-3, max(3 * dx, 0.30 * (usable1 - usable0)))
+        width_cap = min(1.4e-3, max(5 * dx, 0.40 * (usable1 - usable0)))
+        gap = max(2 * dx, 0.4e-3)
+        total = width_bub + gap + width_cap
+        x0b = max(usable0, min(self.a.laser_x + max(1.2e-3, 4 * dx), usable1 - total))
+        x1b = x0b + width_bub
+        x0c = x1b + gap
+        x1c = x0c + width_cap
+        inset = max(dx, 0.18 * (x1c - x0c))
+        # Middle of the uniform substrate layer (the top ~0.8 mm). A thin box of
+        # height ~dx falls between cell centres once blockMesh grades that layer.
+        zf = min(8.0e-4, -self.zb)
+        z0b = -0.72 * zf
+        z1b = -0.28 * zf
+        # First gas cell above the plate, with a solid cap of already-deposited
+        # metal above it. Tall enough that one VOF step cannot open the cavity.
+        z_pocket = 3.5e-4
+        z_cap = 1.05e-3
+        y0, y1 = -1.0, 1.0
+        return f"""    boxToCell       // pore seed: subsurface gas bubble (entrapment once the shell is solid)
+    {{
+        box ({f(x0b)} {f(y0)} {f(z0b)}) ({f(x1b)} {f(y1)} {f(z1b)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue cWire 0
+        );
+    }}
+    boxToCell       // pore seed: solid cap of "already deposited" metal above the plate
+    {{
+        box ({f(x0c)} {f(y0)} 0) ({f(x1c)} {f(y1)} {f(z_cap)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue cWire 0
+        );
+    }}
+    boxToCell       // pore seed: gas on the plate under that cap (lack-of-fusion)
+    {{
+        box ({f(x0c + inset)} {f(y0)} 0) ({f(x1c - inset)} {f(y1)} {f(z_pocket)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue cWire 0
+        );
+    }}
+"""
 
     def set_expr_fields(self):
         """initial stranded wire (helix frozen in the wire, t = 0) between the tip and above the top."""
@@ -1268,7 +1356,60 @@ statistics
     beadProbeOffset {f(max(3e-4, 3*self.dx))};
     beadHeightThreshold {f(0.2*self.dx)};
 }}
-""" + FOOT
+{self.contact_line_block()}{self.porosity_block()}""" + FOOT
+
+    def contact_line_block(self):
+        a = self.a
+        if not getattr(a, "contact_pinning", False):
+            return ""
+        every = 1 if a.end_time <= 0.05 else 10
+        return (
+            "\ncontactLine   // triple-line pinning on the substrate (postProcessing/contactLine)\n"
+            "// Molten window [thetaReceding, thetaAdvancing] measured through the metal.\n"
+            "// Inside the window the line is pinned to the substrate velocity. Freezing opens\n"
+            "// the window to [0, 180] deg (contactState 2). Unmelted wire is not a support.\n"
+            "{\n"
+            "    enabled         true;\n"
+            f"    thetaReceding   {f(a.theta_receding)};   // deg\n"
+            f"    thetaAdvancing  {f(a.theta_advancing)};   // deg\n"
+            "    flPin           0.15;    // at/below this liquid fraction the window is fully open\n"
+            "    flFree          0.60;    // at/above this the molten window is used as written\n"
+            "    flSolid         0.20;    // solid support: metal below this, and not unmelted wire\n"
+            "    Kpin            1e7;     // kg/m3/s, Darcy sink toward the substrate velocity\n"
+            "    gradMin         0.25;    // |grad alpha| * dx above this is an interface cell\n"
+            "    forceFactor     1;       // scale of the Young force outside the window\n"
+            "    zSubstrate      0;\n"
+            f"    interval        {every};\n"
+            "}\n"
+        )
+
+    def porosity_block(self):
+        a = self.a
+        if not getattr(a, "porosity", False):
+            return ""
+        every = 1 if a.end_time <= 0.05 else 10
+        lof = max(6 * self.dx, 8e-4)
+        depth = max(2 * self.dx, 2e-4)
+        return (
+            "\nporosity   // enclosed gas: entrapment / lack-of-fusion / keyhole (postProcessing/porosity)\n"
+            "// Locked (shell liquid fraction < flLock) pores are held at alpha <= alphaLock.\n"
+            "// keyhole requires a closed cavity that is still hot or under recoil; evaporation\n"
+            "// does not remove mass, so an open depression is not a pore.\n"
+            "{\n"
+            "    enabled         true;\n"
+            "    alphaOpen       0.50;     // gas for the connectivity flood-fill\n"
+            "    alphaLock       0.05;     // locked pores cannot be filled above this\n"
+            "    flLock          0.35;     // mean shell liquid fraction that freezes the pore\n"
+            f"    lofBand         {f(lof)};   // lack-of-fusion: gas within this of the plate [m]\n"
+            "    keyholeTfrac    0.85;     // shell temperature / Tboil\n"
+            f"    keyholeDepth    {f(depth)};   // pore this far below the metal column surface [m]\n"
+            "    keyholeRecoil   5000;     // Pa, alternative to the temperature test\n"
+            "    minCells        1;\n"
+            "    zSubstrate      0;\n"
+            f"    Tboil           {f(self.mw['Tboil'])};\n"
+            f"    interval        {every};\n"
+            "}\n"
+        )
 
     def rigid_substrate_block(self):
         a = self.a
@@ -1715,6 +1856,12 @@ def main(argv=None):
                  f"({b0['axis_to_wire_surface_at_tip_in_w']:.2f} w from the wire surface, rel. intensity "
                  f"{b0['rel_intensity_at_wire_surface_at_tip']:.3f}), {b0['axis_offset_at_plate_m']*1e3:.2f} mm "
                  f"at the plate" if b0 else ""))
+    if getattr(a, "contact_pinning", False) or getattr(a, "porosity", False):
+        print(f"[generate] single-track extras: contact-line pinning "
+              f"{'ON' if a.contact_pinning else 'off'}"
+              f" (thetaR {a.theta_receding:.0f} / thetaA {a.theta_advancing:.0f} deg)"
+              f", porosity {'ON' if a.porosity else 'off'}"
+              + (", pore seed ON" if getattr(a, "pore_seed", False) else ""))
     if a.print:
         return 0
     out = Path(a.case)

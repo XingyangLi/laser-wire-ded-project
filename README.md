@@ -112,6 +112,95 @@ which laserWireDEDFoam
 
 ---------------------------------------------------------------------------------------------
 
+## 2b. Single-wire track: contact-line pinning and porosity
+
+The stranded / Fe–Ni cases are unchanged. Pinning and porosity are **off unless the case dictionary asks for them**, and the generator only writes those dictionaries with `--contact-pinning` and `--porosity`.
+
+Two setups are in the tree:
+
+| case | what it is |
+|---|---|
+| `cases/single_wire` | one solid 1.0 mm 316L wire, one vertical beam, side feed, contact-line pinning and porosity **on**, no planted pores. Coarse mesh (~0.15 mm), 3 mm of travel. This is the case to run locally when you want a real bead. It is a full melt-pool run (hours on a laptop, not a smoke test). |
+| `cases/single_wire_demo` | the same physics on a tiny 2-D mesh (~150 cells), end time 30 ms, `--power-2d-factor 8`, plus `--pore-seed`. The seed makes the pore counter report one locked entrapment pore and one locked lack-of-fusion pore immediately. The run is the pipeline check (about a second here). |
+
+### What was added
+
+**Contact-line pinning** (`constant/meltProperties`, `contactLine{}`). The plate is meshed metal, so the bead/pool/gas triple line is inside the domain, not a boundary condition on `bottom`. While the metal at that line is liquid, the contact angle through the metal may lie anywhere between a receding angle (default 20°) and an advancing angle (default 90°). Inside that window the Young force is zero and a momentum sink holds the line on the substrate velocity: the line is pinned. Outside the window a localised Young force advances or recedes the line back to the nearer limit. As the metal at the line freezes, the allowed window opens to 0–180°, so a solidified bead stays at the angle it froze at and is carried with the plate. Unmelted wire is not treated as a wall, so the feed is not pinned. Field `contactState`: 1 hysteresis pin, 2 solidification pin, 3 advancing, 4 receding.
+
+**Porosity** (`porosity{}`). Shielding gas is already the VOF gas phase. Gas that cannot reach the atmosphere (top, outlet, far side, wire inlet) is a pore:
+
+- **gas entrapment** (type 1) — a closed bubble that is not a surface lack-of-fusion gap and not a still-hot keyhole;
+- **lack of fusion** (type 2) — closed gas sitting on the plate and covered by deposited metal (the gap left when the contact line pins before the bead wets the substrate);
+- **keyhole** (type 3) — a closed cavity whose neighbourhood is still near boiling or under recoil pressure. Recoil in this solver dents the surface but does not remove mass, so an *open* depression is not counted. A pore is tagged keyhole only after that hot cavity has closed.
+
+Once the metal cells around the pore have a mean liquid fraction below `flLock` (0.35), the pore is locked (`poreMarker` 1, `alpha.metal` held at or below 0.05) so numerical diffusion cannot fill it. If the shell remelts, the lock releases. Evaporation still removes heat, not mass.
+
+### Dependencies, build, run
+
+Python 3 (standard library) for `generate_case.py`, `run_case.py` and `scripts/quantify_pores.py`. The solver needs **OpenFOAM.com v2406 or v2412**.
+
+```bash
+# build (WSL or Linux). Do not compile on a Windows mount: see section 2.
+source /usr/lib/openfoam/openfoam2406/etc/bashrc   # or openfoam2412
+cd solver && ./Allwmake
+export PATH="$FOAM_USER_APPBIN:$PATH"              # or LWDED_APPBIN=$HOME/lwded_bin ./Allwmake
+
+# short pipeline check (serial, well under a minute once the solver is built)
+./scripts/run_single_wire_demo.sh                  # Allrun + quantify_pores.py --expect-demo
+
+# or by hand
+cd cases/single_wire_demo && ./Allrun 1
+python3 ../../scripts/quantify_pores.py --case . --expect-demo
+
+# the real single-wire track (no planted pores; long)
+cd cases/single_wire && ./Allrun 4
+python3 ../../scripts/quantify_pores.py --case .
+```
+
+Regenerate either case from the repo root (the command that matches `case_params.json`):
+
+```bash
+python3 generate_case.py --case cases/single_wire_demo --laser-config single \
+  --wire-type solid --material 316L --dim 2d --dx 3e-4 \
+  --upstream 2e-3 --downstream 3.5e-3 --substrate-thickness 1.2e-3 --gas-height 1.6e-3 \
+  --power 1200 --power-2d-factor 8 --scan-speed 0.01 --wire-feed-speed 0.02 \
+  --wire-diameter 1e-3 --feed-angle 55 --wire-gap 0.2e-3 --feed-start 0 --laser-ramp 5e-5 \
+  --end-time 0.03 --write-interval 0.01 --max-co 0.5 --np 1 \
+  --contact-pinning --porosity --pore-seed
+
+python3 generate_case.py --case cases/single_wire --laser-config single \
+  --wire-type solid --material 316L --resolution coarse \
+  --power 1800 --scan-speed 0.01 --wire-feed-speed 0.02 --wire-diameter 1e-3 \
+  --feed-angle 50 --wire-gap 0.2e-3 --feed-start 0 --track-length 3e-3 \
+  --write-interval 0.02 --np 4 --rigid-substrate 100 \
+  --contact-pinning --porosity
+```
+
+`--pore-seed` is only for the demo. It plants one gas bubble inside the plate and one gas gap under a solid cap so the counter and the lock run immediately. A production track should omit it and let pores appear only if the free surface actually closes one in.
+
+### Outputs and how to view them
+
+| file / field | meaning |
+|---|---|
+| `postProcessing/contactLine/contactLine.dat` | time, counts of molten / pinned / advancing / receding / frozen cells, mean contact angle, pinned length |
+| `postProcessing/porosity/porosity.dat` | time, pore count by type, locked count, pore volume, volume fraction, mean and max equivalent diameter |
+| `postProcessing/porosity/pores.dat` | one row per pore: id, type, locked flag, volume, equivalent diameter, centroid, cell count, shell liquid fraction |
+| `contactState` | ParaView: where the triple line is pinned or moving |
+| `poreMarker`, `poreType` | ParaView: locked pores and their class |
+| `log.laserWireDEDFoam` | lines `ContactLine:` and `Porosity:` |
+
+`python3 scripts/quantify_pores.py --case <case>` prints the last sample. `--expect-demo` checks the **whole history** of the short case: a locked entrapment pore, a locked lack-of-fusion pore, a molten contact line and a solidification-pinned line. On the 30 ms demo the planted pores lock immediately; once the pool (T well above the liquidus, contact angle inside the 20–90° window, most of the line pinned) remelts their shells, the lock releases and a cavity can disappear before the end time. That is the model, not a failed run. Equivalent diameter is the sphere with the same gas volume, `(6V/π)^(1/3)`. Volume fraction is pore volume / (pore volume + metal volume) on the mesh that was solved. The demo fraction is not a process prediction: the planted pores are large next to a 150-cell 2-D domain.
+
+In ParaView, open `case.foam` (Decomposed Case if you used `mpirun`), colour by `contactState`, `poreMarker` or `poreType`. The usual melt-pool file `postProcessing/meltPool/meltPool.dat` is unchanged.
+
+### Assumptions that matter
+
+- Default angles (20° / 90°) are a wide hysteresis window for liquid steel on solid steel, not a measurement for one alloy pair. Change them with `--theta-receding` / `--theta-advancing`.
+- Pinning acts where the free surface meets solid substrate or already-deposited metal. It does not pin the unmelted wire.
+- A pore has to be topologically closed. An open keyhole depression is not a pore; this solver's recoil does not bore a vapour channel by removing mass.
+- Locking a pore deletes the metal that numerical diffusion had pushed into it. That is intentional, and it is a small mass error equal to that diffusion.
+- 2-D demo "volumes" are the extruded cell volumes (one cell in y). Use `cases/single_wire` for a 3-D bead.
+
 ## 3. Generate, mesh, run, visualize a case
 
 Run everything inside WSL with OpenFOAM sourced. Cases are best run from a WSL-home directory

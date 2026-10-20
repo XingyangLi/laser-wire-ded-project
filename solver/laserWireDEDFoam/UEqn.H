@@ -8,11 +8,13 @@
       + MRF.DDt(rho, U)
       + turbulence->divDevRhoReff(rho, U)
         // Carman-Kozeny (enthalpy-porosity) sink: -K (U - Usolid)
-      + fvm::Sp(Kmushy, U)
+        // plus the optional contact-line pin: -Kcontact (U - Usolid)
+      + fvm::Sp(Kmushy + Kcontact, U)
      ==
-        Kmushy*Usolid
+        (Kmushy + Kcontact)*Usolid
       + Fmarangoni
       + Fbuoy
+      + Fcontact
       + fvOptions(rho, U)
     );
 

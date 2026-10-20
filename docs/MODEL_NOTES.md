@@ -584,6 +584,76 @@ Main limitations to keep in mind:
   instead of stubbing.
 * The VOF bead shape diffuses slightly while it is advected to the outlet.
 
+## Contact-line pinning and porosity (single-wire track)
+
+Both models are off unless `constant/meltProperties` contains `contactLine{ enabled true; }` or
+`porosity{ enabled true; }`. `generate_case.py --contact-pinning` and `--porosity` write those
+blocks. Existing stranded-wire cases do not have the blocks, so their behaviour is unchanged.
+The dedicated setups are `cases/single_wire` (3-D solid wire, no planted pores) and
+`cases/single_wire_demo` (short 2-D run with `--pore-seed`). See the README section
+"Single-wire track: contact-line pinning and porosity".
+
+### Why not a wall contact-angle boundary condition
+
+The substrate is a block of metal cells (`alpha.metal = 1` for z < 0), not a wall. The bottom
+patch is the underside of the plate. The triple line of the bead is the curve where liquid metal,
+shielding gas and solid metal meet *inside* the mesh. `constantAlphaContactAngle` on `bottom`
+would never see it. The model therefore finds that internal line from the VOF field.
+
+### Contact-angle hysteresis, closed by solidification
+
+At each interface cell that touches solid support (substrate or metal that has already been
+molten; never unmelted wire) and also touches gas:
+
+- Apparent angle through the metal: `theta = acos( clamp( -n_alpha · n_solid, -1, 1 ) )`,
+  with `n_alpha = grad(alpha)/|grad(alpha)|` (into the metal) and `n_solid` the direction from
+  the solid neighbour toward the interface cell (out of the solid).
+- Liquid fraction of the metal at the line, `fl_m`, sets a pinning factor
+  `s = 0` above `flFree` (0.60), `s = 1` at or below `flPin` (0.15), linear between.
+  A frozen deposit with no liquid neighbour is `s = 1`.
+- The allowed window is `[(1-s) theta_R, (1-s) theta_A + s π]`. Defaults `theta_R = 20°`,
+  `theta_A = 90°` (a wide hysteresis band used for liquid steel on solid steel; not a
+  measured value for a specific pair).
+- Inside the window the Young force is zero and a Darcy sink `Kpin (U - U_substrate)`
+  (`Kpin = 1e7 kg/m³/s`) holds the line on the plate velocity. That is the pin.
+- Outside the window a volumetric Young force
+  `σ (cos theta_limit - cos theta_app) |grad alpha| / dx`, directed in the wall plane from
+  metal toward gas, restores the angle. `theta_limit` is the advancing angle when the apparent
+  angle is larger, and the receding angle when it is smaller.
+
+So a molten toe can spread only by reaching 90°, can pull back only by reaching 20°, and a toe
+that freezes is stuck and travels with the substrate. That is the deposited-bead pin.
+
+### Porosity
+
+Gas connectivity is a flood fill through cells with `alpha < alphaOpen` (0.5), seeded from the
+open boundaries (`top`, `inletGas`, `outlet`, `side`, `wireInlet`) and from every column that
+is gas all the way to the top of the domain. What the flood does not reach is enclosed.
+
+- **Lack of fusion** if that gas is within `lofBand` of the plate and a cell above it in the
+  same column is deposited metal (`meltHistory > 0.5` or cell centre above the plate). This is
+  the gap left when pinning stops the bead wetting the substrate.
+- **Keyhole** if the cavity is capped, lies more than `keyholeDepth` below the metal-column
+  height, and a neighbour is hotter than `keyholeTfrac * Tboil` or carries recoil pressure
+  above `keyholeRecoil`. Recoil here only depresses the surface; it does not remove mass.
+  An open keyhole is atmosphere, not a pore. The tag means "this closed pore was still a hot
+  cavity when it was counted".
+- **Gas entrapment** otherwise (a fold-over bubble, or a cold closed cavity).
+
+The shell liquid fraction is the mean `liquidFraction` of metal face-neighbours. Below `flLock`
+(0.35) the component is locked: `poreMarker = 1` and `alpha` is reset to at most `alphaLock`
+(0.05) so MULES cannot fill it. Remelting the shell (`fl >= flLock`) drops the lock. The reset
+removes whatever metal numerical diffusion had added; that mass error is the diffusion, not a
+physical shrinkage model.
+
+`--pore-seed` (demo only) writes two initial gas regions so a sub-millisecond run still exercises
+the classifier: a bubble inside the plate (entrapment) and a gap under a `meltHistory = 1` cap
+(lack of fusion). Production cases omit it.
+
+Outputs: `postProcessing/porosity/porosity.dat` (counts, volume, volume fraction, diameters) and
+`pores.dat` (id, type, locked flag, volume, equivalent diameter `(6V/π)^(1/3)`, centroid).
+`scripts/quantify_pores.py` prints the last sample. Half-domain runs are not mirrored.
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:
