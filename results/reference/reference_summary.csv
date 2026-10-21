@@ -1,0 +1,11 @@
+quantity,value
+t_last_s,0.4
+cavity_status_last,1.0
+cavity_volume_last_m3,1.00122639e-08
+cavity_volume_max_m3,1.0383963e-08
+pores_last,0.0
+entrapment_last,0.0
+lackOfFusion_last,0.0
+keyhole_last,0.0
+pinchoff_events,0
+closure_events,3
