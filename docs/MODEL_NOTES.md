@@ -669,6 +669,22 @@ The wire cavity is not required to be a closed pore. After the atmosphere flood,
 
 `--laser-config triple` places three beams from lists (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). The defaults are two beams in front of the wire and one behind, aimed off the axis so the front spots heat the dome and the rear spot heats the wake. The Gao et al. configs are unchanged unless those lists are passed. See README section "Running on a workstation".
 
+### Oxygen-dependent surface tension and contact angle
+
+Off unless `surfaceTension { oxygenDependent true; }` (generate with `--oxygen-ppm`). The linear law and the scalar contact angles are then left as they were.
+
+Uniform melt oxygen `chamberOxygenPpm` (ppm by weight) sets the Sahoo activity `a_O = ppm × 10⁻⁴` wt%. There is no Sieverts solve and no separate oxide-phase field: the ppm is a stand-in for the chamber, and the angle table is a stand-in for the oxide film.
+
+```
+sigma = sigma_m - A (max(T, T_m) - T_m) - R T Gamma_s ln(1 + k1 a_O exp(-dH0/(R T)))
+```
+
+with `T` in the adsorption term also evaluated at `max(T, T_m)`. `sigma_m`, `A` and `T_m` default to the alloy `sigma`, `-dSigmadT` and `Tref` (316L: 1.75 N/m, 4.3×10⁻⁴ N/m/K, 1723 K). Fe–O adsorption defaults are Sahoo, DebRoy and McNallan, Metall. Trans. B 19B (1988) 483–491 (`Gamma_s = 2.03×10⁻⁵ mol/m²`, `k1 = 0.0138`, `dH0 = −1.463×10⁵ J/mol`), the Belton isotherm (Metall. Trans. B 7B (1976) 35). At 1723 K, `dsigma/dT` is still negative at 10 ppm and positive from 100 ppm upward (see README). Marangoni uses that derivative, so the tangential stress reverses with it.
+
+`oxygenAngleTable` is interpolated linearly in ppm for the plate and wire windows. The shipped knots are placeholders (10 ppm recovers 20°/90° and 25°/70°; 1000 ppm is 50°/130° and 58°/130°). Freezing still opens the active window to `[0, π]`.
+
+A pinch-off of the wake is an increase of the entrapment count (`PinchOff:`). The wire cavity itself becoming closed is `CavityClosure:`. Neither is resolved on the 150 µm mesh; `--wire-refine 3 --wire-refine-z` is the optional ~19 µm box, and it is a much longer run (README).
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:

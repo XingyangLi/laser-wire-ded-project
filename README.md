@@ -212,6 +212,8 @@ The case is meant to be run on a multi-core Linux workstation (the one used here
 ./scripts/run_wire_cavity.sh --np 16         # choose the core count
 ./scripts/run_wire_cavity.sh --generate-only # write the case, do not solve
 ./scripts/run_wire_cavity.sh --smoke         # optional coarse 3D case, end time 8 ms
+./scripts/run_wire_cavity.sh --oxygen-ppm 100
+./scripts/sweep_wire_cavity_oxygen.sh --np 24
 ```
 
 If OpenFOAM.com v2406 or v2412 is not installed, the script stops and prints the Ubuntu commands (`openfoam2406-dev` or `openfoam2412-dev` from `dl.openfoam.com`). Details, the default beam table, what to watch in the log, and how to read the cavity file are in that script's header and in `AGENTS.md`.
@@ -254,7 +256,91 @@ python3 scripts/quantify_pores.py --case cases/wire_cavity
 
 The full track is a half-domain mesh (y ≥ 0, symmetry plane): about 30 000 cells at 0.15 mm, end time 0.67 s. The capillary time-step ceiling is about 2.7×10⁻⁵ s, so the run is on the order of 25 000 steps. That is hours on a workstation (use the `ExecutionTime` printed each step to scale it); memory stays well under the size of a desktop. The −55° beam is the mirror of the +55° beam and is folded onto the meshed half by the solver's `symmetryY` (the same rule as the paper configs). Reported laser power is doubled back by `statistics/powerFactor`. Pass `--domain-y full` to mesh both sides explicitly.
 
-The optional `--smoke` case is the same beams on about 400 cells for 8 ms, with `--wire-cavity-seed`, and only checks that the wire-line and cavity files are written. It is not part of `cases/wire_cavity`.
+### Dissolved oxygen
+
+The cavity behind the wire is assumed to feel chamber oxygen through the melt's surface tension and through the contact-angle window. Both are off unless you pass `--oxygen-ppm`. Without that flag the linear `sigma(T)` model and the fixed 20°/90° and 25°/70° windows are unchanged.
+
+With the flag, `surfaceTension/oxygenDependent` is true and `chamberOxygenPpm` is a **uniform dissolved oxygen in the melt, ppm by weight**. It is a stand-in for the chamber set-point: Sieverts' law with the gas is not solved. The activity in the adsorption law is `a_O = chamberOxygenPpm × 10⁻⁴` wt% (the 1 wt% standard state).
+
+Sahoo–Belton / Szekely form (evaluated at `T_eval = max(T, T_m)`, frozen below the liquidus):
+
+```
+sigma(T, a_O) = sigma_m - A (T_eval - T_m)
+              - R T_eval Gamma_s ln( 1 + k1 a_O exp(-dH0 / (R T_eval)) )
+```
+
+The Marangoni coefficient is the analytic derivative (zero where `sigma` is clipped at `sigmaMin`, or where `T < T_m`):
+
+```
+dsigma/dT = -A - R Gamma_s ln(1 + K a_O) - Gamma_s (K a_O)/(1 + K a_O) * dH0 / T_eval
+K = k1 exp(-dH0 / (R T_eval))
+```
+
+`dH0` is negative, so the last term is positive and `dsigma/dT` changes sign once oxygen adsorption wins.
+
+| symbol | default | role |
+|---|---|---|
+| `sigma_m`, `A`, `T_m` | the case `sigma`, `-dSigmadT`, `Tref` | 316L preset: 1.75 N/m, 4.3×10⁻⁴ N/m/K, 1723 K (Mills, *Recommended Values of Thermophysical Properties for Selected Commercial Alloys*, Woodhead, 2002, low-oxygen slope of that order). At `a_O = 0` this is the old linear law. |
+| `Gamma_s` | 2.03×10⁻⁵ mol/m² | Fe–O saturation coverage |
+| `k1` | 0.0138 /wt% | Fe–O entropy factor |
+| `dH0` | −1.463×10⁵ J/mol | Fe–O segregation enthalpy |
+| `R` | 8.314462618 J/mol/K | gas constant |
+
+Fe–O coefficients: Sahoo, DebRoy and McNallan, *Metall. Trans. B* 19B (1988) 483–491, the isotherm Belton, *Metall. Trans. B* 7B (1976) 35–42, in the weld-pool form associated with Szekely. They are a surrogate for 316L, not a 316L fit. Override them with `oxygenGammaS`, `oxygenK1`, `oxygenDeltaH0`, `oxygenSigmaM`, `oxygenA`, `oxygenTm` in `surfaceTension`.
+
+Reference values at the 1723 K anchor (`scripts/compare_oxygen_sweep.py --print-model`):
+
+| ppm | `a_O` wt% | `sigma(T_m)` N/m | `dsigma/dT(T_m)` N/m/K |
+|---|---|---|---|
+| 0 | 0 | 1.750 | −4.3×10⁻⁴ |
+| 10 | 0.001 | 1.657 | −1.3×10⁻⁵ (still negative, near reversal) |
+| 100 | 0.01 | 1.296 | +6.7×10⁻⁴ |
+| 500 | 0.05 | 0.882 | +7.0×10⁻⁴ |
+| 1000 | 0.1 | 0.688 | +6.3×10⁻⁴ |
+
+The solver logs `OxygenSigma:` and writes `postProcessing/oxygen/sigma.dat` plus the fields `sigmaT` and `dSigmadTField`.
+
+Contact angles, only while `oxygenDependent` is true, come from `contactLine/oxygenAngleTable`: linear in ppm, clamped outside the knots. **These knots are placeholders, not sessile-drop measurements.** The rise and the wider window stand in for an oxide film (poorer wetting) until the angles are calibrated. At 10 ppm the window is the historical one.
+
+| ppm | plate receding | plate advancing | wire receding | wire advancing |
+|---|---|---|---|---|
+| 10 | 20° | 90° | 25° | 70° |
+| 100 | 28° | 100° | 35° | 90° |
+| 500 | 40° | 120° | 48° | 115° |
+| 1000 | 50° | 130° | 58° | 130° |
+
+Solidification still opens whichever window is active toward 0–180°. Pinning inside the window is unchanged.
+
+```bash
+./scripts/run_wire_cavity.sh --oxygen-ppm 100          # full track -> cases/wire_cavity_ox100
+./scripts/run_wire_cavity.sh --smoke --oxygen-ppm 10   # 8 ms check
+./scripts/sweep_wire_cavity_oxygen.sh --np 24          # 10, 100, 500, 1000 ppm, full track
+./scripts/sweep_wire_cavity_oxygen.sh --smoke          # same levels, 8 ms each
+python3 scripts/compare_oxygen_sweep.py                # cavity volume and bubble count vs time
+```
+
+`WireCavity:` is still the open wake. `Porosity:` / `nEntrapment` is the bubble count. A rise in that count is logged as `PinchOff:`. The wire-touching cavity going from open or mixed to closed is `CavityClosure:`. Both are appended to `postProcessing/wireCavity/events.dat`. The compare script plots cavity volume and entrapment count against time for each ppm.
+
+### Cells near the wire
+
+A neck that pinches into a bubble is about 10–20 µm. The production mesh is 150 µm, so it will not resolve pinch-off. `--wire-refine N` halves a full-height box around the wire (default half-width = wire radius + 0.3 mm, here ±0.8 mm). By default only x and y are halved, which keeps the vertical spacing at 150 µm: the laser's column march is unchanged, and a neck in z is still one coarse cell. `--wire-refine-z` also halves z inside that box. Columns stay grouped by cell-centre x,y because the box is full height.
+
+On this half-domain track (TaoSun-01: Intel i9-10920X, 12 cores / 24 threads, 62 GB, OpenFOAM.com v2406 under WSL):
+
+| setting | spacing in the wire box | cells | capillary ceiling | steps over 0.67 s | cell-steps vs production |
+|---|---|---|---|---|---|
+| production | 150 µm | 30 305 | 2.7×10⁻⁵ s | ~2.5×10⁴ | 1 |
+| `--wire-refine 3` | 19 µm in x,y; 150 µm in z | 122 000 | 1.2×10⁻⁶ s | ~5.6×10⁵ | ~90× |
+| `--wire-refine 3 --wire-refine-z` | 19 µm | 771 000 | 1.2×10⁻⁶ s | ~5.6×10⁵ | ~570× |
+| `--wire-refine 4 --wire-refine-z` | 9 µm | 6.0×10⁶ | 4×10⁻⁷ s | ~1.6×10⁶ | ~10⁴× |
+
+Cell-steps are `(cells / 30305) × (steps / 25000)`. Wall time is that factor times the production run if the step cost scales with cell count and the 24 ranks stay busy. The production track is already hours; the 19 µm isotropic box is hundreds of times that, and the 9 µm box is not a routine run on this machine. Memory for the 19 µm box is still a small fraction of 62 GB. The 19 µm x,y-only mesh is the cheaper sensitivity test; it does not resolve a vertical neck. Count `ExecutionTime` on the first few minutes and multiply by `steps_total / steps_done` before leaving a refined job overnight.
+
+```bash
+./scripts/run_wire_cavity.sh --np 24 --oxygen-ppm 100 --wire-refine 3 --wire-refine-z
+```
+
+The optional `--smoke` case is the same beams on a coarse mesh (0.4 mm) for 8 ms, with `--wire-cavity-seed`, and only checks that the wire-line and cavity files are written. It is not part of `cases/wire_cavity`. With `--oxygen-ppm` the smoke case is `cases/wire_cavity_smoke_ox<ppm>`.
 
 ## 3. Generate, mesh, run, visualize a case
 

@@ -262,8 +262,16 @@ def build_parser():
     a("--uniform-downstream", type=float, default=None,
       help="end of the uniform-dx region downstream of the laser [m] (default downstream - 2 mm, >= 2.5 mm)")
     a("--wire-refine", type=int, default=None,
-      help="levels of x-y halving of the cells in a vertical box around the wire (full height, keeps the "
-           "vertical cell columns of the ray-traced laser). Default 1 for stranded (100 -> 50 um), 0 for solid")
+      help="levels of halving of the cells in a vertical box around the wire "
+           "(full height). Default: x and y only, so the ray-traced laser keeps "
+           "vertical columns. Default 1 for stranded (100 -> 50 um), 0 for solid. "
+           "On the 150 um wire-cavity mesh, 3 levels is about 19 um and 4 levels "
+           "about 9 um in the refined directions")
+    a("--wire-refine-z", action="store_true",
+      help="with --wire-refine: also halve z inside that box. Needed for a "
+           "roughly isotropic 10-20 um neck. The laser still groups cells by "
+           "their x-y centre, and the box is full height so each refined column "
+           "stays one column. Much more expensive than x-y only")
     a("--refine-halfwidth", type=float, default=None,
       help="half width of the refined box around the wire axis [m] (default wire radius + 0.3 mm)")
     a("--domain-y", default="auto", choices=["auto", "half", "full"],
@@ -300,6 +308,11 @@ def build_parser():
       help="wire contact line: receding angle through the metal [deg] (default 25)")
     a("--theta-advancing-wire", type=float, default=70.0,
       help="wire contact line: advancing angle through the metal [deg] (default 70)")
+    a("--oxygen-ppm", type=float, default=None,
+      help="uniform dissolved oxygen in the melt [ppm by weight], a stand-in for "
+           "the chamber set-point. Turns on Sahoo-Belton sigma(T, a_O) and, with "
+           "contact-line pinning, the oxygen contact-angle table. Omit to keep "
+           "the linear sigma(T) model and the scalar angles")
     a("--wire-pin-frame", default="head", choices=["head", "wire"],
       help="pinned wire line: 'head' holds it still in the lab/head frame so a kink "
            "stays at a fixed height while the wire feeds through (default); "
@@ -373,6 +386,21 @@ def graded(length, dx, ratio):
     """cells for a section starting at dx and growing by 'ratio' (last/first)."""
     n = max(1, round(length / (dx * (1 + ratio) / 2.0)))
     return n
+
+
+# Dissolved oxygen [ppm by weight] and contact angles through the metal [deg]:
+# plate receding, plate advancing, wire receding, wire advancing.
+# PLACEHOLDER knots so a chamber-oxygen sweep moves the hysteresis window.
+# Not a fit to sessile-drop data. Linear in ppm, clamped outside the ends.
+# At 10 ppm the window is the historical 20/90 (plate) and 25/70 (wire).
+# The upward trend stands in for an oxide film (poorer wetting, wider hysteresis)
+# until advancing/receding angles are measured. See README.
+OXYGEN_ANGLE_TABLE = (
+    (10, 20, 90, 25, 70),
+    (100, 28, 100, 35, 90),
+    (500, 40, 120, 48, 115),
+    (1000, 50, 130, 58, 130),
+)
 
 
 class Case:
@@ -512,6 +540,12 @@ class Case:
         self.full = (a.domain_y == "full") and not (a.dim == "2d")
         if a.wire_refine is None:
             a.wire_refine = 1 if a.wire_type == "stranded" else 0
+        if a.wire_refine < 0:
+            raise SystemExit("--wire-refine must be >= 0")
+        if a.wire_refine_z and a.wire_refine < 1:
+            raise SystemExit("--wire-refine-z needs --wire-refine of at least 1")
+        if a.oxygen_ppm is not None and a.oxygen_ppm < 0:
+            raise SystemExit("--oxygen-ppm must be >= 0")
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
         # weave: the laser focus and the wire axis travel a triangular zigzag in y.
@@ -798,7 +832,8 @@ class Case:
             ncy = 2 * int(math.floor(hwy / dx + 0.5)) if self.full else int(math.floor(hwy / dx + 0.5))
             self.n_refine_cols = ncx * ncy
             nz = nzs + nzg
-            self.ncells = self.ncells_block + self.n_refine_cols * nz * (4 ** a.wire_refine - 1)
+            split = 8 if a.wire_refine_z else 4
+            self.ncells = self.ncells_block + self.n_refine_cols * nz * (split ** a.wire_refine - 1)
 
     @staticmethod
     def grading(secs):
@@ -873,14 +908,21 @@ actions
 """ + FOOT
 
     def refine_mesh_dict(self):
-        return header("dictionary", "refineMeshDict", "system") + """set             wireBox;
+        dirs = "(tan1 tan2 tan3)" if self.a.wire_refine_z else "(tan1 tan2)"
+        note = (
+            "x, y and z. Full-height box: the laser still keys columns by cell-centre x,y"
+            if self.a.wire_refine_z else
+            "x and y only (no z split: vertical spacing stays at the core dx)"
+        )
+        return header("dictionary", "refineMeshDict", "system") + f"""set             wireBox;
 coordinateSystem global;
 globalCoeffs
-{
+{{
     tan1        (1 0 0);
     tan2        (0 1 0);
-}
-directions      (tan1 tan2);     // split in x and y only (no z split: columns stay intact)
+    tan3        (0 0 1);
+}}
+directions      {dirs};     // {note}
 useHexTopology  no;
 geometricCut    no;
 writeMesh       no;
@@ -1520,7 +1562,7 @@ surfaceTension
     liquidOnly          true;
     alphaMin            1e-3;
     capillaryDtFactor   {f(a.capillary_dt_factor)};
-}}
+{self.oxygen_surface_block()}}}
 
 vaporisation
 {{
@@ -1592,12 +1634,46 @@ statistics
 }}
 {self.contact_line_block()}{self.porosity_block()}""" + FOOT
 
+    def oxygen_surface_block(self):
+        """Sahoo-Belton coefficients. Empty when --oxygen-ppm is omitted."""
+        ppm = getattr(self.a, "oxygen_ppm", None)
+        if ppm is None:
+            return ""
+        return (
+            "    // oxygenDependent false restores sigma = sigma + dSigmadT*(max(T,Tref)-Tref).\n"
+            "    // a_O [wt%] = chamberOxygenPpm * 1e-4 (uniform melt oxygen; Sieverts not solved).\n"
+            "    // Fe-O adsorption: Sahoo, DebRoy, McNallan, Metall. Trans. B 19B (1988) 483.\n"
+            "    // sigma_m and A fall back to sigma and -dSigmadT above (316L preset at Tref).\n"
+            "    oxygenDependent  true;\n"
+            f"    chamberOxygenPpm {f(ppm)};\n"
+            "    oxygenGammaS     2.03e-05;     // mol/m^2\n"
+            "    oxygenK1         0.0138;       // 1/wt%\n"
+            "    oxygenDeltaH0    -146300;      // J/mol\n"
+            "    oxygenR          8.314462618;  // J/mol/K\n"
+        )
+
     def contact_line_block(self):
         a = self.a
         if not getattr(a, "contact_pinning", False):
             return ""
         every = 1 if a.end_time <= 0.05 else 10
         pin_wire = bool(getattr(a, "pin_wire", False))
+        angle_table = ""
+        if getattr(a, "oxygen_ppm", None) is not None:
+            rows = "\n".join(
+                f"        ({f(ppm)} {f(tr)} {f(ta)} {f(wr)} {f(wa)})"
+                for ppm, tr, ta, wr, wa in OXYGEN_ANGLE_TABLE
+            )
+            angle_table = (
+                "    // PLACEHOLDER. Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire.\n"
+                "    // Linear in ppm, clamped outside the knots. Ignored if oxygenDependent is false.\n"
+                "    // Replace with sessile-drop advancing/receding angles before treating\n"
+                "    // the cavity as a prediction. 10 ppm reproduces 20/90 and 25/70.\n"
+                "    oxygenAngleTable\n"
+                "    (\n"
+                f"{rows}\n"
+                "    );\n"
+            )
         if pin_wire:
             wire_txt = (
                 "    pinWire         true;    // melt/gas/unmelted-wire line, own angles\n"
@@ -1632,6 +1708,7 @@ statistics
             "    forceFactor     1;       // scale of the Young force outside the window\n"
             "    zSubstrate      0;\n"
             f"    interval        {every};\n"
+            + angle_table +
             "}\n"
         )
 
@@ -2111,9 +2188,19 @@ def main(argv=None):
                   f"{c.weave_wavelength*1e3:.2f} mm of travel ({nzig:.1f} zigzags over the track)")
         if a.wire_refine:
             hwy = a.refine_halfwidth_y or a.refine_halfwidth
+            axes = "x,y,z" if a.wire_refine_z else "x,y"
             print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
-                  f"refined {a.wire_refine}x "
+                  f"refined {a.wire_refine}x in {axes} "
                   f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+    if a.wire_refine and not c.strands:
+        hwy = a.refine_halfwidth_y or a.refine_halfwidth
+        axes = "x,y,z" if a.wire_refine_z else "x,y"
+        print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
+              f"refined {a.wire_refine}x in {axes} "
+              f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+    if getattr(a, "oxygen_ppm", None) is not None:
+        print(f"[generate] oxygen model ON: chamberOxygenPpm = {a.oxygen_ppm:g} "
+              f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off.")
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
           f"capillary dt ~ {s['capillary_dt']:.2e} s; expected bead area {c.bead_area*1e6:.2f} mm^2; "
           f"E_L = {s['energy_per_length_J_per_mm']:.0f} J/mm")

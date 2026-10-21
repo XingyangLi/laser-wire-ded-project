@@ -73,7 +73,8 @@
             label guard = 0;
             while (guard++ < 1000)
             {
-                List<label> nei(syncTools::swapBoundaryCellList(mesh, cav));
+                List<label> nei;
+                lwdSwapCells(cav, nei);
                 DynamicList<label> nq;
                 const label nInt = mesh.nInternalFaces();
                 for (label fi = nInt; fi < mesh.nFaces(); ++fi)
@@ -173,6 +174,73 @@
                 << "  depth = " << depth << " m"
                 << "  zContact = " << contactWireZMax << " m"
                 << endl;
+
+            // Pinch-off: the existing enclosed-pore counter (entrapment) rises
+            // while a wake is present. Closure: the wire-touching cavity itself
+            // goes from open/mixed to fully enclosed. Both are appended to
+            // postProcessing/wireCavity/events.dat. Bubble count is nEntrapment.
+            {
+                static label prevEnt = -1;
+                static label prevStatus = -1;
+                static label pinchTotal = 0;
+                static label closureTotal = 0;
+                const label bubbles = max(porEntNow, 0);
+                label newBubbles = 0;
+                label closedNow = 0;
+                if (prevEnt >= 0 && bubbles > prevEnt)
+                {
+                    newBubbles = bubbles - prevEnt;
+                    pinchTotal += newBubbles;
+                    Info<< "PinchOff: t = " << runTime.value()
+                        << "  newBubbles = " << newBubbles
+                        << "  bubbleCount = " << bubbles
+                        << "  pinchTotal = " << pinchTotal
+                        << "  cavityV = " << vAll << " m3"
+                        << endl;
+                }
+                if ((prevStatus == 1 || prevStatus == 3) && status == 2)
+                {
+                    closedNow = 1;
+                    closureTotal += 1;
+                    Info<< "CavityClosure: t = " << runTime.value()
+                        << "  cavityV = " << vAll << " m3"
+                        << "  bubbleCount = " << bubbles
+                        << "  closureTotal = " << closureTotal
+                        << endl;
+                }
+                if (prevEnt >= 0 && (newBubbles || closedNow))
+                {
+                    const fileName edir(runTime.globalPath()/"postProcessing"/"wireCavity");
+                    mkDir(edir);
+                    const fileName efn(edir/"events.dat");
+                    const bool eNew = !isFile(efn);
+                    std::ofstream eos(efn.c_str(), std::ios::app);
+                    if (eNew)
+                    {
+                        eos << "# time[s] event newBubbles bubbleCount "
+                            << "pinchTotal closureTotal cavityVolume[m3] status\n"
+                            << "# event: pinchoff (entrapment count rose) or "
+                            << "closure (open/mixed wire cavity became closed)\n"
+                            << "# bubbleCount is nEntrapment from porosity.dat\n";
+                    }
+                    eos.setf(std::ios::scientific);
+                    eos.precision(8);
+                    if (newBubbles)
+                    {
+                        eos << runTime.value() << " pinchoff " << newBubbles << ' '
+                            << bubbles << ' ' << pinchTotal << ' ' << closureTotal
+                            << ' ' << vAll << ' ' << status << '\n';
+                    }
+                    if (closedNow)
+                    {
+                        eos << runTime.value() << " closure " << newBubbles << ' '
+                            << bubbles << ' ' << pinchTotal << ' ' << closureTotal
+                            << ' ' << vAll << ' ' << status << '\n';
+                    }
+                }
+                prevEnt = bubbles;
+                prevStatus = status;
+            }
 
             const fileName dir(runTime.globalPath()/"postProcessing"/"wireCavity");
             mkDir(dir);

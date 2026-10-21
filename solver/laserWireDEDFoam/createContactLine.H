@@ -29,9 +29,9 @@ const dictionary contactDict(meltProperties.subOrEmptyDict("contactLine"));
 const bool contactEnabled = contactDict.getOrDefault<bool>("enabled", false);
 const scalar contactDeg =
     constant::mathematical::pi/180.0;
-const scalar contactThetaR0 =
+scalar contactThetaR0 =
     contactDict.getOrDefault<scalar>("thetaReceding", 20.0)*contactDeg;
-const scalar contactThetaA0 =
+scalar contactThetaA0 =
     contactDict.getOrDefault<scalar>("thetaAdvancing", 90.0)*contactDeg;
 const scalar contactFlPin = contactDict.getOrDefault<scalar>("flPin", 0.15);
 const scalar contactFlFree = contactDict.getOrDefault<scalar>("flFree", 0.60);
@@ -41,10 +41,74 @@ const scalar contactGradMin = contactDict.getOrDefault<scalar>("gradMin", 0.25);
 const scalar contactForceFactor = contactDict.getOrDefault<scalar>("forceFactor", 1.0);
 const scalar contactZSub = contactDict.getOrDefault<scalar>("zSubstrate", 0.0);
 const bool contactPinWire = contactDict.getOrDefault<bool>("pinWire", false);
-const scalar contactThetaRwire =
+scalar contactThetaRwire =
     contactDict.getOrDefault<scalar>("thetaRecedingWire", 25.0)*contactDeg;
-const scalar contactThetaAwire =
+scalar contactThetaAwire =
     contactDict.getOrDefault<scalar>("thetaAdvancingWire", 70.0)*contactDeg;
+
+// Oxygen / oxide hysteresis. oxygenAngleTable rows are
+// (ppm  thetaReceding  thetaAdvancing  thetaRecedingWire  thetaAdvancingWire)
+// in degrees, linearly interpolated in ppm and clamped outside the table.
+// Used only when surfaceTension/oxygenDependent is true, so the linear-sigma
+// cases keep the scalar angles. The default table is a placeholder, not a
+// sessile-drop measurement (see generate_case.py / README).
+scalarListList contactOxygenAngles;
+contactDict.readIfPresent("oxygenAngleTable", contactOxygenAngles);
+auto lwdOxygenAngle = [&](const label col, const scalar fallbackDeg) -> scalar
+{
+    if (!oxygenDependent || contactOxygenAngles.empty()) return fallbackDeg;
+    scalarList xs(contactOxygenAngles.size());
+    scalarList ys(contactOxygenAngles.size());
+    label nRow = 0;
+    for (const scalarList& row : contactOxygenAngles)
+    {
+        if (row.size() <= col)
+        {
+            FatalErrorInFunction
+                << "contactLine/oxygenAngleTable rows need 5 numbers: "
+                << "ppm thetaReceding thetaAdvancing thetaRecedingWire "
+                << "thetaAdvancingWire" << nl
+                << "got " << row << exit(FatalError);
+        }
+        xs[nRow] = row[0];
+        ys[nRow] = row[col];
+        ++nRow;
+    }
+    for (label i = 1; i < nRow; ++i)
+    {
+        const scalar xv = xs[i];
+        const scalar yv = ys[i];
+        label j = i;
+        while (j > 0 && xs[j - 1] > xv)
+        {
+            xs[j] = xs[j - 1];
+            ys[j] = ys[j - 1];
+            --j;
+        }
+        xs[j] = xv;
+        ys[j] = yv;
+    }
+    const scalar x = chamberOxygenPpm;
+    if (x <= xs[0]) return ys[0];
+    if (x >= xs[nRow - 1]) return ys[nRow - 1];
+    for (label i = 1; i < nRow; ++i)
+    {
+        if (x <= xs[i])
+        {
+            const scalar den = max(xs[i] - xs[i - 1], SMALL);
+            const scalar f = (x - xs[i - 1])/den;
+            return ys[i - 1] + f*(ys[i] - ys[i - 1]);
+        }
+    }
+    return ys[nRow - 1];
+};
+if (oxygenDependent && contactOxygenAngles.size())
+{
+    contactThetaR0 = lwdOxygenAngle(1, contactThetaR0/contactDeg)*contactDeg;
+    contactThetaA0 = lwdOxygenAngle(2, contactThetaA0/contactDeg)*contactDeg;
+    contactThetaRwire = lwdOxygenAngle(3, contactThetaRwire/contactDeg)*contactDeg;
+    contactThetaAwire = lwdOxygenAngle(4, contactThetaAwire/contactDeg)*contactDeg;
+}
 const word contactWireVelocity(contactDict.getOrDefault<word>("wireVelocity", "head"));
 // head: pinned wire line is stationary in the lab/head frame (default).
 // wire: pinned wire line moves at the instantaneous feed velocity.
@@ -150,6 +214,15 @@ if (contactEnabled)
     else
     {
         Info<< "  (unmelted wire is not a support)";
+    }
+    if (oxygenDependent && contactOxygenAngles.size())
+    {
+        Info<< nl << "    oxygen angles at " << chamberOxygenPpm
+            << " ppm from oxygenAngleTable (placeholder unless you replaced it)";
+    }
+    else if (oxygenDependent)
+    {
+        Info<< nl << "    oxygen model on, no oxygenAngleTable: scalar angles kept";
     }
 }
 Info<< nl << endl;

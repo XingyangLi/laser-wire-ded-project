@@ -1,13 +1,22 @@
 #!/bin/bash
 # Three-laser vertical-wire case: source OpenFOAM.com, build, generate, run, summarise.
 #
-#   ./scripts/run_wire_cavity.sh                  # full track, one rank per core (nproc)
+#   ./scripts/run_wire_cavity.sh                       # full track, one rank per core (nproc)
 #   ./scripts/run_wire_cavity.sh --np 16
-#   ./scripts/run_wire_cavity.sh --generate-only  # write the case and stop
-#   ./scripts/run_wire_cavity.sh --smoke          # coarse 3D case, 8 ms, planted wake
+#   ./scripts/run_wire_cavity.sh --generate-only       # write the case and stop
+#   ./scripts/run_wire_cavity.sh --smoke               # coarse 3D case, 8 ms, planted wake
+#   ./scripts/run_wire_cavity.sh --oxygen-ppm 100      # Sahoo-Belton sigma and oxygen angles
+#   ./scripts/run_wire_cavity.sh --smoke --oxygen-ppm 10
+#   ./scripts/run_wire_cavity.sh --wire-refine 3 --wire-refine-z   # ~19 um box around the wire
+#
+# --oxygen-ppm writes cases/wire_cavity_ox<ppm> (or cases/wire_cavity_smoke_ox<ppm>).
+# Without it the case is cases/wire_cavity and the linear sigma(T) model is unchanged.
+# A sweep over 10, 100, 500 and 1000 ppm is scripts/sweep_wire_cavity_oxygen.sh.
 #
 # The full track is a melt-pool run (hours on a workstation). This script is what
-# to launch on taosun01. It does not pick a reduced mesh unless --smoke is passed.
+# to launch on TaoSun-01. It does not pick a reduced mesh unless --smoke is passed.
+# --wire-refine 3 --wire-refine-z is the optional 10-20 um neck mesh. It is much
+# slower than the 0.15 mm track; see README. Do not start it unless you mean to.
 #
 # OpenFOAM.com v2406 or v2412 is required (wmake). If neither is installed, the
 # script prints Ubuntu install commands and exits.
@@ -16,14 +25,43 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NP="${NP:-}"
 MODE="full"
 GEN_ONLY=0
+OXYGEN=""
+WIRE_REFINE=""
+REFINE_Z=0
+REFINE_HALF=""
+CASE_DIR=""
 
 usage() {
-    sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'
+    cat <<'EOF'
+Three-laser vertical-wire case: source OpenFOAM.com, build, generate, run, summarise.
+
+  ./scripts/run_wire_cavity.sh                       # full track, nproc ranks
+  ./scripts/run_wire_cavity.sh --np 16
+  ./scripts/run_wire_cavity.sh --generate-only
+  ./scripts/run_wire_cavity.sh --smoke
+  ./scripts/run_wire_cavity.sh --oxygen-ppm 100
+  ./scripts/run_wire_cavity.sh --wire-refine 3 --wire-refine-z
+  ./scripts/run_wire_cavity.sh --case cases/my_ox --oxygen-ppm 500
+
+--oxygen-ppm N   uniform melt oxygen [ppm by weight]; separate case directory
+--wire-refine N  halve the wire box N times (x,y). 3 levels on 150 um ~ 19 um
+--wire-refine-z  also halve z (isotropic neck). Needs --wire-refine
+--refine-halfwidth M   half-width of that box [m] (default wire radius + 0.3 mm)
+--case DIR       write this case instead of the default directory
+--np N           MPI ranks (default nproc; smoke is capped at 2)
+--smoke          coarse 3D, 8 ms, planted wake
+--generate-only  build the solver, write the case, do not solve
+EOF
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --np) NP="${2:?--np needs a core count}"; shift 2 ;;
+        --oxygen-ppm) OXYGEN="${2:?--oxygen-ppm needs a number}"; shift 2 ;;
+        --wire-refine) WIRE_REFINE="${2:?--wire-refine needs a level count}"; shift 2 ;;
+        --wire-refine-z) REFINE_Z=1; shift ;;
+        --refine-halfwidth) REFINE_HALF="${2:?--refine-halfwidth needs a length in metres}"; shift 2 ;;
+        --case) CASE_DIR="${2:?--case needs a directory}"; shift 2 ;;
         --smoke) MODE="smoke"; shift ;;
         --generate-only) GEN_ONLY=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -36,6 +74,48 @@ fi
 if ! [[ "$NP" =~ ^[1-9][0-9]*$ ]]; then
     echo "--np must be a positive integer, got: $NP" >&2
     exit 1
+fi
+if [[ -n "$OXYGEN" ]] && ! [[ "$OXYGEN" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "--oxygen-ppm must be a non-negative number, got: $OXYGEN" >&2
+    exit 1
+fi
+if [[ -n "$WIRE_REFINE" ]] && ! [[ "$WIRE_REFINE" =~ ^[0-9]+$ ]]; then
+    echo "--wire-refine must be a non-negative integer, got: $WIRE_REFINE" >&2
+    exit 1
+fi
+if [[ "$REFINE_Z" == 1 && -z "$WIRE_REFINE" ]]; then
+    echo "--wire-refine-z needs --wire-refine N (N >= 1)" >&2
+    exit 1
+fi
+
+EXTRA=()
+if [[ -n "$OXYGEN" ]]; then
+    EXTRA+=(--oxygen-ppm "$OXYGEN")
+fi
+if [[ -n "$WIRE_REFINE" ]]; then
+    EXTRA+=(--wire-refine "$WIRE_REFINE")
+fi
+if [[ "$REFINE_Z" == 1 ]]; then
+    EXTRA+=(--wire-refine-z)
+fi
+if [[ -n "$REFINE_HALF" ]]; then
+    EXTRA+=(--refine-halfwidth "$REFINE_HALF")
+fi
+
+OX_TAG=""
+if [[ -n "$OXYGEN" ]]; then
+    OX_TAG="_ox${OXYGEN//./p}"
+fi
+if [[ -n "$CASE_DIR" ]]; then
+    if [[ "$CASE_DIR" = /* ]]; then
+        CASE="$CASE_DIR"
+    else
+        CASE="$ROOT/$CASE_DIR"
+    fi
+elif [[ "$MODE" == "smoke" ]]; then
+    CASE="$ROOT/cases/wire_cavity_smoke${OX_TAG}"
+else
+    CASE="$ROOT/cases/wire_cavity${OX_TAG}"
 fi
 
 # OpenFOAM's bashrc consumes "$@". Drop the arguments before sourcing.
@@ -78,8 +158,13 @@ and it will source the bashrc itself.
 EOF
         exit 1
     fi
+    # OpenFOAM's bashrc reads unset variables and returns non-zero from
+    # optional third-party probes. Nounset and errexit must be off while
+    # it is sourced.
+    set +euo pipefail
     # shellcheck disable=SC1090
     source "$found"
+    set -euo pipefail
     echo "Sourced $found"
 else
     echo "Using OpenFOAM already on the environment: ${WM_PROJECT_DIR}"
@@ -107,7 +192,10 @@ if [[ "$MODE" == "smoke" ]]; then
         SMOKE_NP=2
     fi
     echo "Smoke case: coarse 3D, end time 8 ms, ${SMOKE_NP} rank(s). Not the production track."
-    python3 generate_case.py --case cases/wire_cavity_smoke --laser-config triple \
+    if [[ -n "$OXYGEN" ]]; then
+        echo "Oxygen model: ${OXYGEN} ppm by weight -> ${CASE}"
+    fi
+    python3 generate_case.py --case "$CASE" --laser-config triple \
         --wire-type solid --material 316L --dim 3d --dx 4e-4 \
         --upstream 2.5e-3 --downstream 2.5e-3 --half-width 1.6e-3 \
         --substrate-thickness 1.2e-3 --gas-height 2.4e-3 \
@@ -116,12 +204,20 @@ if [[ "$MODE" == "smoke" ]]; then
         --end-time 0.008 --write-interval 0.004 --max-co 0.5 --np "$SMOKE_NP" \
         --laser-ramp 1e-4 \
         --contact-pinning --pin-wire --porosity --wire-cavity --wire-cavity-seed \
-        --rigid-substrate 100
-    CASE="$ROOT/cases/wire_cavity_smoke"
+        --rigid-substrate 100 \
+        "${EXTRA[@]}"
     RUN_NP="$SMOKE_NP"
 else
-    echo "Full case: cases/wire_cavity, ${NP} rank(s)."
-    python3 generate_case.py --case cases/wire_cavity --laser-config triple \
+    echo "Full case: ${CASE}, ${NP} rank(s)."
+    if [[ -n "$OXYGEN" ]]; then
+        echo "Oxygen model: ${OXYGEN} ppm by weight."
+    fi
+    if [[ "$REFINE_Z" == 1 ]]; then
+        echo "Wire-box refinement: ${WIRE_REFINE} level(s) in x, y and z."
+    elif [[ -n "$WIRE_REFINE" && "$WIRE_REFINE" != 0 ]]; then
+        echo "Wire-box refinement: ${WIRE_REFINE} level(s) in x and y (z stays at the core spacing)."
+    fi
+    python3 generate_case.py --case "$CASE" --laser-config triple \
         --wire-type solid --material 316L --resolution coarse --domain-y half \
         --upstream 5e-3 --downstream 5e-3 --half-width 3.5e-3 \
         --substrate-thickness 2e-3 --gas-height 3.5e-3 --gas-uniform-height 2.6e-3 \
@@ -132,8 +228,8 @@ else
         --theta-receding 20 --theta-advancing 90 \
         --theta-receding-wire 25 --theta-advancing-wire 70 \
         --wire-pin-frame head \
-        --rigid-substrate 100
-    CASE="$ROOT/cases/wire_cavity"
+        --rigid-substrate 100 \
+        "${EXTRA[@]}"
     RUN_NP="$NP"
 fi
 
@@ -143,7 +239,7 @@ if [[ "$GEN_ONLY" == 1 ]]; then
 fi
 
 echo "Log (once the solve starts): tail -f $CASE/log.laserWireDEDFoam"
-echo "Progress lines: grep -E 'Time =|ContactLine:|WireCavity:|Porosity:|End' $CASE/log.laserWireDEDFoam"
+echo "Progress lines: grep -E 'Time =|ContactLine:|WireCavity:|Porosity:|PinchOff:|CavityClosure:|OxygenSigma:|End' $CASE/log.laserWireDEDFoam"
 cd "$CASE"
 ./Allclean >/dev/null 2>&1 || true
 ./Allrun "$RUN_NP"

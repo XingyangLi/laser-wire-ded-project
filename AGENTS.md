@@ -19,6 +19,8 @@ That builds `solver/` with `Allwmake` and writes `cases/wire_cavity`. Do not com
 ```bash
 ./scripts/run_wire_cavity.sh              # nproc ranks
 ./scripts/run_wire_cavity.sh --np 16
+./scripts/run_wire_cavity.sh --oxygen-ppm 100
+./scripts/sweep_wire_cavity_oxygen.sh --np 24
 ./scripts/run_wire_cavity.sh --smoke      # coarse 3D, 8 ms, planted wake; optional check only
 ```
 
@@ -30,16 +32,17 @@ The solver log is `cases/wire_cavity/log.laserWireDEDFoam` (or `cases/wire_cavit
 
 ```bash
 tail -f cases/wire_cavity/log.laserWireDEDFoam
-grep -E 'Time =|ContactLine:|WireCavity:|Porosity:|End' cases/wire_cavity/log.laserWireDEDFoam
+grep -E 'Time =|ContactLine:|WireCavity:|Porosity:|PinchOff:|CavityClosure:|OxygenSigma:|End' cases/wire_cavity/log.laserWireDEDFoam
 ```
 
-`ContactLine:` reports the substrate line and, when `pinWire` is on, `wire` and `zWire`. `WireCavity:` is `open`, `closed`, `mixed` or `none`, with volume and depth. `Porosity:` is the enclosed-pore counter (entrapment, lack-of-fusion, keyhole) and is separate from the open wake. A run that is still printing `Time =` is still going. `End` is the clean finish.
+`ContactLine:` reports the substrate line and, when `pinWire` is on, `wire` and `zWire`. `WireCavity:` is `open`, `closed`, `mixed` or `none`, with volume and depth. `Porosity:` is the enclosed-pore counter (entrapment, lack-of-fusion, keyhole) and is separate from the open wake. `PinchOff:` is an increase of that entrapment count; `CavityClosure:` is the wire cavity becoming closed. `OxygenSigma:` is the Sahoo–Belton model when `--oxygen-ppm` was passed. A run that is still printing `Time =` is still going. `End` is the clean finish.
 
 ## Post-process
 
 ```bash
 python3 scripts/quantify_pores.py --case cases/wire_cavity
 python3 scripts/quantify_pores.py --case cases/wire_cavity_smoke --expect-wire-smoke
+python3 scripts/compare_oxygen_sweep.py
 ```
 
 Read `postProcessing/contactLine/contactLine.dat` (wire columns start at `nWire`, including `zWireMax`) and `postProcessing/wireCavity/wireCavity.dat` (status, volume, depth below the contact line, downstream length). In ParaView open `case.foam`. Use a decomposed case if `Allrun` was given more than one rank. Colour `contactState` (5–8 are the wire line), `contactSupport` (2 = wire) and `cavityMarker` (1 open, 2 closed).

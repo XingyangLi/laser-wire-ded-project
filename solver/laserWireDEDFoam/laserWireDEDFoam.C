@@ -43,7 +43,9 @@ Description
       - ray-traced (vertical beam, column march) laser surface heat flux
         deposited at the first metal/gas interface along the beam, with
         natural shadowing by the wire; Gaussian or top-hat profile,
-      - liquid-only CSF surface tension with sigma(T), Marangoni stress,
+      - liquid-only CSF surface tension with sigma(T), or optional
+        Sahoo-Belton sigma(T, a_O) from chamberOxygenPpm, Marangoni stress
+        using the matching dSigma/dT (sign can reverse at high oxygen),
         Clausius-Clapeyron recoil pressure, evaporative / radiative /
         convective free-surface heat loss, optional Boussinesq buoyancy,
       - an advected melt-history marker (fusion zone) and melt-pool / bead
@@ -70,6 +72,7 @@ Description
 #include "fvCFD.H"
 #include "dynamicFvMesh.H"
 #include "syncTools.H"
+#include "processorPolyPatch.H"
 #include "CMULES.H"
 #include "EulerDdtScheme.H"
 #include "localEulerDdtScheme.H"

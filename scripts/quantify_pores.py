@@ -121,6 +121,21 @@ def main(argv=None):
     else:
         print("wireCavity.dat: not written (wireCavity is off, or the run has not sampled yet)")
 
+    sig = _rows(case / "postProcessing" / "oxygen" / "sigma.dat")
+    if sig:
+        s = sig[-1]
+        print("oxygen surface tension (last sample):")
+        print(f"  time_s: {s[0]}  chamberOxygenPpm: {s[1]}  aO_wt%: {s[2]}")
+        if len(s) >= 8:
+            print(f"  sigmaLiqMean_N_per_m: {s[3]}  dsigdTLiqMean: {s[4]}")
+            print(f"  sigmaLiqMin: {s[5]}  sigmaLiqMax: {s[6]}  nLiquidCells: {s[7]}")
+    events = _rows(case / "postProcessing" / "wireCavity" / "events.dat")
+    if events:
+        n_pinch = sum(1 for r in events if len(r) >= 2 and r[1] == "pinchoff")
+        n_close = sum(1 for r in events if len(r) >= 2 and r[1] == "closure")
+        print(f"cavity events: pinchoff={n_pinch}  closure={n_close}  "
+              f"(postProcessing/wireCavity/events.dat)")
+
     print("ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport "
           "(1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).")
 

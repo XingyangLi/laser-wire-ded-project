@@ -15,4 +15,4 @@ Build and run only through `scripts/run_wire_cavity.sh`. It sources OpenFOAM.com
 
 Monitor `cases/wire_cavity/log.laserWireDEDFoam` for `ContactLine:`, `WireCavity:` and `Porosity:`. ParaView: `case.foam`, colour `contactState` (5–8 wire line), `contactSupport`, `cavityMarker`.
 
-Beam positions, powers and angles are flags on `generate_case.py` (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). Defaults and the wire-pin model are in README section "Running on a workstation" and `docs/MODEL_NOTES.md`.
+Beam positions, powers and angles are flags on `generate_case.py` (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). `--oxygen-ppm` switches on Sahoo–Belton `sigma(T, a_O)` and the placeholder contact-angle table; the sweep is `scripts/sweep_wire_cavity_oxygen.sh`. Defaults and the wire-pin model are in README section "Running on a workstation" and `docs/MODEL_NOTES.md`.

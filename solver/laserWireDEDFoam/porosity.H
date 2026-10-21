@@ -8,6 +8,77 @@
         const labelListList& cCells = mesh.cellCells();
         const label nCells = mesh.nCells();
 
+        // Neighbour-cell values across processor faces.
+        // syncTools::swapBoundaryCellList uses the default message tag, the
+        // same tag as processor halo swaps. On this build that mix aborts
+        // with MPI_ERR_TRUNCATE once the pool is hot. A private tag per
+        // ordered rank pair keeps the two exchanges apart.
+        auto lwdSwapCells = [&](const labelUList& cellData, List<label>& nei)
+        {
+            const label nB = mesh.nBoundaryFaces();
+            const label bOff = mesh.nInternalFaces();
+            nei.resize(nB);
+            const polyBoundaryMesh& patches = mesh.boundaryMesh();
+            for (const polyPatch& pp : patches)
+            {
+                const labelUList& fc = pp.faceCells();
+                const label base = pp.start() - bOff;
+                forAll(fc, i)
+                {
+                    nei[base + i] = cellData[fc[i]];
+                }
+            }
+            if (!Pstream::parRun()) return;
+
+            List<label> recv(nB, -1);
+            const label me = Pstream::myProcNo();
+            const label start = UPstream::nRequests();
+            for (const polyPatch& pp : patches)
+            {
+                const auto* ppp = isA<processorPolyPatch>(pp);
+                if (!ppp || !pp.size()) continue;
+                const label nb = ppp->neighbProcNo();
+                // Tag must match the sender below: 25000 + sender*nProcs + receiver.
+                const int tag = int(25000 + nb*max(Pstream::nProcs(), label(1)) + me);
+                SubList<label> fld(recv, pp.size(), pp.start() - bOff);
+                UIPstream::read
+                (
+                    UPstream::commsTypes::nonBlocking,
+                    nb,
+                    fld.data_bytes(),
+                    fld.size_bytes(),
+                    tag
+                );
+            }
+            for (const polyPatch& pp : patches)
+            {
+                const auto* ppp = isA<processorPolyPatch>(pp);
+                if (!ppp || !pp.size()) continue;
+                const label nb = ppp->neighbProcNo();
+                const int tag = int(25000 + me*max(Pstream::nProcs(), label(1)) + nb);
+                const SubList<label> fld(nei, pp.size(), pp.start() - bOff);
+                UOPstream::write
+                (
+                    UPstream::commsTypes::nonBlocking,
+                    nb,
+                    fld.cdata_bytes(),
+                    fld.size_bytes(),
+                    tag
+                );
+            }
+            UPstream::waitRequests(start);
+            for (const polyPatch& pp : patches)
+            {
+                const auto* ppp = isA<processorPolyPatch>(pp);
+                if (!ppp || !pp.size()) continue;
+                const label base = pp.start() - bOff;
+                for (label i = 0; i < pp.size(); ++i)
+                {
+                    nei[base + i] = recv[base + i];
+                }
+            }
+        };
+
         // 0 = metal / ignored, 1 = atmosphere-connected gas, 2 = enclosed gas
         labelList gasState(nCells, 0);
         forAll(alpha1, celli)
@@ -58,7 +129,8 @@
             label guard = 0;
             while (guard++ < 1000)
             {
-                List<label> nei(syncTools::swapBoundaryCellList(mesh, gasState));
+                List<label> nei;
+                lwdSwapCells(gasState, nei);
                 DynamicList<label> nq;
                 const label nInt = mesh.nInternalFaces();
                 for (label fi = nInt; fi < mesh.nFaces(); ++fi)
@@ -120,7 +192,8 @@
             label guard = 0;
             while (guard++ < 1000)
             {
-                List<label> nei(syncTools::swapBoundaryCellList(mesh, comp));
+                List<label> nei;
+                lwdSwapCells(comp, nei);
                 DynamicList<label> cq;
                 const label nInt = mesh.nInternalFaces();
                 for (label fi = nInt; fi < mesh.nFaces(); ++fi)
@@ -303,13 +376,24 @@
         }
         poreMarker.correctBoundaryConditions();
         poreType.correctBoundaryConditions();
-        if (changedAlpha)
+        // A locked pore changes alpha only on the ranks that own its cells.
+        // alpha1.correctBoundaryConditions() is a processor halo exchange, so
+        // every rank must enter it. Gating it on the local flag deadlocks as
+        // soon as the shell freezes on a subset of the decomposition (the
+        // 1000 ppm smoke hung here, after ContactLine and before Porosity).
+        label changedAny = changedAlpha ? 1 : 0;
+        reduce(changedAny, maxOp<label>());
+        if (changedAny)
         {
             alpha1.correctBoundaryConditions();
             alpha2 = 1.0 - alpha1;
             rho == alpha1*rho1 + alpha2*rho2;
             mixture.correct();
         }
+
+        // Entrapment count for the wire-cavity pinch-off log. -1 until this
+        // iteration writes a porosity sample (wireCavity.H reads it).
+        label porEntNow = -1;
 
         const bool report =
             pimple.finalIter()
@@ -360,6 +444,8 @@
             const scalar metalVol = gSum(max(min(alpha1.primitiveField(), scalar(1)), scalar(0))*V);
             const scalar vf = vPore/max(vPore + metalVol, SMALL);
             const scalar dMean = (vPore > SMALL) ? dSum/vPore : 0;
+
+            porEntNow = label(nEnt);
 
             Info<< "Porosity: pores = " << label(nPore)
                 << "  locked = " << label(nLock)
