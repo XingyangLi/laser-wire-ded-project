@@ -1871,17 +1871,18 @@ statistics
 
     def function_objects(self):
         a = self.a
+        blocks = []
         xs = self.record_planes()
-        if not xs:
-            return ""
-        dt = a.record_interval or 0.5 * self.dx_min / a.scan_speed
-        a.record_interval = dt
-        flds = ["alpha.metal", "T", "liquidFraction", "meltHistory", "cWire"]
-        if self.comp_names:
-            flds += [f"c{c}" for c in self.comp_names] + [f"u{c}" for c in self.comp_names]
-        surf = "\n".join(f"            x{i} {{ type cuttingPlane; point ({f(x)} 0 0); normal (1 0 0); interpolate false; }}"
-                         for i, x in enumerate(xs))
-        return f"""    recordPlanes    // y-z planes behind the pool: the passing (solid) track, stacked into the build later
+        if xs:
+            dt = a.record_interval or 0.5 * self.dx_min / a.scan_speed
+            a.record_interval = dt
+            flds = ["alpha.metal", "T", "liquidFraction", "meltHistory", "cWire"]
+            if self.comp_names:
+                flds += [f"c{c}" for c in self.comp_names] + [f"u{c}" for c in self.comp_names]
+            surf = "\n".join(
+                f"            x{i} {{ type cuttingPlane; point ({f(x)} 0 0); normal (1 0 0); interpolate false; }}"
+                for i, x in enumerate(xs))
+            blocks.append(f"""    recordPlanes    // y-z planes behind the pool: the passing (solid) track, stacked into the build later
     {{
         type            surfaces;
         libs            (sampling);
@@ -1894,8 +1895,26 @@ statistics
         {{
 {surf}
         }}
-    }}
-"""
+    }}""")
+        # Side view through the wire, same cut as a radiograph. y = 20 um sits
+        # inside the first cell layer of a half domain (the symmetry plane
+        # itself does not cut those cells).
+        if not self.d2:
+            blocks.append(f"""    sidePlane
+    {{
+        type            surfaces;
+        libs            (sampling);
+        writeControl    adjustableRunTime;
+        writeInterval   {f(a.write_interval)};
+        surfaceFormat   raw;
+        interpolationScheme cell;
+        fields          (alpha.metal T liquidFraction cavityMarker contactState sigmaT);
+        surfaces
+        {{
+            xz {{ type cuttingPlane; point (0 2e-5 0); normal (0 1 0); interpolate false; }}
+        }}
+    }}""")
+        return "\n".join(blocks) + ("\n" if blocks else "")
 
     # ------------------------------------------------------------------
     def fields(self):
@@ -2018,7 +2037,9 @@ if [ "$NP" -gt 1 ]; then
     foamDictionary -entry coeffs.n -set "$N" system/decomposeParDict > /dev/null
     decomposePar -force > log.decomposePar 2>&1
     [ -n "$MESH_ONLY" ] && exit 0
-    mpirun -np $NP laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
+    # WSL reports nproc hardware threads. Open MPI otherwise counts cores
+    # and refuses np greater than the core count (12 on TaoSun-01).
+    mpirun --use-hwthread-cpus -np $NP laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
 else
     [ -n "$MESH_ONLY" ] && exit 0
     laserWireDEDFoam > log.laserWireDEDFoam 2>&1

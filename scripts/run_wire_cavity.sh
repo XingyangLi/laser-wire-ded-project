@@ -30,6 +30,8 @@ WIRE_REFINE=""
 REFINE_Z=0
 REFINE_HALF=""
 CASE_DIR=""
+END_TIME=""
+WRITE_IV="0.02"
 
 usage() {
     cat <<'EOF'
@@ -48,6 +50,8 @@ Three-laser vertical-wire case: source OpenFOAM.com, build, generate, run, summa
 --wire-refine-z  also halve z (isotropic neck). Needs --wire-refine
 --refine-halfwidth M   half-width of that box [m] (default wire radius + 0.3 mm)
 --case DIR       write this case instead of the default directory
+--end-time S     stop at this time [s] instead of track-length/scan-speed
+--write-interval S   field and side-plane write interval [s] (default 0.02)
 --np N           MPI ranks (default nproc; smoke is capped at 2)
 --smoke          coarse 3D, 8 ms, planted wake
 --generate-only  build the solver, write the case, do not solve
@@ -62,6 +66,8 @@ while [[ $# -gt 0 ]]; do
         --wire-refine-z) REFINE_Z=1; shift ;;
         --refine-halfwidth) REFINE_HALF="${2:?--refine-halfwidth needs a length in metres}"; shift 2 ;;
         --case) CASE_DIR="${2:?--case needs a directory}"; shift 2 ;;
+        --end-time) END_TIME="${2:?--end-time needs a time in seconds}"; shift 2 ;;
+        --write-interval) WRITE_IV="${2:?--write-interval needs a time in seconds}"; shift 2 ;;
         --smoke) MODE="smoke"; shift ;;
         --generate-only) GEN_ONLY=1; shift ;;
         -h|--help) usage; exit 0 ;;
@@ -83,8 +89,12 @@ if [[ -n "$WIRE_REFINE" ]] && ! [[ "$WIRE_REFINE" =~ ^[0-9]+$ ]]; then
     echo "--wire-refine must be a non-negative integer, got: $WIRE_REFINE" >&2
     exit 1
 fi
-if [[ "$REFINE_Z" == 1 && -z "$WIRE_REFINE" ]]; then
-    echo "--wire-refine-z needs --wire-refine N (N >= 1)" >&2
+if [[ -n "$END_TIME" ]] && ! [[ "$END_TIME" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "--end-time must be a non-negative number of seconds, got: $END_TIME" >&2
+    exit 1
+fi
+if ! [[ "$WRITE_IV" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+    echo "--write-interval must be a non-negative number of seconds, got: $WRITE_IV" >&2
     exit 1
 fi
 
@@ -100,6 +110,9 @@ if [[ "$REFINE_Z" == 1 ]]; then
 fi
 if [[ -n "$REFINE_HALF" ]]; then
     EXTRA+=(--refine-halfwidth "$REFINE_HALF")
+fi
+if [[ -n "$END_TIME" ]]; then
+    EXTRA+=(--end-time "$END_TIME")
 fi
 
 OX_TAG=""
@@ -223,7 +236,7 @@ else
         --substrate-thickness 2e-3 --gas-height 3.5e-3 --gas-uniform-height 2.6e-3 \
         --wire-diameter 1e-3 --feed-angle 90 --wire-gap 0.15e-3 --feed-start 0.01 \
         --scan-speed 0.006 --wire-feed-speed 0.030 --track-length 4e-3 \
-        --write-interval 0.02 --np "$NP" --laser-ramp 2e-3 \
+        --write-interval "$WRITE_IV" --np "$NP" --laser-ramp 2e-3 \
         --contact-pinning --pin-wire --porosity --wire-cavity \
         --theta-receding 20 --theta-advancing 90 \
         --theta-receding-wire 25 --theta-advancing-wire 70 \
