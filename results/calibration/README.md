@@ -50,4 +50,17 @@ Verdict: right scale, trailing side higher, wire line stable. The line still sit
 
 ## cal03 — narrower spots, lower flank hit
 
-Running. Front spots miss the wire and land at r ≈ 0.8 mm. Rear axis meets the wire at z ≈ 0.56 mm and the inner ray near z ≈ 1.1 mm. Powers 350 + 350 + 520 W, spot radius 0.32 mm. End time 0.20 s. See `launch_cal03.sh`.
+Command: `launch_cal03.sh`. Coarse mesh, 24 ranks, 920 s for 0.20 s.
+
+| item | value |
+| --- | --- |
+| azimuths | 22°, −22°, 180° |
+| inclinations | −16°, −16°, −30° |
+| powers | 350 + 350 + 520 W |
+| 1/e² radius | 0.32 mm |
+| aims | front plate hit r ≈ 0.82 mm (misses the wire); rear axis meets the wire at z ≈ 0.56 mm |
+| feed | gap 0.10 mm, feed starts at 0.02 s, 30 mm/s, scan 6 mm/s |
+
+At 0.20 s the pool is 2.8 mm long and 1.9 mm wide (cal02 had spread to 3.4 mm by 0.48 s). Tmax 2830 K. The wire line is entirely pinned at z = 0.84–0.99 mm, which is the top of the liquid on the centerline. The trailing crest is 0.69 mm and the leading crest is 0.84 mm; the track is too short for the trailing pile-up seen later in cal02. Open cavity 2.1 mm³, depth 0.92 mm, still centred off the center plane. Figures: `cal03_side_alpha_T.png`, `cal03_projection.png`.
+
+The screen has the contact on the crown and a narrower pool, so the same case is continued to 0.70 s (`continue_cal03.sh`).
