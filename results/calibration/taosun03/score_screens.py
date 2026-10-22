@@ -56,6 +56,9 @@ QUESTIONS = {
     "cal65": "700 W, 60/140 window, scan 2 mm/s",
     "cal66": "700 W with 30/100 trail window",
     "cal67": "700 W, rear aim z 0.35 mm",
+    "cal68": "700 W with feed 32 mm/s",
+    "cal69": "650 W rear spot with feed 28 mm/s",
+    "cal70": "650 W rear spot with 60/140 window",
 }
 
 
