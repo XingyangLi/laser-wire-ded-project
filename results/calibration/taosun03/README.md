@@ -70,6 +70,8 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal35 | 0.45 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 8/8 pinned | open, 3.18 mm³, centre y = 1.08 mm | Same crest height, line fully pinned above it. Continued to 1.00 s. |
 | cal34 | 0.30 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 6/11 pinned | open, 3.19 mm³, centre y = 1.06 mm | Best window. Continued to 0.70 s. |
 | cal47 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 12/13 pinned | open, 3.70 mm³, centre y = 0.98 mm | Milder plate window, same crests as cal34. Not continued. |
+| cal51 | 0.28 s | 7 | 1.45 / 1.15 mm | 0.99–1.61 mm, 9/11 pinned | open, 3.31 mm³, centre y = 1.01 mm | 0.18 mm spots. Same crests. Not continued. |
+| cal56 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 9/11 pinned | open, 3.56 mm³, centre y = 0.97 mm | Force factor 2. Same crests. Not continued. |
 | cal32 | 0.30 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 5/9 pinned | open, 3.07 mm³, centre y = 1.02 mm | Narrower window. Continued to 0.70 s. |
 | cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
 | cal39 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 8/13 pinned | open, 3.17 mm³, centre y = 1.02 mm | Wide 90°/170° window. Foot pore, not a neck. Not continued. |
@@ -93,6 +95,8 @@ cal48 turns Marangoni back on, on the cal08 beams. At 0.28 s the trailing crest 
 
 cal39 is the wide trailing window, 90°/170°. At 0.28 s the trailing crest is 1.30 mm and the leading crest is 1.15 mm, with 5 of 13 wire cells receding. A lack-of-fusion pore is locked at the plate, 0.46 mm, 15 cells, centred near (0.60, 0.51, −0.05) mm. That is not gas under the neck. The wider window does not beat 60°/140°, and the run is not continued. Comparison: `cal39_vs_radiograph.png`.
 
-cal36, cal35, cal34 and cal32 are the continued runs. cal33, cal37, cal39, cal45, cal47 and cal48 are not. The refined 60°/140° mesh is cal10 on TaoSun-01 and is not started here. cal63 is the best coarse screen, cal36, at `--wire-refine 2` (about 38 µm in x and y, z left coarse), one rank, to 0.25 s. Powers stay 100+100+700 W and there is no trailing sector.
+cal51 (0.18 mm spots) and cal56 (force factor 2) both finish on the same crest pair as cal34, 1.45 mm trailing and 1.15 mm leading, with the wire line on the neck. The tighter spot does not steepen the foot: all 28 molten plate cells are receding and the mean angle is 50°. The weaker force leaves the same receding plate line, mean angle 58°. Neither has a locked pore at the end, and neither reaches the 1.76 mm crest of cal35 and cal36. They are not continued. Comparisons: `cal51_vs_radiograph.png`, `cal56_vs_radiograph.png`.
+
+cal36, cal35, cal34 and cal32 are the continued runs. cal33, cal37, cal39, cal45, cal47, cal48, cal51 and cal56 are not. The refined 60°/140° mesh is cal10 on TaoSun-01 and is not started here. cal63 is the best coarse screen, cal36, at `--wire-refine 2` (about 38 µm in x and y, z left coarse), one rank, to 0.25 s. Powers stay 100+100+700 W and there is no trailing sector.
 
 cal59 keeps the 60°/140° window with cal35's taller section (scan 2 mm/s, feed 18 mm/s, 120+120+560 W) to 0.60 s. cal61 keeps that window with cal36's powers (100+100+700 W, scan 3 mm/s) to 0.40 s. cal62 is cal36's powers at scan 2 mm/s and feed 20 mm/s, to 0.60 s, to see whether the tall crest lengthens into a bulb. cal31 stays the refined cal08 mesh. Solvers stay at `nice -n 10` and the rank total stays at or under 32.
