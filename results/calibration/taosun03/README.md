@@ -56,4 +56,18 @@ cal31 stayed on one rank. A geometric 4-rank split of the refined mesh was no fa
 
 None of those is a 1.5× gain, so cal31 was not restarted.
 
-cal50–cal58 are further one-rank screens: a 45° trailing sector (not cal10's 90° refined run), 0.18 mm spots, a 0.02 mm wire gap, feed 32 mm/s, scan 2.5 mm/s, a steeper rear beam, a weaker Young force, a uniform 45°/110° wire window, and front spots cut to 80 W. With cal31–cal49 that is 28 ranks. A watcher continues a finished screen when the wire line is still on the flank.
+cal50–cal58 are further one-rank screens: a 45° trailing sector (not cal10's 90° refined run), 0.18 mm spots, a 0.02 mm wire gap, feed 32 mm/s, scan 2.5 mm/s, a steeper rear beam, a weaker Young force, a uniform 45°/110° wire window, and front spots cut to 80 W. With cal31–cal49 that is 28 ranks.
+
+Continuations are chosen after the score, not by the flank-height watcher. That watcher was stopped so a weak screen does not keep a core. `score_screens.py` writes `ranking.csv`.
+
+## Scores against the radiograph
+
+The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing side, with the three-phase line pinned on the wire at that neck and a gas cavity in the wake. The score is out of 10: trailing height (2), trailing crest above the leading crest (2), wire line pinned at the neck (3), wake behind the wire (2), a closure (1). A point for the wake still stands when the cavity is off the center plane; the note says so. Figures are `results/calibration/taosun03/<tag>_vs_radiograph.png`.
+
+| tag | t | score | trail / lead | wire line | cavity | what it shows |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal37 | 0.25 s | 5 | 1.30 / 1.30 mm | 0.99–1.45 mm, 12/12 pinned | open, 3.39 mm³, centre y = 0.97 mm | Steep plate window did not hold. Not continued. |
+
+cal37 uses the cal08 beams with a plate window of 150°/170° and force factor 10. At 0.25 s the centerline crests are equal. The wire line sits one cell above that crest and is fully pinned. The molten plate line is entirely receding, and its mean angle is 47°, so the 150° floor is not what shapes the foot. The open cavity is downstream of the wire and off the center plane. Lack-of-fusion cells of about 0.15–0.26 mm flicker on and off through the run; none is locked at 0.25 s, and there is no closure. Travel is 1.0 mm, shorter than the pool. Comparison: `cal37_vs_radiograph.png`.
+
+The other screens and cal31 are still running, one rank each, `nice -n 10`, 27 ranks after cal37 released its slot. At mid-run (about 0.20–0.25 s) cal34 (60°/140°) and cal33 (75°/160°) hold the wire line on the flank with the trailing crest above the leading crest. cal32 (45°/120°) has let the bottom of the line fall to about 0.23 mm. Those three are scored when they reach their end times, and the top of that set is continued.
