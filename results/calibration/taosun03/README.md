@@ -78,15 +78,18 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal49 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 13/16 pinned | open, 3.53 mm³, centre y = 1.01 mm | Tight 15°/50° window, no sector. Not continued. |
 | cal52 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 11/12 pinned | open, 3.45 mm³, centre y = 0.99 mm | Wire gap 0.02 mm. Not continued. |
 | cal55 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.45 mm, 9/11 pinned | open, 3.49 mm³, centre y = 0.97 mm | Steeper rear beam. Not continued. |
+| cal53 | 0.30 s | 7 | 1.61 / 1.30 mm | 0.84–1.61 mm, 8/8 pinned | open, 2.63 mm³, centre y = 1.03 mm | Feed 32 mm/s. Lead rises with the trail. Not continued. |
 | cal46 | 0.30 s | 6 | 1.45 / 0.99 mm | 0.69–1.61 mm, 9/9 pinned | open, 3.34 mm³, centre y = 1.01 mm | Rear aim at the foot. Line slips down. Not continued. |
 | cal32 | 0.30 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 5/9 pinned | open, 3.07 mm³, centre y = 1.02 mm | Narrower window. Continued to 0.70 s. |
 | cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
 | cal39 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 8/13 pinned | open, 3.17 mm³, centre y = 1.02 mm | Wide 90°/170° window. Foot pore, not a neck. Not continued. |
 | cal37 | 0.25 s | 5 | 1.30 / 1.30 mm | 0.99–1.45 mm, 12/12 pinned | open, 3.39 mm³, centre y = 0.97 mm | Steep plate window did not hold. Not continued. |
+| cal42 | 0.32 s | 5 | 1.30 / 1.30 mm | 0.84–1.45 mm, 10/10 pinned | open, 2.18 mm³, centre y = 1.06 mm | Feed 28 mm/s. Crests equal. Not continued. |
 | cal41 | 0.28 s | 4 | 1.30 / 1.30 mm | 1.30–1.45 mm, 1/7 pinned | open, 3.40 mm³, centre y = 0.97 mm | Wide 100°/165° window. Line mostly mobile. Not continued. |
 | cal50 | 0.28 s | 4 | 1.15 / 1.15 mm | 1.15–1.45 mm, 6/9 pinned | open, 3.36 mm³, centre y = 0.99 mm | 60°/140° only within 45° of +x. Crests equal. Not continued. |
 | cal57 | 0.28 s | 4 | 1.15 / 1.30 mm | 1.15–1.45 mm, 7/10 pinned | open, 3.28 mm³, centre y = 0.98 mm | Uniform 45°/110° window. Leading crest higher. Not continued. |
 | cal45 | 0.28 s | 3 | 1.30 / 1.30 mm | 1.15–1.76 mm, 7/9 pinned | open, 3.88 mm³, centre y = 0.99 mm | Rear aim at z = 0.95 mm lifts the line above a flat crest. Not continued. |
+| cal44 | 0.36 s | 2 | 0.99 / 1.30 mm | 1.30–1.45 mm, 11/12 pinned | open, 3.49 mm³, centre y = 0.96 mm | Scan 1.5 mm/s with feed cut to 14 mm/s. Leading crest higher. Not continued. |
 | cal33 | 0.30 s | 2 | 0.84 / 1.30 mm | 1.30–1.45 mm, 3/9 pinned | open, 3.28 mm³, centre y = 0.98 mm | Wide window dropped the trailing crest. Not continued. |
 
 cal36 and cal35 both reach a trailing crest of 1.76 mm, which is one cell layer on this mesh, and both pin the wire line on that crest. They get there by different levers, and neither has a closed cavity.
@@ -94,6 +97,8 @@ cal36 and cal35 both reach a trailing crest of 1.76 mm, which is one cell layer 
 cal43 drops the front spots to 50 W and puts 650 W in the rear spot, at scan 3 mm/s and feed 18 mm/s. At 0.32 s the trailing crest is 1.61 mm and the leading crest is 0.99 mm, the lowest leading crest of the finished set. The wire line is pinned on 9 of 11 cells from 0.84 mm to 1.76 mm. The cavity is open and off the center plane. Three pinch-offs did not stay. It is continued to 0.80 s. Comparison: `cal43_vs_radiograph.png`.
 
 Aiming that kind of rear-heavy beam at the foot instead (cal46, aim z = 0.30 mm, 80+80+520 W) also keeps the leading crest at 0.99 mm, but the wire line reaches down to 0.69 mm, so the neck is not held. A 0.02 mm wire gap (cal52) and a steeper rear inclination (cal55, −48°) stay on the 1.45 mm crest. Those three are not continued.
+
+More wire at the cal08 heat does not by itself make the trailing bulb. Feed 32 mm/s (cal53) raises the trail to 1.61 mm and the lead to 1.30 mm, with the line fully pinned and eight pinch-offs that do not stay. Feed 28 mm/s (cal42) leaves equal 1.30 mm crests. Scan 1.5 mm/s with the feed cut to 14 mm/s (cal44) puts the crest on the leading side, 1.30 mm against 0.99 mm, and locks a 0.34 mm lack-of-fusion pore in the plate at z ≈ −0.08 mm. The slow scan that did raise a trailing crest is cal35, which kept the feed near 18 mm/s and moved power rearward. cal42, cal44 and cal53 are not continued.
 
 cal36 puts 700 W in the rear spot and 100 W in each front spot, at scan 3 mm/s and feed 20 mm/s, with the plain 30°/90° wire window. At 0.36 s the leading crest is only 1.15 mm, so the trail stands 0.61 mm above it. The wire line is pinned on 8 of 9 cells and its top is the crest. The cavity is open and centred at y = 1.04 mm. Four pinch-offs were single mobile cells; none was locked, and there is no closure. One of those cells sat near the center plane (y ≈ 0.07 mm) and then vanished. The molten plate line is entirely receding at a mean angle of 64°. Travel is 1.1 mm. It is continued to 0.80 s. Comparison: `cal36_vs_radiograph.png`.
 
