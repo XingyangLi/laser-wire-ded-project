@@ -97,6 +97,18 @@ Verdict: scaling the Young force and switching Marangoni off does not change the
 
 `launch_cal06.sh` was stopped at t = 0.10 s. The pool was only 1.0 mm wide and Tmax was 2785 K, but the rear beam (axis hit z ≈ 1.2 mm) had already put the wire line at z = 2.14 mm and the plate section was ~0.03 mm². The liquid was a band on the wire, not a bead on the plate.
 
-## cal07 — same idea, heat at the foot
+## cal07 — heat at the foot, stopped at 0.40 s
 
-Running. Rear axis meets the wire at z ≈ 0.39 mm and the inner ray at z ≈ 0.87 mm; the outer ray hits the plate at x ≈ 0.56 mm. Front spots land at r ≈ 0.6 mm. Powers 300 + 300 + 400 W, spots 0.30 mm. Scan 3 mm/s, feed 22 mm/s (steady area 5.8 mm²). Marangoni off, force factor 4, plate window 70°/125°. End time 0.40 s. See `launch_cal07.sh`.
+Command: `launch_cal07.sh`. Coarse mesh, 24 ranks. Wall clock 2157 s for 0.40 s.
+
+Rear axis meets the wire at z ≈ 0.39 mm and the inner ray at z ≈ 0.87 mm; the outer ray hits the plate at x ≈ 0.56 mm. Front spots land at r ≈ 0.6 mm. Powers 300 + 300 + 400 W, spots 0.30 mm. Scan 3 mm/s, feed 22 mm/s (steady area 5.8 mm²). Marangoni off, force factor 4, plate window 70°/125°.
+
+At 0.40 s the centerline metal (cold wire removed) peaks at 1.45 mm on both sides of the wire, at |x| ≈ 0.6 mm, then falls to 0.5 mm by |x| ≈ 2 mm. That is a mound with a skirt, the same height on the leading and trailing sides, not a round trailing cap that meets the plate steeply. The pool is 3.0 mm by 2.2 mm and still widening (1.0 mm at 0.08 s, 1.6 mm at 0.16 s, 2.2 mm at 0.36 s). Plate angle 53°, with 26 of 32 molten plate-line cells receding, so the 70° floor is still not held. The wire line is fully pinned at z = 1.30–1.61 mm. Tmax 2914 K.
+
+Travel since the feed started is 1.05 mm, shorter than the pool, so the probe area (0.04 mm²) is not a track section. The mirrored metal volume rose by 6.1 mm³, which matches the 6.0 mm³ of wire fed in 0.35 s: the wire is entering the pool, and it has not yet been laid down as a bead. The open-cavity report is 2.66 mm³ centred at y = 1.11 mm, beside the wire. One mobile gas cell sits near the center plane at (x, y, z) ≈ (0.90, 0.07, 0.99) mm; that is a single 150 µm cell, not a notch under the contact line. Figures: `cal07_side_alpha_T.png`, `cal07_projection.png`, `cal07_iso_alpha.png`.
+
+Verdict: tallest compact mound so far, and the fed wire is in the pool. The skirt is still spreading and the two sides are equal. Continuing these beams would widen the fillet. Not a radiograph match.
+
+## cal08 — wire-flank heat, slower scan, steep plate window
+
+Running. `launch_cal08.sh`. The plate skirt in cal04–cal07 follows the heated footprint; the Young force does not pull it back. This run puts almost all of the rear spot on the trailing flank (axis z ≈ 0.88 mm, 1/e² ray z ≈ 1.22 mm, outer ray z ≈ 0.55 mm, so the 2w wing is the only part above 1.5 mm) and lets the front spots only kiss the plate at r ≈ 0.56–0.82 mm. Powers 160 + 160 + 420 W, spots 0.26 mm. Scan 4 mm/s, feed 20 mm/s, steady area 3.93 mm², so a melted wire has time to conduct through the 0.5 mm core and the track target is the full wire section. Plate window 110°/150°, force factor 6, wire window 30°/90°, Marangoni off. End time 1.50 s.
