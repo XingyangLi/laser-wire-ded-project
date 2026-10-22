@@ -54,6 +54,8 @@ QUESTIONS = {
     "cal63": "cal36 at wire-refine 2",
     "cal64": "cal36 with a 0.40 mm rear spot",
     "cal65": "700 W, 60/140 window, scan 2 mm/s",
+    "cal66": "700 W with 30/100 trail window",
+    "cal67": "700 W, rear aim z 0.35 mm",
 }
 
 
