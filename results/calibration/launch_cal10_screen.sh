@@ -2,6 +2,7 @@
 # Short screen of the trailing wire window on the cal08 beams.
 # Front of the wire stays 25/70. The trailing half is 60/140, blended over 30 deg.
 # Coarse mesh, 0.15 s. Not the refined run.
+# TaoSun-01 is shared: 12 ranks and a lower priority, never 24.
 exec > >(tee -a /home/xingyang/laser-wire-ded-project/results/calibration/cal10_screen_launch.log) 2>&1
 set -euo pipefail
 ROOT=/home/xingyang/laser-wire-ded-project
@@ -27,7 +28,7 @@ python3 generate_case.py --case "$CASE" --laser-config triple \
     --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
     --beam-aim-radii 0.60e-3,0.60e-3,0.24e-3 \
     --beam-aim-heights 0.08e-3,0.08e-3,0.55e-3 \
-    --end-time 0.15 --write-interval 0.075 --np 24 --laser-ramp 2e-3 \
+    --end-time 0.15 --write-interval 0.075 --np 12 --laser-ramp 2e-3 \
     --contact-pinning --pin-wire --porosity --wire-cavity \
     --theta-receding 110 --theta-advancing 150 \
     --theta-receding-wire 25 --theta-advancing-wire 70 \
@@ -40,6 +41,6 @@ python3 generate_case.py --case "$CASE" --laser-config triple \
     --rigid-substrate 100
 cd "$CASE"
 ./Allclean >/dev/null 2>&1 || true
-./Allrun 24
+nice -n 10 ./Allrun 12
 python3 "$ROOT/scripts/quantify_pores.py" --case "$CASE" || true
 echo "CAL10_SCREEN_DONE"

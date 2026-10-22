@@ -129,6 +129,8 @@ At 0.31 s the pool was 2.0 mm by 1.6 mm, Tmax about 2860 K, and the probed area 
 
 Stopped so the trailing face of the wire can be given its own contact window. Not a radiograph match.
 
+From 1:20 PM CT on 22 Oct 2026 the workstation is shared. Every calibration run uses at most 12 MPI ranks and `nice -n 10`. The 24-rank refined rate (cal09) was about 1.5×10⁻⁵ simulated seconds per wall second, so 12 ranks are planned at about half of that, near 8×10⁻⁶ s/s: 0.10 s of refined time is a little over 3 h, and 0.30 s is about 11 h. After cal09 about 9 h of the 24 h budget remained, so the refined end time stays at or under 0.30 s and is cut further if the measured 12-rank rate would run past that. A coarse step that took about 15 min for 0.15 s on 24 ranks takes about half an hour on 12.
+
 ## cal10 — trailing wire window
 
-Screen first (`launch_cal10_screen.sh`), then the refined run (`launch_cal10.sh`) if the line stays on the wire. Same beams and speeds as cal08. Front of the wire 25°/70°, trailing half 60°/140°, cosine blend 30°, head frame. Plate window still 110°/150°, Marangoni off. The refined mesh is `--wire-refine 2` (about 38 µm in x and y).
+Screen first (`launch_cal10_screen.sh`), then the refined run (`launch_cal10.sh`) if the line stays on the wire. Same beams and speeds as cal08. Front of the wire 25°/70°, trailing half 60°/140°, cosine blend 30°, head frame. Plate window still 110°/150°, Marangoni off. The refined mesh is `--wire-refine 2` (about 38 µm in x and y). The screen ran on 24 ranks until `stopAt writeNow` at t = 0.123 s (the line was still at z = 1.15 mm, not climbing the wire). It continues from that written time on 12 ranks.
