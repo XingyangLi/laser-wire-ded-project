@@ -93,6 +93,10 @@ The apparent plate angle is still 49°, with 36 of 37 molten plate-line cells re
 
 Verdict: scaling the Young force and switching Marangoni off does not change the macroscopic foot. On this mesh the reported angle stays near 50° while the pool edge follows the heated footprint. The next run shrinks that footprint onto the wire.
 
-## cal06 — tight spots on the wire, slower feed and scan
+## cal06 — tight spots, stopped early
 
-Running. Spots 0.26 mm, powers 220 + 220 + 320 W, aimed so the front axis meets the wire at z ≈ 0.4 mm and the rear axis at z ≈ 1.2 mm. Scan 3 mm/s, wire feed 20 mm/s (steady area 5.2 mm²). Same steep angle, Marangoni off, force factor 4. End time 0.32 s. See `launch_cal06.sh`.
+`launch_cal06.sh` was stopped at t = 0.10 s. The pool was only 1.0 mm wide and Tmax was 2785 K, but the rear beam (axis hit z ≈ 1.2 mm) had already put the wire line at z = 2.14 mm and the plate section was ~0.03 mm². The liquid was a band on the wire, not a bead on the plate.
+
+## cal07 — same idea, heat at the foot
+
+Running. Rear axis meets the wire at z ≈ 0.39 mm and the inner ray at z ≈ 0.87 mm; the outer ray hits the plate at x ≈ 0.56 mm. Front spots land at r ≈ 0.6 mm. Powers 300 + 300 + 400 W, spots 0.30 mm. Scan 3 mm/s, feed 22 mm/s (steady area 5.8 mm²). Marangoni off, force factor 4, plate window 70°/125°. End time 0.40 s. See `launch_cal07.sh`.

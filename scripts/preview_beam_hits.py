@@ -48,12 +48,12 @@ def main():
     # shadowed hit is low on the wire. "inner"/"outer" shift the axis by one
     # 1/e^2 radius toward / away from the wire.
     rows = [
-        ("cal06 front", 18, -24, 0.42e-3, 0.20e-3, 0.26e-3),
-        ("cal06 front inner", 18, -24, 0.16e-3, 0.20e-3, 0.26e-3),
-        ("cal06 front outer", 18, -24, 0.68e-3, 0.20e-3, 0.26e-3),
-        ("cal06 rear", 180, -22, 0.20e-3, 0.45e-3, 0.26e-3),
-        ("cal06 rear inner", 180, -22, -0.06e-3, 0.45e-3, 0.26e-3),
-        ("cal06 rear outer", 180, -22, 0.46e-3, 0.45e-3, 0.26e-3),
+        ("cal07 front", 20, -14, 0.62e-3, 0.10e-3, 0.30e-3),
+        ("cal07 front inner", 20, -14, 0.32e-3, 0.10e-3, 0.30e-3),
+        ("cal07 front outer", 20, -14, 0.92e-3, 0.10e-3, 0.30e-3),
+        ("cal07 rear", 180, -32, 0.38e-3, 0.20e-3, 0.30e-3),
+        ("cal07 rear inner", 180, -32, 0.08e-3, 0.20e-3, 0.30e-3),
+        ("cal07 rear outer", 180, -32, 0.68e-3, 0.20e-3, 0.30e-3),
     ]
     for name, az, th, ar, azh, w in rows:
         trace(name, az, th, ar, azh, w)
