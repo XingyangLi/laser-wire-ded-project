@@ -300,6 +300,9 @@ def build_parser():
       help="contact-line pinning: receding angle through the metal [deg] (default 20)")
     a("--theta-advancing", type=float, default=90.0,
       help="contact-line pinning: advancing angle through the metal [deg] (default 90)")
+    a("--contact-force-factor", type=float, default=1.0,
+      help="scale on the Young force outside the contact-angle window (default 1). "
+           "The force is still capped at 2*sigma/h^2")
     a("--pin-wire", action="store_true",
       help="with --contact-pinning: also pin the melt/argon/unmelted-wire triple line, "
            "with its own hysteresis window. Default off, so the feed is not a wall "
@@ -1705,7 +1708,7 @@ statistics
             "    flSolid         0.20;    // solid support: metal below this\n"
             "    Kpin            1e7;     // kg/m3/s\n"
             "    gradMin         0.25;    // |grad alpha| * dx above this is an interface cell\n"
-            "    forceFactor     1;       // scale of the Young force outside the window\n"
+            f"    forceFactor     {f(a.contact_force_factor)};   // scale of the Young force outside the window\n"
             "    zSubstrate      0;\n"
             f"    interval        {every};\n"
             + angle_table +

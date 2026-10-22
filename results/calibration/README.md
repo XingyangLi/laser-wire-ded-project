@@ -73,8 +73,18 @@ At 0.70 s the solidified section is h = 1.08 mm, w = 2.2 mm, area 2.43 mm² (the
 
 This is the reference. It has the dome, the trailing pile-up, and a pinned line at the neck. It does not have a closed cavity under the bead, and the track has not yet taken up the full wire cross-section. Comparison: `cal03b_vs_radiograph.png`. Fields: `cal03b_side_alpha_T.png`, `cal03b_projection.png`, `cal03b_iso_alpha.png`.
 
-Repeat the run with:
+Repeat that cal03 run with `./results/calibration/launch_cal03.sh`. It is not a radiograph match: the bead is a fillet, the section is short of the fed area, and there is no gas pocket under the contact line.
 
-```bash
-./results/calibration/launch_cal03.sh
-```
+## cal04 — steep plate angle, slower scan
+
+Command: `launch_cal04.sh`. Coarse mesh, 33611 cells, 24 ranks. Wall clock 1812 s for 0.36 s.
+
+Plate window 70°/125°, wire window 20°/150°. Scan 4 mm/s (steady area 5.89 mm²), powers 420 + 420 + 680 W. Rear axis meets the wire at z ≈ 0.85 mm.
+
+At 0.36 s the apparent plate angle is 50° and 41 of 44 molten plate-line cells are receding, so the 70° floor is not being held. The pool is 3.3 mm by 3.1 mm. Crests are 1.15 mm trailing and 1.30 mm leading. The wire line is pinned at z = 1.30–1.61 mm. The section at the pool tail is 0.21 mm²; travel is only 1.4 mm, shorter than the pool, so this is not quasi-steady. Tmax 2760 K. Open cavity 2.4 mm³. Figures: `cal04_side_alpha_T.png`, `cal04_projection.png`, `cal04_iso_alpha.png`.
+
+Verdict: still a wide shallow bead. The Young force at factor 1 does not pull the angle up to 70° while Marangoni is on.
+
+## cal05 — Marangoni off, stronger Young force
+
+Running. Same beams, scan and angles as cal04. `--no-marangoni` and `--contact-force-factor 4`. End time 0.30 s. See `launch_cal05.sh`.
