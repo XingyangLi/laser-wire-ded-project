@@ -40,3 +40,9 @@ Screens are coarse (150 µm), one rank each, all six together. A 10-rank trial o
 | cal31 | does the neck resolve | `--wire-refine 2` (57 014 cells, 38 µm in x,y) | cal08, no sector | one rank. A probe gave 7.4×10⁻⁶ s/s, so 0.40 s is about 15 h. Four ranks were no faster | 0.40 s |
 
 60°/140° on the refined mesh is cal10 on TaoSun-01 and is not run here.
+
+## Filling the 32 cores
+
+One rank is faster than 10 on the coarse mesh, so the cores are filled with more runs rather than more ranks on one run. cal38–cal41 extend the trailing-angle sweep (20/90, 30/100, 90/170, 100/165). cal42–cal47 change the dome: more feed, rear-heavy power, a slower scan, a higher flank hit, a foot hit, and a milder plate window. cal48 turns Marangoni back on. cal49 pins the wire with a tight 15°/50° window. Each is one rank at `nice -n 10`.
+
+cal31 stayed on one rank because a geometric 4-rank split of the refined mesh was no faster (the wire box lands on one rank). A Scotch split is timed separately (`probe_cal31_scotch.sh`). If 4 or 8 ranks are more than 1.5× faster once the mesh exists, cal31 is restarted from its latest time with `resume_cal31.sh`.
