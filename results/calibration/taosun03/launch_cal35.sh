@@ -6,7 +6,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"
 exec > >(tee -a "$DIR/cal35_launch.log") 2>&1
 set -euo pipefail
 source "$DIR/lib.sh"
-NP=10
+NP=1
 tao_acquire "$NP"
 trap 'tao_release '"$NP" EXIT
 tao_build

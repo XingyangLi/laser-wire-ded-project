@@ -1,6 +1,7 @@
 #!/bin/bash
-# Coarse screens, three at a time, then stop. The refined cal31 run is
-# launched separately so it can take a larger share of the 32-core cap.
+# Coarse screens together. One rank each: on this 35k-cell mesh a 10-rank
+# run spent the step in MPI (~1.8 s/step) and one rank does ~0.24 s/step.
+# Six ranks in total, under the 32-core cap. cal31 is launched separately.
 DIR0="$(cd "$(dirname "$0")" && pwd)"
 exec > >(tee -a "$DIR0/screens_launch.log") 2>&1
 set -euo pipefail
@@ -31,6 +32,7 @@ run_batch() {
     fi
 }
 
-run_batch BATCH1 "$DIR/launch_cal32.sh" "$DIR/launch_cal33.sh" "$DIR/launch_cal34.sh"
-run_batch BATCH2 "$DIR/launch_cal35.sh" "$DIR/launch_cal36.sh" "$DIR/launch_cal37.sh"
+run_batch SCREENS \
+    "$DIR/launch_cal32.sh" "$DIR/launch_cal33.sh" "$DIR/launch_cal34.sh" \
+    "$DIR/launch_cal35.sh" "$DIR/launch_cal36.sh" "$DIR/launch_cal37.sh"
 echo "SCREENS_DONE $(date --iso-8601=seconds)"

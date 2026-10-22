@@ -27,7 +27,7 @@ cal08 is the best shape so far: flank-heated 160+160+420 W spots, scan 4 mm/s, f
 
 ## Runs from this machine
 
-Screens are coarse (150 µm), 10 ranks each, three at a time (30 ranks). Long runs come after the screens.
+Screens are coarse (150 µm), one rank each, all six together. A 10-rank trial on this mesh spent about 90% of each step in MPI (about 1.8 s/step, 1.5×10⁻⁵ simulated seconds per wall second). One rank does about 0.24 s/step (1.1×10⁻⁴ s/s), so 0.30 s of coarse time is about 45 minutes. Six ranks stay inside the 32-core cap. Long runs come after the screens, on one rank unless a refined-mesh timing says otherwise.
 
 | tag | question | mesh | angles (plate, wire front, wire trail) | other change from cal08 | end |
 | --- | --- | --- | --- | --- | --- |

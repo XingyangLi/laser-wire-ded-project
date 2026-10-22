@@ -1,11 +1,11 @@
 #!/bin/bash
 # cal32. Trailing wire window 45/120 on the cal08 beams. Coarse screen.
-# Front of the wire stays 25/70. Three screens share 30 of the 32-core cap.
+# Front of the wire stays 25/70. One rank: 10 ranks were slower on this mesh.
 DIR="$(cd "$(dirname "$0")" && pwd)"
 exec > >(tee -a "$DIR/cal32_launch.log") 2>&1
 set -euo pipefail
 source "$DIR/lib.sh"
-NP=10
+NP=1
 tao_acquire "$NP"
 trap 'tao_release '"$NP" EXIT
 tao_build
