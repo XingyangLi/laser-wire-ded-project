@@ -59,6 +59,14 @@ QUESTIONS = {
     "cal68": "700 W with feed 32 mm/s",
     "cal69": "650 W rear spot with feed 28 mm/s",
     "cal70": "650 W rear spot with 60/140 window",
+    "cal71": "700 W on a full-width mesh",
+    "cal72": "650 W rear spot at scan 2 mm/s",
+    "cal73": "powers 25/25/700",
+    "cal74": "700 W with a 0.18 mm rear spot",
+    "cal75": "700 W, rear aim z 0.70 mm",
+    "cal76": "650 W rear spot with 30/100 window",
+    "cal77": "700 W, rear inclination -28 deg",
+    "cal78": "700 W with wire window 15/50",
 }
 
 
@@ -266,7 +274,7 @@ def score(r):
 
 
 def main(argv):
-    tags = argv[1:] or [f"cal{i}" for i in range(31, 59)]
+    tags = argv[1:] or [f"cal{i}" for i in range(31, 90)]
     recs = []
     for tag in tags:
         case = CASES / f"wire_cavity_{tag}"
