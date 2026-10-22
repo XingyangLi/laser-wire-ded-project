@@ -52,6 +52,8 @@ QUESTIONS = {
     "cal61": "60/140 window with cal36 power",
     "cal62": "cal36 powers at scan 2 mm/s",
     "cal63": "cal36 at wire-refine 2",
+    "cal64": "cal36 with a 0.40 mm rear spot",
+    "cal65": "700 W, 60/140 window, scan 2 mm/s",
 }
 
 
