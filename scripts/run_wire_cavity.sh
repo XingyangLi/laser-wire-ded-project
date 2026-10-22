@@ -8,6 +8,7 @@
 #   ./scripts/run_wire_cavity.sh --oxygen-ppm 100      # Sahoo-Belton sigma and oxygen angles
 #   ./scripts/run_wire_cavity.sh --smoke --oxygen-ppm 10
 #   ./scripts/run_wire_cavity.sh --wire-refine 3 --wire-refine-z   # ~19 um box around the wire
+#   ./scripts/run_wire_cavity.sh --wire-sector                     # wider pin on the trailing wire
 #
 # --oxygen-ppm writes cases/wire_cavity_ox<ppm> (or cases/wire_cavity_smoke_ox<ppm>).
 # Without it the case is cases/wire_cavity and the linear sigma(T) model is unchanged.
@@ -29,6 +30,11 @@ OXYGEN=""
 WIRE_REFINE=""
 REFINE_Z=0
 REFINE_HALF=""
+WIRE_SECTOR=0
+TRAIL_R=""
+TRAIL_A=""
+SECTOR_HALF=""
+SECTOR_BLEND=""
 CASE_DIR=""
 END_TIME=""
 WRITE_IV="0.02"
@@ -49,6 +55,11 @@ Three-laser vertical-wire case: source OpenFOAM.com, build, generate, run, summa
 --wire-refine N  halve the wire box N times (x,y). 3 levels on 150 um ~ 19 um
 --wire-refine-z  also halve z (isotropic neck). Needs --wire-refine
 --refine-halfwidth M   half-width of that box [m] (default wire radius + 0.3 mm)
+--wire-sector    wider hysteresis on the trailing (+x) side of the wire
+--theta-receding-wire-trail DEG    trailing receding angle (default 60)
+--theta-advancing-wire-trail DEG   trailing advancing angle (default 140)
+--wire-sector-half-angle DEG       half-angle about +x (default 90)
+--wire-sector-blend DEG            cosine blend width (default 30)
 --case DIR       write this case instead of the default directory
 --end-time S     stop at this time [s] instead of track-length/scan-speed
 --write-interval S   field and side-plane write interval [s] (default 0.02)
@@ -65,6 +76,11 @@ while [[ $# -gt 0 ]]; do
         --wire-refine) WIRE_REFINE="${2:?--wire-refine needs a level count}"; shift 2 ;;
         --wire-refine-z) REFINE_Z=1; shift ;;
         --refine-halfwidth) REFINE_HALF="${2:?--refine-halfwidth needs a length in metres}"; shift 2 ;;
+        --wire-sector) WIRE_SECTOR=1; shift ;;
+        --theta-receding-wire-trail) TRAIL_R="${2:?--theta-receding-wire-trail needs degrees}"; WIRE_SECTOR=1; shift 2 ;;
+        --theta-advancing-wire-trail) TRAIL_A="${2:?--theta-advancing-wire-trail needs degrees}"; WIRE_SECTOR=1; shift 2 ;;
+        --wire-sector-half-angle) SECTOR_HALF="${2:?--wire-sector-half-angle needs degrees}"; WIRE_SECTOR=1; shift 2 ;;
+        --wire-sector-blend) SECTOR_BLEND="${2:?--wire-sector-blend needs degrees}"; WIRE_SECTOR=1; shift 2 ;;
         --case) CASE_DIR="${2:?--case needs a directory}"; shift 2 ;;
         --end-time) END_TIME="${2:?--end-time needs a time in seconds}"; shift 2 ;;
         --write-interval) WRITE_IV="${2:?--write-interval needs a time in seconds}"; shift 2 ;;
@@ -110,6 +126,24 @@ if [[ "$REFINE_Z" == 1 ]]; then
 fi
 if [[ -n "$REFINE_HALF" ]]; then
     EXTRA+=(--refine-halfwidth "$REFINE_HALF")
+fi
+num_ok() { [[ "$1" =~ ^[0-9]+([.][0-9]+)?$ ]]; }
+if [[ "$WIRE_SECTOR" == 1 ]]; then
+    TRAIL_R="${TRAIL_R:-60}"
+    TRAIL_A="${TRAIL_A:-140}"
+    SECTOR_HALF="${SECTOR_HALF:-90}"
+    SECTOR_BLEND="${SECTOR_BLEND:-30}"
+    if ! num_ok "$TRAIL_R" || ! num_ok "$TRAIL_A" || ! num_ok "$SECTOR_HALF" || ! num_ok "$SECTOR_BLEND"; then
+        echo "--wire-sector angles must be non-negative numbers" >&2
+        exit 1
+    fi
+    EXTRA+=(
+        --wire-sector
+        --theta-receding-wire-trail "$TRAIL_R"
+        --theta-advancing-wire-trail "$TRAIL_A"
+        --wire-sector-half-angle "$SECTOR_HALF"
+        --wire-sector-blend "$SECTOR_BLEND"
+    )
 fi
 if [[ -n "$END_TIME" ]]; then
     EXTRA+=(--end-time "$END_TIME")

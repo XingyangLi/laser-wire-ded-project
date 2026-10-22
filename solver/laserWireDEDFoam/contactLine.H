@@ -116,8 +116,49 @@
                 sPin = (contactFlFree - flMetal)
                      /max(contactFlFree - contactFlPin, SMALL);
             }
-            const scalar thetaR0 = useWire ? contactThetaRwire : contactThetaR0;
-            const scalar thetaA0 = useWire ? contactThetaAwire : contactThetaA0;
+            // One wire window, unless wireSector blends in a wider trailing one.
+            // psi = 0 on the trailing face (+x), pi on the leading face.
+            scalar thetaRwire = contactThetaRwire;
+            scalar thetaAwire = contactThetaAwire;
+            if (useWire && contactWireSector)
+            {
+                vector trail(1, 0, 0);
+                trail -= (trail & wireUp)*wireUp;
+                const scalar mtTrail = mag(trail);
+                if (mtTrail > SMALL)
+                {
+                    trail /= mtTrail;
+                }
+                const scalar cosPsi =
+                    max(min(nSub & trail, scalar(1)), scalar(-1));
+                const scalar psi = Foam::acos(cosPsi);
+                scalar wTrail = 0;
+                if (contactWireSectorBlend <= SMALL)
+                {
+                    wTrail = psi <= contactWireSectorHalf ? scalar(1) : scalar(0);
+                }
+                else
+                {
+                    const scalar inner =
+                        contactWireSectorHalf - 0.5*contactWireSectorBlend;
+                    const scalar outer =
+                        contactWireSectorHalf + 0.5*contactWireSectorBlend;
+                    if (psi <= inner) wTrail = 1;
+                    else if (psi >= outer) wTrail = 0;
+                    else
+                    {
+                        const scalar tBlend = (psi - inner)/contactWireSectorBlend;
+                        wTrail = 0.5*(1 + Foam::cos(pi*tBlend));
+                    }
+                }
+                thetaRwire =
+                    (1 - wTrail)*contactThetaRwire + wTrail*contactThetaRtrail;
+                thetaAwire =
+                    (1 - wTrail)*contactThetaAwire + wTrail*contactThetaAtrail;
+                if (thetaAwire < thetaRwire) thetaAwire = thetaRwire;
+            }
+            const scalar thetaR0 = useWire ? thetaRwire : contactThetaR0;
+            const scalar thetaA0 = useWire ? thetaAwire : contactThetaA0;
             const scalar thetaR = (1.0 - sPin)*thetaR0;
             const scalar thetaA = (1.0 - sPin)*thetaA0 + sPin*pi;
             const bool pinned = (thetaApp >= thetaR && thetaApp <= thetaA);

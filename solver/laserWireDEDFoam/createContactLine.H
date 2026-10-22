@@ -23,6 +23,13 @@
 // (wireVelocity wire: stuck to a material point of the wire). Freezing the
 // meniscus hands the line to the substrate velocity. Nothing is added to
 // the momentum equation unless enabled = true.
+//
+// wireSector (default false) widens that window on the trailing side of the
+// wire, the +x half that faces the bead trail. It is a stand-in for an oxide
+// film that pins the line there while the front of the wire keeps
+// thetaRecedingWire / thetaAdvancingWire. The two windows are blended with a
+// cosine over wireSectorBlend, centred on wireSectorHalfAngle measured from
+// +x. Off, the wire line uses one window all the way around.
 // ---------------------------------------------------------------------------
 
 const dictionary contactDict(meltProperties.subOrEmptyDict("contactLine"));
@@ -45,6 +52,30 @@ scalar contactThetaRwire =
     contactDict.getOrDefault<scalar>("thetaRecedingWire", 25.0)*contactDeg;
 scalar contactThetaAwire =
     contactDict.getOrDefault<scalar>("thetaAdvancingWire", 70.0)*contactDeg;
+// Trailing-sector window. Absent or wireSector false: one window on the wire.
+const bool contactWireSector =
+    contactPinWire && contactDict.getOrDefault<bool>("wireSector", false);
+const scalar contactThetaRtrail =
+    contactDict.getOrDefault<scalar>("thetaRecedingWireTrail", 60.0)*contactDeg;
+const scalar contactThetaAtrail =
+    contactDict.getOrDefault<scalar>("thetaAdvancingWireTrail", 140.0)*contactDeg;
+const scalar contactWireSectorHalf =
+    contactDict.getOrDefault<scalar>("wireSectorHalfAngle", 90.0)*contactDeg;
+const scalar contactWireSectorBlend =
+    max
+    (
+        contactDict.getOrDefault<scalar>("wireSectorBlend", 30.0),
+        scalar(0)
+    )*contactDeg;
+if (contactWireSector && contactThetaAtrail < contactThetaRtrail)
+{
+    FatalErrorInFunction
+        << "contactLine: thetaAdvancingWireTrail ("
+        << contactThetaAtrail/contactDeg
+        << " deg) is below thetaRecedingWireTrail ("
+        << contactThetaRtrail/contactDeg << " deg)" << nl
+        << exit(FatalError);
+}
 
 // Oxygen / oxide hysteresis. oxygenAngleTable rows are
 // (ppm  thetaReceding  thetaAdvancing  thetaRecedingWire  thetaAdvancingWire)
@@ -210,6 +241,14 @@ if (contactEnabled)
         Info<< nl << "    wire line: thetaR " << contactThetaRwire/contactDeg
             << " deg  thetaA " << contactThetaAwire/contactDeg
             << " deg  velocity " << (contactWireHeadFrame ? "head" : "wire");
+        if (contactWireSector)
+        {
+            Info<< nl << "    trailing sector (+x): thetaR "
+                << contactThetaRtrail/contactDeg
+                << " deg  thetaA " << contactThetaAtrail/contactDeg
+                << " deg  half-angle " << contactWireSectorHalf/contactDeg
+                << " deg  blend " << contactWireSectorBlend/contactDeg << " deg";
+        }
     }
     else
     {

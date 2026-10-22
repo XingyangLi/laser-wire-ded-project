@@ -121,6 +121,14 @@ The open-cavity report is 2.37 mm³ centred at y = 1.15 mm, beside the wire. The
 
 Verdict: the track finally takes the wire, and it is tall and trailing-heavy. It is flatter along the travel direction than the radiograph's round bulb, and the junction cavity is not resolved on the 150 µm mesh.
 
-## cal09 — same beams, 37 µm at the wire
+## cal09 — 37 µm at the wire, stopped early
 
-Running. `launch_cal09.sh`. Same process as cal08 with `--wire-refine 2` (x and y only, about 37 µm in the wire box). z is left coarse: the capillary step follows the smallest edge, and halving z as well would multiply the cell count without a further step-size change. End time 0.50 s, which is when cal08 already had the tall trailing crest. The question is whether a pinch-off at the neck stays closed.
+`launch_cal09.sh` was stopped at t = 0.38 s (SIGTERM). Wall clock about 7.1 h. Same beams as cal08, `--wire-refine 2` (about 38 µm in x and y). The last field write is 0.25 s.
+
+At 0.31 s the pool was 2.0 mm by 1.6 mm, Tmax about 2860 K, and the probed area was still 0.2 mm². The wire line sat at z = 0.84–1.45 mm and was only partly pinned. On the 0.25 s centerline the metal outside the wire reached 0.84 mm on the trailing side and 0.69 mm on the leading side, with the foot back at x ≈ 1.3 mm. That is a small steep mound, not yet cal08's tall track, and the mirrored metal volume had risen only about 2 mm³. The open cavity was a few mm³ and still off the center plane. Figure: `cal09_t025_side_alpha_T.png`.
+
+Stopped so the trailing face of the wire can be given its own contact window. Not a radiograph match.
+
+## cal10 — trailing wire window
+
+Screen first (`launch_cal10_screen.sh`), then the refined run (`launch_cal10.sh`) if the line stays on the wire. Same beams and speeds as cal08. Front of the wire 25°/70°, trailing half 60°/140°, cosine blend 30°, head frame. Plate window still 110°/150°, Marangoni off. The refined mesh is `--wire-refine 2` (about 38 µm in x and y).

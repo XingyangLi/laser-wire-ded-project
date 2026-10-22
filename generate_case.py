@@ -308,9 +308,24 @@ def build_parser():
            "with its own hysteresis window. Default off, so the feed is not a wall "
            "and existing single-wire cases are unchanged")
     a("--theta-receding-wire", type=float, default=25.0,
-      help="wire contact line: receding angle through the metal [deg] (default 25)")
+      help="wire contact line: receding angle through the metal [deg] (default 25). "
+           "With --wire-sector this is the front-side window")
     a("--theta-advancing-wire", type=float, default=70.0,
-      help="wire contact line: advancing angle through the metal [deg] (default 70)")
+      help="wire contact line: advancing angle through the metal [deg] (default 70). "
+           "With --wire-sector this is the front-side window")
+    a("--wire-sector", action="store_true",
+      help="with --pin-wire: wider hysteresis on the trailing side of the wire (+x, "
+           "the bead trail), blended into the front window. Default off, so the wire "
+           "line keeps one window all the way around and existing cases are unchanged")
+    a("--theta-receding-wire-trail", type=float, default=60.0,
+      help="trailing wire sector: receding angle [deg] (default 60, used with --wire-sector)")
+    a("--theta-advancing-wire-trail", type=float, default=140.0,
+      help="trailing wire sector: advancing angle [deg] (default 140, used with --wire-sector)")
+    a("--wire-sector-half-angle", type=float, default=90.0,
+      help="trailing sector half-angle about +x [deg] (default 90: the trailing half of the wire)")
+    a("--wire-sector-blend", type=float, default=30.0,
+      help="full width of the cosine blend between the trailing and front windows [deg] "
+           "(default 30)")
     a("--oxygen-ppm", type=float, default=None,
       help="uniform dissolved oxygen in the melt [ppm by weight], a stand-in for "
            "the chamber set-point. Turns on Sahoo-Belton sigma(T, a_O) and, with "
@@ -1658,6 +1673,8 @@ statistics
     def contact_line_block(self):
         a = self.a
         if not getattr(a, "contact_pinning", False):
+            if getattr(a, "wire_sector", False):
+                raise SystemExit("--wire-sector needs --contact-pinning and --pin-wire")
             return ""
         every = 1 if a.end_time <= 0.05 else 10
         pin_wire = bool(getattr(a, "pin_wire", False))
@@ -1678,17 +1695,38 @@ statistics
                 "    );\n"
             )
         if pin_wire:
+            sector_txt = ""
+            if getattr(a, "wire_sector", False):
+                if a.theta_advancing_wire_trail < a.theta_receding_wire_trail:
+                    raise SystemExit(
+                        "--theta-advancing-wire-trail is below --theta-receding-wire-trail"
+                    )
+                sector_txt = (
+                    "    // Trailing (+x) window, blended into the front window.\n"
+                    "    wireSector      true;\n"
+                    f"    thetaRecedingWireTrail {f(a.theta_receding_wire_trail)};"
+                    "  // deg, trailing side\n"
+                    f"    thetaAdvancingWireTrail {f(a.theta_advancing_wire_trail)};"
+                    "  // deg, trailing side\n"
+                    f"    wireSectorHalfAngle {f(a.wire_sector_half_angle)};"
+                    "  // deg about +x\n"
+                    f"    wireSectorBlend {f(a.wire_sector_blend)};"
+                    "  // deg, cosine blend full width\n"
+                )
             wire_txt = (
                 "    pinWire         true;    // melt/gas/unmelted-wire line, own angles\n"
                 f"    thetaRecedingWire  {f(a.theta_receding_wire)};   // deg, through the metal\n"
                 f"    thetaAdvancingWire {f(a.theta_advancing_wire)};   // deg, through the metal\n"
                 f"    wireVelocity    {a.wire_pin_frame};   // head: kink fixed in the lab frame; "
                 "wire: stuck to the feed\n"
+                + sector_txt
             )
             comment = (
                 "// pinWire: the unmelted wire is a second wall, with its own window.\n"
                 "// wireVelocity head holds that line still while the wire feeds through it.\n"
             )
+        elif getattr(a, "wire_sector", False):
+            raise SystemExit("--wire-sector needs --pin-wire")
         else:
             wire_txt = "    pinWire         false;   // unmelted wire is not a support\n"
             comment = "// Unmelted wire is not a support (pinWire false).\n"
@@ -2245,6 +2283,11 @@ def main(argv=None):
               f" (thetaR {a.theta_receding:.0f} / thetaA {a.theta_advancing:.0f} deg)"
               + (f", wire pin ON (thetaR {a.theta_receding_wire:.0f} / thetaA {a.theta_advancing_wire:.0f} deg, "
                  f"frame {a.wire_pin_frame})" if getattr(a, "pin_wire", False) else "")
+              + (f", trailing wire sector {a.theta_receding_wire_trail:.0f}/"
+                 f"{a.theta_advancing_wire_trail:.0f} deg within "
+                 f"{a.wire_sector_half_angle:.0f} deg of +x "
+                 f"(blend {a.wire_sector_blend:.0f} deg)"
+                 if getattr(a, "wire_sector", False) else "")
               + f", porosity {'ON' if a.porosity else 'off'}"
               + (", wire cavity ON" if getattr(a, "wire_cavity", False) else "")
               + (", pore seed ON" if getattr(a, "pore_seed", False) else "")

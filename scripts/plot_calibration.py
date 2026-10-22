@@ -177,6 +177,36 @@ def parse_cavity(rows):
     }
 
 
+def write_cavity_history(case, out, tag):
+    """Cavity volume versus time, with a mark at each recorded closure."""
+    rows = read_table(case / "postProcessing" / "wireCavity" / "wireCavity.dat")
+    if not rows:
+        return None
+    t, vol = [], []
+    for r in rows:
+        if len(r) < 5:
+            continue
+        t.append(float(r[0]))
+        vol.append(float(r[4]) * 1e9)
+    if not t:
+        return None
+    fig, ax = plt.subplots(figsize=(7.2, 3.4))
+    ax.plot(t, vol, color="C0", lw=1.0)
+    n_close = 0
+    for e in read_table(case / "postProcessing" / "wireCavity" / "events.dat"):
+        if len(e) > 1 and e[1] == "closure":
+            ax.axvline(float(e[0]), color="C3", lw=0.8, alpha=0.8)
+            n_close += 1
+    ax.set_xlabel("t [s]")
+    ax.set_ylabel("cavity volume [mm³]")
+    ax.set_title(f"{tag}: wire-cavity volume ({n_close} closures)")
+    dest = out / f"{tag}_cavity_history.png"
+    fig.savefig(dest, dpi=140, bbox_inches="tight")
+    plt.close(fig)
+    print("wrote", dest)
+    return dest
+
+
 def write_iso(case, out, tag):
     """Iso-surface of alpha.metal = 0.5 from the latest reconstructed time."""
     times = []
@@ -302,6 +332,7 @@ def main():
     cavity = parse_cavity(read_table(case / "postProcessing" / "wireCavity" / "wireCavity.dat"))
     metrics.update(contact)
     metrics.update(cavity)
+    write_cavity_history(case, out, args.tag)
 
     summary = out / f"{args.tag}_metrics.csv"
     with summary.open("w", newline="") as fh:
