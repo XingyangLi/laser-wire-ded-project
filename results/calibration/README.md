@@ -63,4 +63,18 @@ Command: `launch_cal03.sh`. Coarse mesh, 24 ranks, 920 s for 0.20 s.
 
 At 0.20 s the pool is 2.8 mm long and 1.9 mm wide (cal02 had spread to 3.4 mm by 0.48 s). Tmax 2830 K. The wire line is entirely pinned at z = 0.84–0.99 mm, which is the top of the liquid on the centerline. The trailing crest is 0.69 mm and the leading crest is 0.84 mm; the track is too short for the trailing pile-up seen later in cal02. Open cavity 2.1 mm³, depth 0.92 mm, still centred off the center plane. Figures: `cal03_side_alpha_T.png`, `cal03_projection.png`.
 
-The screen has the contact on the crown and a narrower pool, so the same case is continued to 0.70 s (`continue_cal03.sh`).
+The screen has the contact on the crown and a narrower pool, so the same case was continued to 0.70 s (`continue_cal03.sh`, another 2294 s). `launch_cal03.sh` now carries end time 0.70 s so one command repeats the full run.
+
+## Result — cal03 at 0.70 s
+
+Oxygen off. Coarse 150 µm half-domain, 24 ranks. Total wall time about 54 min (920 s to 0.20 s, then 2294 s to 0.70 s).
+
+At 0.70 s the solidified section is h = 1.08 mm, w = 2.2 mm, area 2.43 mm² (the wire-feed steady area is 3.93 mm²). Off the wire the trailing crest is 1.61 mm and the leading crest is 1.15 mm. The wire line is fully pinned at z = 1.15–1.91 mm, which brackets the crest: the bottom of the line meets the bead and the top sits about 0.3 mm above the trailing crest. On the centerline, gas beside the wire occupies z ≈ 1.45–1.91 mm over x ≈ 0.7–2.5 mm, which is the notch above the bead. The cavity report is open, 3.0 mm³, depth 1.84 mm, centred at (x, z) = (0.45, 1.30) mm and y ≈ 1.2 mm, so most of that volume is beside the center plane rather than a closed bubble under the bead. Pool 4.2 mm by 2.5 mm, depth 0, penetration of the section 0.24 mm, Tmax 2714 K. No enclosed pores.
+
+This is the reference. It has the dome, the trailing pile-up, and a pinned line at the neck. It does not have a closed cavity under the bead, and the track has not yet taken up the full wire cross-section. Comparison: `cal03b_vs_radiograph.png`. Fields: `cal03b_side_alpha_T.png`, `cal03b_projection.png`, `cal03b_iso_alpha.png`.
+
+Repeat the run with:
+
+```bash
+./results/calibration/launch_cal03.sh
+```

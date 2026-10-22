@@ -25,7 +25,7 @@ python3 generate_case.py --case "$CASE" --laser-config triple \
     --beam-radii-each 0.32e-3,0.32e-3,0.32e-3 \
     --beam-aim-radii 0.85e-3,0.85e-3,0.32e-3 \
     --beam-aim-heights 0.10e-3,0.10e-3,0.25e-3 \
-    --end-time 0.20 --write-interval 0.05 --np 24 --laser-ramp 2e-3 \
+    --end-time 0.70 --write-interval 0.05 --np 24 --laser-ramp 2e-3 \
     --contact-pinning --pin-wire --porosity --wire-cavity \
     --theta-receding 20 --theta-advancing 90 \
     --theta-receding-wire 25 --theta-advancing-wire 70 \
