@@ -142,3 +142,7 @@ At 0.40 s the centerline metal outside the wire peaks at 1.76 mm just behind the
 The wire line is at z = 0.84–1.91 mm, 6 of 13 cells pinned, one advancing and six receding, mean angle 41°. On the centerline the columns just behind the wire are solid from the plate up to 1.76 mm. The open-cavity report is 3.56 mm³ centred at (0.58, 1.03, 1.14) mm, beside the wire, and the closed volume is zero. The run recorded 169 pinch-offs and no closure. One lack-of-fusion pore is locked, one cell, 0.18 mm, at (x, y, z) ≈ (−0.33, 0.95, 0.23) mm. The plate angle is 64°, with 41 of 42 molten plate-line cells receding.
 
 Verdict: the centerline behind the wire is solid metal. The gas the solver counts is still off the center plane, and no pinch-off stayed closed. The bead is tall on the trailing side and the line reaches that crest, and the mound is short. Comparison: `cal10_vs_radiograph.png`. Not a radiograph match.
+
+## cal11 — continue cal10 to 1.0 s
+
+`continue_cal11.sh` restarts `cases/wire_cavity_cal10` from the written 0.40 s to 1.0 s. Same beams, same 60°/140° trailing window, same 38 µm mesh. 12 ranks, `nice -n 10`. Travel from the feed start to 1.0 s is 3.8 mm, longer than the 2.55 mm pool at 0.40 s, so the trailing section can settle under the pinned line. TaoSun-03's coarse screens (cal31–cal58, best shape so far cal36: 100+100+700 W, scan 3 mm/s, trailing crest 1.76 mm, no sector) are not repeated here.
