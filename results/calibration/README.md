@@ -87,4 +87,12 @@ Verdict: still a wide shallow bead. The Young force at factor 1 does not pull th
 
 ## cal05 — Marangoni off, stronger Young force
 
-Running. Same beams, scan and angles as cal04. `--no-marangoni` and `--contact-force-factor 4`. End time 0.30 s. See `launch_cal05.sh`.
+Command: `launch_cal05.sh`. Same beams, scan and 70°/125° window as cal04, plus `--no-marangoni` and `--contact-force-factor 4`. Wall clock 1697 s for 0.30 s.
+
+The apparent plate angle is still 49°, with 36 of 37 molten plate-line cells receding. The pool is 3.2 mm by 2.8 mm. Crests are about 1.1–1.3 mm. The wire line is pinned at z = 1.15–1.61 mm. Tmax 2935 K. Open cavity 2.6 mm³, still off the center plane. The section at the pool tail is 0.03 mm² because travel (1.0 mm) is shorter than the pool. Figures: `cal05_side_alpha_T.png`, `cal05_projection.png`, `cal05_iso_alpha.png`.
+
+Verdict: scaling the Young force and switching Marangoni off does not change the macroscopic foot. On this mesh the reported angle stays near 50° while the pool edge follows the heated footprint. The next run shrinks that footprint onto the wire.
+
+## cal06 — tight spots on the wire, slower feed and scan
+
+Running. Spots 0.26 mm, powers 220 + 220 + 320 W, aimed so the front axis meets the wire at z ≈ 0.4 mm and the rear axis at z ≈ 1.2 mm. Scan 3 mm/s, wire feed 20 mm/s (steady area 5.2 mm²). Same steep angle, Marangoni off, force factor 4. End time 0.32 s. See `launch_cal06.sh`.
