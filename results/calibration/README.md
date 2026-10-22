@@ -109,6 +109,18 @@ Travel since the feed started is 1.05 mm, shorter than the pool, so the probe ar
 
 Verdict: tallest compact mound so far, and the fed wire is in the pool. The skirt is still spreading and the two sides are equal. Continuing these beams would widen the fillet. Not a radiograph match.
 
-## cal08 — wire-flank heat, slower scan, steep plate window
+## cal08 — flank heat, 4 mm/s, full wire section
 
-Running. `launch_cal08.sh`. The plate skirt in cal04–cal07 follows the heated footprint; the Young force does not pull it back. This run puts almost all of the rear spot on the trailing flank (axis z ≈ 0.88 mm, 1/e² ray z ≈ 1.22 mm, outer ray z ≈ 0.55 mm, so the 2w wing is the only part above 1.5 mm) and lets the front spots only kiss the plate at r ≈ 0.56–0.82 mm. Powers 160 + 160 + 420 W, spots 0.26 mm. Scan 4 mm/s, feed 20 mm/s, steady area 3.93 mm², so a melted wire has time to conduct through the 0.5 mm core and the track target is the full wire section. Plate window 110°/150°, force factor 6, wire window 30°/90°, Marangoni off. End time 1.50 s.
+Command: `launch_cal08.sh`. Coarse mesh, 35264 cells, 24 ranks. Wall clock 2.3 h for 1.50 s.
+
+The rear spot stays on the trailing flank (axis hit z ≈ 0.88 mm, 1/e² ray z ≈ 1.22 mm, outer ray z ≈ 0.55 mm). Front spots only kiss the plate at r ≈ 0.56–0.82 mm. Powers 160 + 160 + 420 W, spots 0.26 mm. Scan 4 mm/s, feed 20 mm/s, steady area 3.93 mm². Plate window 110°/150°, force factor 6, wire window 30°/90°, Marangoni off.
+
+At 1.50 s the probed section is 3.78 mm² against the 3.93 mm² the wire feed should build, so the fed wire is in the track. The pool is 2.85 mm long and 1.61 mm wide, depth 0, Tmax 2901 K. On the centerline the trailing crest is 1.61 mm and the leading crest is 0.84 mm. Behind the wire the track holds about 1.3–1.5 mm out to x ≈ 4 mm, taller than the 1 mm wire, not the low ramp of cal03. The wire line is fully pinned at z = 0.99–1.61 mm, level with that crest. The plate angle is still 53°, and all 22 molten plate-line cells are receding, so the 110° floor is not what holds the foot. The compact beam does.
+
+The open-cavity report is 2.37 mm³ centred at y = 1.15 mm, beside the wire. The y-projection does not show a gas pocket on the center plane. The run recorded 35 pinch-offs and no closure. One lack-of-fusion pore is locked, 0.23 mm, two cells, at (x, y, z) ≈ (1.70, 0.81, 0.54) mm. That is not the notch under the contact line. Comparison: `cal08_vs_radiograph.png`.
+
+Verdict: the track finally takes the wire, and it is tall and trailing-heavy. It is flatter along the travel direction than the radiograph's round bulb, and the junction cavity is not resolved on the 150 µm mesh.
+
+## cal09 — same beams, 37 µm at the wire
+
+Running. `launch_cal09.sh`. Same process as cal08 with `--wire-refine 2` (x and y only, about 37 µm in the wire box). z is left coarse: the capillary step follows the smallest edge, and halving z as well would multiply the cell count without a further step-size change. End time 0.50 s, which is when cal08 already had the tall trailing crest. The question is whether a pinch-off at the neck stays closed.
