@@ -48,6 +48,8 @@ QUESTIONS = {
     "cal56": "force factor 2",
     "cal57": "wire window 45/110",
     "cal58": "front spots 80 W",
+    "cal59": "60/140 window with cal35 section",
+    "cal61": "60/140 window with cal36 power",
 }
 
 
@@ -96,16 +98,23 @@ def as_float(v):
 
 
 def finished(tag):
-    log = CASES / f"wire_cavity_{tag}" / "log.laserWireDEDFoam"
-    cont = CASES / f"wire_cavity_{tag}" / "log.laserWireDEDFoam.continue"
-    for p in (cont, log):
-        if not p.is_file():
-            continue
-        text = p.read_text(errors="replace")
+    case = CASES / f"wire_cavity_{tag}"
+    cont = case / "log.laserWireDEDFoam.continue"
+    log = case / "log.laserWireDEDFoam"
+    if cont.is_file():
+        text = cont.read_text(errors="replace")
         if "FOAM FATAL" in text:
             return "fatal"
         if text.rstrip().endswith("End"):
             return "done"
+        return "continuing"
+    if not log.is_file():
+        return ""
+    text = log.read_text(errors="replace")
+    if "FOAM FATAL" in text:
+        return "fatal"
+    if text.rstrip().endswith("End"):
+        return "done"
     return ""
 
 
@@ -160,6 +169,21 @@ def collect(tag):
         rec["cy_mm"] = fnum(cv, 10) * 1e3
     if rec["cz_mm"] is None and fnum(cv, 11) is not None:
         rec["cz_mm"] = fnum(cv, 11) * 1e3
+    # A continuation keeps writing the contact table. The score stays on the
+    # posted slice so it matches the comparison figure.
+    if rec["has_figures"]:
+        for src, dst in (
+            ("t_contact_s", "t_s"),
+            ("z_wire_max_mm", "z_max_mm"),
+            ("z_wire_min_mm", "z_min_mm"),
+            ("n_wire", "n_wire"),
+            ("n_wire_pinned", "n_pin"),
+            ("n_wire_advancing", "n_adv"),
+            ("n_wire_receding", "n_rec"),
+        ):
+            val = as_float(m.get(src))
+            if val is not None:
+                rec[dst] = val
     rec["score"], rec["notes"] = score(rec)
     return rec
 
