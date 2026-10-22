@@ -45,4 +45,15 @@ Screens are coarse (150 µm), one rank each, all six together. A 10-rank trial o
 
 One rank is faster than 10 on the coarse mesh, so the cores are filled with more runs rather than more ranks on one run. cal38–cal41 extend the trailing-angle sweep (20/90, 30/100, 90/170, 100/165). cal42–cal47 change the dome: more feed, rear-heavy power, a slower scan, a higher flank hit, a foot hit, and a milder plate window. cal48 turns Marangoni back on. cal49 pins the wire with a tight 15°/50° window. Each is one rank at `nice -n 10`.
 
-cal31 stayed on one rank because a geometric 4-rank split of the refined mesh was no faster (the wire box lands on one rank). A Scotch split is timed separately (`probe_cal31_scotch.sh`). If 4 or 8 ranks are more than 1.5× faster once the mesh exists, cal31 is restarted from its latest time with `resume_cal31.sh`.
+cal31 stayed on one rank. A geometric 4-rank split of the refined mesh was no faster. Scotch was slower, and it cuts vertical columns: the solver counted 3715 column pieces against 2011 real columns, and it requires each column on one rank (`simple`, nz = 1). Late step times on the same 57k-cell mesh, cold start, `nice -n 10`:
+
+| ranks | decomposition | seconds per step |
+| --- | --- | --- |
+| 1 | none | 0.44 |
+| 4 | simple, nz = 1 | 0.41 |
+| 4 | scotch | 0.51 |
+| 8 | scotch | 1.76 |
+
+None of those is a 1.5× gain, so cal31 was not restarted.
+
+cal50–cal58 are further one-rank screens: a 45° trailing sector (not cal10's 90° refined run), 0.18 mm spots, a 0.02 mm wire gap, feed 32 mm/s, scan 2.5 mm/s, a steeper rear beam, a weaker Young force, a uniform 45°/110° wire window, and front spots cut to 80 W. With cal31–cal49 that is 28 ranks. A watcher continues a finished screen when the wire line is still on the flank.
