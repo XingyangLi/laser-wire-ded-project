@@ -66,6 +66,7 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 
 | tag | t | score | trail / lead | wire line | cavity | what it shows |
 | --- | --- | --- | --- | --- | --- | --- |
+| cal43 | 0.32 s | 8 | 1.61 / 0.99 mm | 0.84–1.76 mm, 9/11 pinned | open, 3.66 mm³, centre y = 1.01 mm | Lowest leading crest. Continued to 0.80 s. |
 | cal36 | 0.36 s | 8 | 1.76 / 1.15 mm | 1.15–1.76 mm, 8/9 pinned | open, 3.25 mm³, centre y = 1.04 mm | Tall trailing crest, lower leading side. Continued to 0.80 s. |
 | cal35 | 0.45 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 8/8 pinned | open, 3.18 mm³, centre y = 1.08 mm | Same crest height, line fully pinned above it. Continued to 1.00 s. |
 | cal34 | 0.30 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 6/11 pinned | open, 3.19 mm³, centre y = 1.06 mm | Best window. Continued to 0.70 s. |
@@ -75,6 +76,9 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal40 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 9/11 pinned | open, 3.50 mm³, centre y = 0.99 mm | Sticky 20°/90° trail. Less asymmetry. Not continued. |
 | cal38 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 9/10 pinned | open, 3.43 mm³, centre y = 0.99 mm | 30°/100° window matches cal34. Continued to 0.60 s. |
 | cal49 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 13/16 pinned | open, 3.53 mm³, centre y = 1.01 mm | Tight 15°/50° window, no sector. Not continued. |
+| cal52 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 11/12 pinned | open, 3.45 mm³, centre y = 0.99 mm | Wire gap 0.02 mm. Not continued. |
+| cal55 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.45 mm, 9/11 pinned | open, 3.49 mm³, centre y = 0.97 mm | Steeper rear beam. Not continued. |
+| cal46 | 0.30 s | 6 | 1.45 / 0.99 mm | 0.69–1.61 mm, 9/9 pinned | open, 3.34 mm³, centre y = 1.01 mm | Rear aim at the foot. Line slips down. Not continued. |
 | cal32 | 0.30 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 5/9 pinned | open, 3.07 mm³, centre y = 1.02 mm | Narrower window. Continued to 0.70 s. |
 | cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
 | cal39 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 8/13 pinned | open, 3.17 mm³, centre y = 1.02 mm | Wide 90°/170° window. Foot pore, not a neck. Not continued. |
@@ -86,6 +90,10 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal33 | 0.30 s | 2 | 0.84 / 1.30 mm | 1.30–1.45 mm, 3/9 pinned | open, 3.28 mm³, centre y = 0.98 mm | Wide window dropped the trailing crest. Not continued. |
 
 cal36 and cal35 both reach a trailing crest of 1.76 mm, which is one cell layer on this mesh, and both pin the wire line on that crest. They get there by different levers, and neither has a closed cavity.
+
+cal43 drops the front spots to 50 W and puts 650 W in the rear spot, at scan 3 mm/s and feed 18 mm/s. At 0.32 s the trailing crest is 1.61 mm and the leading crest is 0.99 mm, the lowest leading crest of the finished set. The wire line is pinned on 9 of 11 cells from 0.84 mm to 1.76 mm. The cavity is open and off the center plane. Three pinch-offs did not stay. It is continued to 0.80 s. Comparison: `cal43_vs_radiograph.png`.
+
+Aiming that kind of rear-heavy beam at the foot instead (cal46, aim z = 0.30 mm, 80+80+520 W) also keeps the leading crest at 0.99 mm, but the wire line reaches down to 0.69 mm, so the neck is not held. A 0.02 mm wire gap (cal52) and a steeper rear inclination (cal55, −48°) stay on the 1.45 mm crest. Those three are not continued.
 
 cal36 puts 700 W in the rear spot and 100 W in each front spot, at scan 3 mm/s and feed 20 mm/s, with the plain 30°/90° wire window. At 0.36 s the leading crest is only 1.15 mm, so the trail stands 0.61 mm above it. The wire line is pinned on 8 of 9 cells and its top is the crest. The cavity is open and centred at y = 1.04 mm. Four pinch-offs were single mobile cells; none was locked, and there is no closure. One of those cells sat near the center plane (y ≈ 0.07 mm) and then vanished. The molten plate line is entirely receding at a mean angle of 64°. Travel is 1.1 mm. It is continued to 0.80 s. Comparison: `cal36_vs_radiograph.png`.
 
@@ -107,6 +115,6 @@ Across the trailing-window sweep the 60°/140° window (cal34) is the one that k
 
 A 30°/100° window (cal38) and a tight 15°/50° window with no sector (cal49) reproduce cal34's 1.45 / 1.15 mm crests, with the line mostly pinned. Cutting the 60°/140° sector from 90° down to 45° (cal50) removes that trailing advantage: the crests are equal at 1.15 mm, and a 0.26 mm lack-of-fusion pore is locked on the leading side at z = 0.23 mm. A uniform 45°/110° window (cal57) makes the leading crest the higher one, 1.30 mm against 1.15 mm. None of these four is continued.
 
-cal36, cal35, cal34, cal32 and cal38 are the continued runs. The screens that matched a lower score are not. cal66 puts cal38's 30°/100° window on cal36's 700 W rear spot. cal67 keeps that 700 W and lowers the rear aim from 0.55 mm to 0.35 mm. Two further crosses use the free cores: cal64 keeps cal36's 700 W rear spot and widens that spot to 0.40 mm, and cal65 puts that 700 W together with the 60°/140° window and a 2 mm/s scan. The refined 60°/140° mesh is cal10 on TaoSun-01 and is not started here. cal63 is the best coarse screen, cal36, at `--wire-refine 2` (about 38 µm in x and y, z left coarse), one rank, to 0.25 s. Powers stay 100+100+700 W and there is no trailing sector.
+cal43, cal36, cal35, cal34, cal32 and cal38 are the continued runs. The screens that matched a lower score are not. cal66 puts cal38's 30°/100° window on cal36's 700 W rear spot. cal67 keeps that 700 W and lowers the rear aim from 0.55 mm to 0.35 mm. Two further crosses use the free cores: cal64 keeps cal36's 700 W rear spot and widens that spot to 0.40 mm, and cal65 puts that 700 W together with the 60°/140° window and a 2 mm/s scan. The refined 60°/140° mesh is cal10 on TaoSun-01 and is not started here. cal63 is the best coarse screen, cal36, at `--wire-refine 2` (about 38 µm in x and y, z left coarse), one rank, to 0.25 s. Powers stay 100+100+700 W and there is no trailing sector.
 
 cal59 keeps the 60°/140° window with cal35's taller section (scan 2 mm/s, feed 18 mm/s, 120+120+560 W) to 0.60 s. cal61 keeps that window with cal36's powers (100+100+700 W, scan 3 mm/s) to 0.40 s. cal62 is cal36's powers at scan 2 mm/s and feed 20 mm/s, to 0.60 s, to see whether the tall crest lengthens into a bulb. cal31 stays the refined cal08 mesh. Solvers stay at `nice -n 10` and the rank total stays at or under 32.
