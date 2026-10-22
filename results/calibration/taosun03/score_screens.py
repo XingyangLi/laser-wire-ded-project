@@ -266,7 +266,7 @@ def main(argv):
         recs.append(collect(tag))
     ranked = sorted(
         recs,
-        key=lambda r: (r["state"] == "done", r["score"], r["t_s"] or 0),
+        key=lambda r: (r["state"] in ("done", "continuing"), r["score"], r["t_s"] or 0),
         reverse=True,
     )
     dest = OUT / "ranking.csv"
