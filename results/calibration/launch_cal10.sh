@@ -3,9 +3,8 @@
 # (60/140 within 90 deg of +x, blended over 30 deg to the front 25/70).
 # --wire-refine 2 is about 38 um in x and y, enough to see a gap behind the wire.
 # TaoSun-01 is shared: 12 ranks and a lower priority, never 24.
-# End 0.30 s is the upper plan. Half of the cal09 24-rank rate makes that
-# about 11 h, past the ~9 h still in the 24 h budget, so the first minutes
-# of this 12-rank log decide whether endTime stays or is cut.
+# End 0.40 s. Twelve ranks on this mesh are faster than the 24-rank cal09
+# run (about 2.5e-5 sim-s per wall-s), so 0.40 s is about 4.5 h.
 exec > >(tee -a /home/xingyang/laser-wire-ded-project/results/calibration/cal10_launch.log) 2>&1
 set -euo pipefail
 ROOT=/home/xingyang/laser-wire-ded-project
@@ -31,7 +30,7 @@ python3 generate_case.py --case "$CASE" --laser-config triple \
     --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
     --beam-aim-radii 0.60e-3,0.60e-3,0.24e-3 \
     --beam-aim-heights 0.08e-3,0.08e-3,0.55e-3 \
-    --end-time 0.30 --write-interval 0.10 --np 12 --laser-ramp 2e-3 \
+    --end-time 0.40 --write-interval 0.10 --np 12 --laser-ramp 2e-3 \
     --wire-refine 2 \
     --contact-pinning --pin-wire --porosity --wire-cavity \
     --theta-receding 110 --theta-advancing 150 \
