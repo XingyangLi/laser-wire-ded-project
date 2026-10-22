@@ -37,6 +37,6 @@ Screens are coarse (150 µm), one rank each, all six together. A 10-rank trial o
 | cal35 | taller bulb | coarse | 110/150, 30/90, none | scan 2 mm/s, feed 18 mm/s (section 7.1 mm²), powers 120+120+560 W | 0.45 s |
 | cal36 | more power into the wire | coarse | 110/150, 30/90, none | scan 3 mm/s, feed 20 mm/s (section 5.2 mm²), powers 100+100+700 W | 0.36 s |
 | cal37 | steeper plate foot | coarse | **150/170**, 30/90, none | force factor 10 | 0.25 s |
-| cal31 | does the neck resolve | `--wire-refine 2` (~38 µm in x,y) | cal08, no sector | none; this is the mesh test cal09 did not finish | set after the screens |
+| cal31 | does the neck resolve | `--wire-refine 2` (57 014 cells, 38 µm in x,y) | cal08, no sector | one rank. A probe gave 7.4×10⁻⁶ s/s, so 0.40 s is about 15 h. Four ranks were no faster | 0.40 s |
 
 60°/140° on the refined mesh is cal10 on TaoSun-01 and is not run here.

@@ -16,7 +16,7 @@ trap 'tao_release '"$NP" EXIT
 tao_build
 CASE="$TAO_ROOT/cases/wire_cavity_cal31"
 tao_cal08_case "$CASE" \
-    --end-time 0.50 --write-interval 0.10 --np "$NP" \
+    --end-time 0.40 --write-interval 0.10 --np "$NP" \
     --wire-refine 2
 tao_run "$NP" "$CASE"
 tao_post cal31 "$CASE"
