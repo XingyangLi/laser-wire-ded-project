@@ -2,8 +2,10 @@
 """Radiograph next to a calibration y-projection, centerline slice and iso-surface.
 
     python3 make_comparison.py cal08
-writes results/calibration/cal08_vs_radiograph.png from cal08_projection.png,
-cal08_side_alpha_T.png and cal08_iso_alpha.png.
+    python3 make_comparison.py cal32 results/calibration/taosun03
+writes <dir>/<tag>_vs_radiograph.png from the three figure files in that
+directory. The radiograph is read from the same directory, or from this
+script's directory when the figures live in a subdirectory.
 """
 import sys
 from pathlib import Path
@@ -13,9 +15,15 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-root = Path("/home/xingyang/laser-wire-ded-project/results/calibration")
+here = Path(__file__).resolve().parent
+root = here
+if len(sys.argv) > 2:
+    root = Path(sys.argv[2]).expanduser().resolve()
 tag = sys.argv[1] if len(sys.argv) > 1 else "cal03b"
-radio = mpimg.imread(root / "radiograph.png")
+radio_path = root / "radiograph.png"
+if not radio_path.is_file():
+    radio_path = here / "radiograph.png"
+radio = mpimg.imread(radio_path)
 proj = mpimg.imread(root / f"{tag}_projection.png")
 iso = mpimg.imread(root / f"{tag}_iso_alpha.png")
 side = mpimg.imread(root / f"{tag}_side_alpha_T.png")
