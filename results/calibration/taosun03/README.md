@@ -69,6 +69,7 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal43 | 0.32 s | 8 | 1.61 / 0.99 mm | 0.84–1.76 mm, 9/11 pinned | open, 3.66 mm³, centre y = 1.01 mm | Lowest leading crest. Continued to 0.80 s. |
 | cal36 | 0.36 s | 8 | 1.76 / 1.15 mm | 1.15–1.76 mm, 8/9 pinned | open, 3.25 mm³, centre y = 1.04 mm | Tall trailing crest, lower leading side. Continued to 0.80 s. |
 | cal35 | 0.45 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 8/8 pinned | open, 3.18 mm³, centre y = 1.08 mm | Same crest height, line fully pinned above it. Continued to 1.00 s. |
+| cal58 | 0.34 s | 8 | 1.61 / 1.15 mm | 0.99–1.61 mm, 10/10 pinned | open, 3.35 mm³, centre y = 1.01 mm | Front spots 80 W, rear 500 W, scan 2 mm/s. Continued to 0.70 s. |
 | cal34 | 0.30 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 6/11 pinned | open, 3.19 mm³, centre y = 1.06 mm | Best window. Continued to 0.70 s. |
 | cal47 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 12/13 pinned | open, 3.70 mm³, centre y = 0.98 mm | Milder plate window, same crests as cal34. Not continued. |
 | cal51 | 0.28 s | 7 | 1.45 / 1.15 mm | 0.99–1.61 mm, 9/11 pinned | open, 3.31 mm³, centre y = 1.01 mm | 0.18 mm spots. Same crests. Not continued. |
@@ -79,6 +80,7 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal52 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 11/12 pinned | open, 3.45 mm³, centre y = 0.99 mm | Wire gap 0.02 mm. Not continued. |
 | cal55 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.45 mm, 9/11 pinned | open, 3.49 mm³, centre y = 0.97 mm | Steeper rear beam. Not continued. |
 | cal53 | 0.30 s | 7 | 1.61 / 1.30 mm | 0.84–1.61 mm, 8/8 pinned | open, 2.63 mm³, centre y = 1.03 mm | Feed 32 mm/s. Lead rises with the trail. Not continued. |
+| cal54 | 0.36 s | 7 | 1.61 / 1.30 mm | 1.30–1.76 mm, 11/11 pinned | open, 3.27 mm³, centre y = 1.01 mm | Scan 2.5 mm/s, feed 22 mm/s. Lead rises with the trail. Not continued. |
 | cal46 | 0.30 s | 6 | 1.45 / 0.99 mm | 0.69–1.61 mm, 9/9 pinned | open, 3.34 mm³, centre y = 1.01 mm | Rear aim at the foot. Line slips down. Not continued. |
 | cal32 | 0.30 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 5/9 pinned | open, 3.07 mm³, centre y = 1.02 mm | Narrower window. Continued to 0.70 s. |
 | cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
@@ -127,3 +129,9 @@ cal59 keeps the 60°/140° window with cal35's taller section (scan 2 mm/s, feed
 By 0.59 s the cal36 continuation has the wire line fully pinned from 0.99 mm to 2.22 mm. cal35 at 0.58 s is fully pinned from 1.45 mm to 2.06 mm. Both wakes are still open, and neither continuation has a closure event. The half-domain centroid stays near y = 1 mm, which is what a cavity sitting on the symmetry plane reports. The official scores above stay on the posted slices until each continuation is post-processed.
 
 cal71 repeats the 100+100+700 W case on a full-width mesh to 0.30 s, so the wake centroid is not folded onto y ≥ 0. cal72 puts the 50+50+650 W split on cal35's section (scan 2 mm/s, feed 18 mm/s) to 0.50 s. cal73 keeps the 750 W of cal43 and moves it to 25+25+700 W. cal74 tightens the 700 W spot to 0.18 mm. cal75 raises that spot's aim to z = 0.70 mm. cal76 puts the 30°/100° window on the 50+50+650 W split. cal77 shallows the rear beam to −28°. cal78 uses the 15°/50° wire window on the 700 W spot. Each is one rank.
+
+cal58 cuts the front spots to 80 W and the rear spot to 500 W, at scan 2 mm/s and feed 16 mm/s. At 0.34 s the trailing crest is 1.61 mm and the leading crest is 1.15 mm. All 10 wire cells are pinned from 0.99 mm to 1.61 mm. The cavity is open. Two pinch-offs did not stay. All 23 molten plate cells are receding, at a mean angle of 50°. It reaches score 8 with less rear power than cal36 or cal43, and it is continued to 0.70 s. Comparison: `cal58_vs_radiograph.png`.
+
+cal54 keeps the cal08 beams and changes only the speeds, to scan 2.5 mm/s and feed 22 mm/s. At 0.36 s the trailing crest is 1.61 mm and the leading crest is 1.30 mm, so the advantage is 0.31 mm. All 11 wire cells are pinned from 1.30 mm to 1.76 mm. A single-cell gas pore, 0.15 mm, showed up near the center plane just before the end and was gone in the final sample. The run is not continued. Comparison: `cal54_vs_radiograph.png`.
+
+The cal58 heat is crossed on the freed cores. cal79 adds the 60°/140° window. cal80 raises the feed from 16 mm/s to 22 mm/s. cal81 drops the front spots to 40 W and puts 560 W in the rear spot, still at scan 2 mm/s and feed 16 mm/s.

@@ -67,6 +67,9 @@ QUESTIONS = {
     "cal76": "650 W rear spot with 30/100 window",
     "cal77": "700 W, rear inclination -28 deg",
     "cal78": "700 W with wire window 15/50",
+    "cal79": "80/80/500 W with 60/140 window",
+    "cal80": "80/80/500 W with feed 22 mm/s",
+    "cal81": "powers 40/40/560 at scan 2 mm/s",
 }
 
 
