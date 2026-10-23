@@ -62,64 +62,36 @@ Continuations are chosen after the score, not by the flank-height watcher. That 
 
 ## Scores against the radiograph
 
-The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing side, with the three-phase line pinned on the wire at that neck and a gas cavity in the wake. The score is out of 10: trailing height (2), trailing crest above the leading crest (2), wire line pinned at the neck (3), wake behind the wire (2), a closure (1). A point for the wake still stands when the cavity is off the center plane; the note says so. Figures are `results/calibration/taosun03/<tag>_vs_radiograph.png`.
+The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing side, with a small notch where the melt pins on the wire. The gas in that pool is small closed bubbles, about 0.05–0.3 mm, not a large open wake. A gas sheet under the trailing bead is a non-wetted film: the plate angle sits near 50–60° and the molten plate line is receding, which is the same artifact TaoSun-01 saw on cal11. The score is out of 10:
 
-| tag | t | score | trail / lead | wire line | cavity | what it shows |
+| points | check |
+| --- | --- |
+| 2 | trailing crest 1.45–2.30 mm |
+| 1 | trailing crest at least 0.35 mm above the leading crest |
+| 2 | wire line pinned at that neck |
+| 1 | molten plate line mostly pinned or advancing (not a receding film) |
+| 2 | substrate under the bead melted on the center plane, with no gas sheet |
+| 2 | one or more closed bubbles of 0.05–0.3 mm that stay in the pool |
+
+Bubble points are withheld while the plate line is receding. A one-cell mobile pore and an open wake do not score. A locked lack-of-fusion pore at the foot does not score. The center-plane cut is `sidePlane` at y = 20 µm, drawn in `<tag>_side_alpha_T.png` and in the lower-left panel of `<tag>_vs_radiograph.png`. The full table is `ranking.csv`.
+
+Every finished screen below still has a receding plate line and a solid substrate under the bead (center-plane temperature stays below the 316L solidus). The best dome is therefore 5, and none of them has a scored bubble. cal48 (Marangoni on) is the one center-plane slice with a gas sheet under the bead.
+
+| tag | t | score | trail / lead | plate line | substrate | what it shows |
 | --- | --- | --- | --- | --- | --- | --- |
-| cal72 | 0.50 s | 8 | 1.91 / 0.54 mm | 0.84–2.06 mm, 10/12 pinned | open, 3.52 mm³, centre y = 1.06 mm | 50+50+650 W at 2 mm/s. Lowest lead with a tall trail. Continued to 0.75 s. |
-| cal36 | 1.00 s | 8 | 2.22 / 1.15 mm | 1.15–2.37 mm, 12/13 pinned | open, 2.96 mm³, centre y = 1.15 mm | Trail held. Lead rose from 0.84 mm at 0.80 s. Not continued. |
-| cal43 | 0.80 s | 8 | 1.91 / 0.84 mm | 0.99–2.06 mm, 10/10 pinned | open, 2.62 mm³, centre y = 1.11 mm | 50+50+650 W, given time. Lead fell to 0.84 mm. Continued to 1.05 s. |
-| cal66 | 0.70 s | 8 | 2.06 / 0.99 mm | 0.99–2.06 mm, 10/10 pinned | open, 2.71 mm³, centre y = 1.16 mm | 700 W with 30°/100°. Lead stayed at 0.99 mm. Continued to 0.90 s. |
-| cal74 | 0.36 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 10/10 pinned | open, 3.15 mm³, centre y = 1.07 mm | 0.18 mm rear spot on 700 W. Crest shorter than cal36. Not continued. |
-| cal78 | 0.36 s | 8 | 1.61 / 0.84 mm | 0.99–1.76 mm, 6/12 pinned | open, 3.20 mm³, centre y = 1.07 mm | 15°/50° window on 700 W. Lead already 0.84 mm. Continued to 0.60 s. |
-| cal62 | 0.60 s | 8 | 2.06 / 1.30 mm | 1.30–2.22 mm, 12/12 pinned | open, 3.17 mm³, centre y = 1.08 mm | 700 W at scan 2 mm/s. Fully pinned. Lead still high. Continued to 0.90 s. |
-| cal38 | 0.60 s | 8 | 1.91 / 1.30 mm | 1.15–1.91 mm, 11/13 pinned | open, 2.68 mm³, centre y = 1.13 mm | 30°/100° given time. Lead rose with the trail. Not continued further. |
-| cal59 | 0.60 s | 8 | 1.91 / 1.45 mm | 1.45–1.91 mm, 7/11 pinned | open, 2.64 mm³, centre y = 1.13 mm | 60°/140° on the tall section. Lead rose. Not continued. |
-| cal64 | 0.40 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 10/11 pinned | open, 3.41 mm³, centre y = 1.05 mm | 0.40 mm rear spot. Lead rose. Not continued. |
-| cal69 | 0.40 s | 8 | 1.76 / 0.99 mm | 0.99–1.91 mm, 5/8 pinned | open, 2.80 mm³, centre y = 1.04 mm | 650 W with feed 28 mm/s. Line partly receding. Not continued. |
-| cal67 | 0.40 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 13/13 pinned | open, 2.96 mm³, centre y = 1.07 mm | Rear aim z = 0.35 mm. Fully pinned, shorter trail than cal36. Not continued. |
-| cal75 | 0.36 s | 8 | 1.61 / 1.15 mm | 1.15–1.76 mm, 8/11 pinned | open, 3.37 mm³, centre y = 1.05 mm | Rear aim z = 0.70 mm. Lead rose. Not continued. |
-| cal70 | 0.40 s | 8 | 1.45 / 0.99 mm | 0.84–1.61 mm, 5/9 pinned | open, 2.67 mm³, centre y = 1.09 mm | 650 W with 60°/140°. Trail only just 1.45 mm. Not continued. |
-| cal77 | 0.36 s | 8 | 1.45 / 0.99 mm | 1.30–1.76 mm, 5/7 pinned | open, 3.10 mm³, centre y = 1.06 mm | Rear inclination −28°. Trail stayed at 1.45 mm. Not continued. |
-| cal79 | 0.45 s | 8 | 1.61 / 1.15 mm | 1.15–1.76 mm, 6/8 pinned | open, 3.45 mm³, centre y = 1.04 mm | 80+80+500 W with 60°/140°. Same early crests as cal58. Not continued. |
-| cal35 | 1.00 s | 8 | 2.06 / 1.45 mm | 1.45–2.22 mm, 9/9 pinned | open, 2.23 mm³, centre y = 1.14 mm | Slow scan, given time. Lead rose with the trail. Not continued further. |
-| cal58 | 0.70 s | 8 | 1.91 / 0.99 mm | 0.99–2.06 mm, 9/9 pinned | open, 3.09 mm³, centre y = 1.07 mm | 80+80+500 W at 2 mm/s, given time. Fully pinned. Continued to 0.95 s. |
-| cal81 | 0.65 s | 8 | 1.76 / 0.84 mm | 0.99–1.91 mm, 7/7 pinned | open, 3.13 mm³, centre y = 1.05 mm | 40+40+560 W. Lead rose from 0.69 mm. Foot pore grew to 0.26 mm. Not continued. |
-| cal76 | 0.40 s | 8 | 1.76 / 0.99 mm | 0.99–1.91 mm, 12/14 pinned | open, 3.60 mm³, centre y = 1.03 mm | 650 W with the 30°/100° window. Continued to 0.70 s. |
-| cal32 | 0.70 s | 8 | 1.91 / 1.45 mm | 1.15–1.91 mm, 11/13 pinned | open, 2.61 mm³, centre y = 1.15 mm | 45°/120° window, given time. Tallest trail. Lead rose with it. Not continued further. |
-| cal34 | 1.00 s | 8 | 1.91 / 1.45 mm | 1.15–1.91 mm, 10/13 pinned | open, 2.44 mm³, centre y = 1.17 mm | 60°/140°, given time. Lead rose from 1.15 mm. Not continued further. |
-| cal84 | 0.32 s | 8 | 1.76 / 0.99 mm | 1.15–1.76 mm, 8/10 pinned | open, 3.41 mm³, centre y = 1.04 mm | 700 W at scan 5 mm/s. No pore froze. Not continued. |
-| cal47 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 12/13 pinned | open, 3.70 mm³, centre y = 0.98 mm | Milder plate window, same crests as cal34. Not continued. |
-| cal51 | 0.28 s | 7 | 1.45 / 1.15 mm | 0.99–1.61 mm, 9/11 pinned | open, 3.31 mm³, centre y = 1.01 mm | 0.18 mm spots. Same crests. Not continued. |
-| cal56 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 9/11 pinned | open, 3.56 mm³, centre y = 0.97 mm | Force factor 2. Same crests. Not continued. |
-| cal40 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 9/11 pinned | open, 3.50 mm³, centre y = 0.99 mm | Sticky 20°/90° trail. Less asymmetry. Not continued. |
-| cal38 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 9/10 pinned | open, 3.43 mm³, centre y = 0.99 mm | 30°/100° window matches cal34. Continued to 0.60 s. |
-| cal49 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 13/16 pinned | open, 3.53 mm³, centre y = 1.01 mm | Tight 15°/50° window, no sector. Not continued. |
-| cal52 | 0.28 s | 7 | 1.45 / 1.30 mm | 1.15–1.61 mm, 11/12 pinned | open, 3.45 mm³, centre y = 0.99 mm | Wire gap 0.02 mm. Not continued. |
-| cal55 | 0.28 s | 7 | 1.45 / 1.15 mm | 1.15–1.45 mm, 9/11 pinned | open, 3.49 mm³, centre y = 0.97 mm | Steeper rear beam. Not continued. |
-| cal53 | 0.30 s | 7 | 1.61 / 1.30 mm | 0.84–1.61 mm, 8/8 pinned | open, 2.63 mm³, centre y = 1.03 mm | Feed 32 mm/s. Lead rises with the trail. Not continued. |
-| cal54 | 0.36 s | 7 | 1.61 / 1.30 mm | 1.30–1.76 mm, 11/11 pinned | open, 3.27 mm³, centre y = 1.01 mm | Scan 2.5 mm/s, feed 22 mm/s. Lead rises with the trail. Not continued. |
-| cal61 | 0.40 s | 7 | 1.61 / 1.15 mm | 1.15–1.76 mm, 4/10 pinned | open, 2.98 mm³, centre y = 1.09 mm | 700 W with the 60°/140° window. Line mostly receding. Not continued. |
-| cal82 | 0.45 s | 6 | 1.76 / 0.54 mm | 0.69–1.91 mm, 3/8 pinned | open, 3.03 mm³, centre y = 1.09 mm | 45°/120° on 50+50+650 W. Lead low, line not held. Not continued. |
-| cal68 | 0.40 s | 6 | 1.76 / 1.15 mm | 0.54–1.91 mm, 12/12 pinned | open, 2.55 mm³, centre y = 1.09 mm | Feed 32 mm/s on 700 W. Line slipped to 0.54 mm. Foot pore locked. Not continued. |
-| cal73 | 0.40 s | 6 | 1.45 / 0.69 mm | 0.69–1.76 mm, 8/10 pinned | open, 3.02 mm³, centre y = 1.06 mm | Front spots 25 W. Lead fell and the line slipped. Not continued. |
-| cal46 | 0.30 s | 6 | 1.45 / 0.99 mm | 0.69–1.61 mm, 9/9 pinned | open, 3.34 mm³, centre y = 1.01 mm | Rear aim at the foot. Line slips down. Not continued. |
-| cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
-| cal39 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 8/13 pinned | open, 3.17 mm³, centre y = 1.02 mm | Wide 90°/170° window. Foot pore, not a neck. Not continued. |
-| cal37 | 0.25 s | 5 | 1.30 / 1.30 mm | 0.99–1.45 mm, 12/12 pinned | open, 3.39 mm³, centre y = 0.97 mm | Steep plate window did not hold. Not continued. |
-| cal80 | 0.45 s | 7 | 1.76 / 1.45 mm | 1.30–1.91 mm, 5/7 pinned | open, 3.06 mm³, centre y = 1.03 mm | 80+80+500 W with feed 22 mm/s. Lead rose. Not continued. |
-| cal71 | 0.30 s | 7 | 1.30 / 1.15 mm | 1.15–1.61 mm, 15/20 pinned | open, 6.08 mm³, centre y = 0.00 mm | Full-width mesh. Wake is on the center plane. Crest still short. Continued to 0.55 s. |
-| cal83 | 0.40 s | 7 | 1.45 / 1.30 mm | 1.30–1.61 mm, 8/12 pinned | open, 2.71 mm³, centre y = 1.12 mm | 45°/120° on 700 W. Trail did not grow. Not continued. |
-| cal42 | 0.32 s | 5 | 1.30 / 1.30 mm | 0.84–1.45 mm, 10/10 pinned | open, 2.18 mm³, centre y = 1.06 mm | Feed 28 mm/s. Crests equal. Not continued. |
-| cal65 | 0.55 s | 5 | 1.45 / 1.15 mm | 1.15–1.91 mm, 7/13 pinned | open, 2.66 mm³, centre y = 1.13 mm | 700 W, 60°/140°, scan 2 mm/s. Trail stayed low. Not continued. |
-| cal41 | 0.28 s | 4 | 1.30 / 1.30 mm | 1.30–1.45 mm, 1/7 pinned | open, 3.40 mm³, centre y = 0.97 mm | Wide 100°/165° window. Line mostly mobile. Not continued. |
-| cal50 | 0.28 s | 4 | 1.15 / 1.15 mm | 1.15–1.45 mm, 6/9 pinned | open, 3.36 mm³, centre y = 0.99 mm | 60°/140° only within 45° of +x. Crests equal. Not continued. |
-| cal57 | 0.28 s | 4 | 1.15 / 1.30 mm | 1.15–1.45 mm, 7/10 pinned | open, 3.28 mm³, centre y = 0.98 mm | Uniform 45°/110° window. Leading crest higher. Not continued. |
-| cal45 | 0.28 s | 3 | 1.30 / 1.30 mm | 1.15–1.76 mm, 7/9 pinned | open, 3.88 mm³, centre y = 0.99 mm | Rear aim at z = 0.95 mm lifts the line above a flat crest. Not continued. |
-| cal44 | 0.36 s | 2 | 0.99 / 1.30 mm | 1.30–1.45 mm, 11/12 pinned | open, 3.49 mm³, centre y = 0.96 mm | Scan 1.5 mm/s with feed cut to 14 mm/s. Leading crest higher. Not continued. |
-| cal33 | 0.30 s | 2 | 0.84 / 1.30 mm | 1.30–1.45 mm, 3/9 pinned | open, 3.28 mm³, centre y = 0.98 mm | Wide window dropped the trailing crest. Not continued. |
+| cal62 | 0.80 s | 5 | 2.22 / 0.84 mm | 26/26 receding, 54° | solid | 700 W at 2 mm/s, run to 0.90 s. Lead fell to 0.84 mm. Plate still unwetted. Stopped. Center plane: `cal62_side_alpha_T.png`. |
+| cal43 | 0.96 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 47° | solid | 50+50+650 W at 1.05 s. Dome held. Plate still unwetted. Stopped. |
+| cal36 | 1.00 s | 5 | 2.22 / 1.15 mm | 35/36 receding | solid | 700 W. Open wake, no locked bubble. Stopped. |
+| cal66 | 0.70 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 52° | solid | 30°/100° notch on 700 W. Continued to 0.90 s. |
+| cal72 | 0.50 s | 5 | 1.91 / 0.54 mm | 26/27 receding | solid | Lowest lead. Continued to 0.75 s. |
+| cal58 | 0.70 s | 5 | 1.91 / 0.99 mm | 37/37 receding, 54° | solid | 80+80+500 W. Continued to 0.95 s. |
+| cal81 | 0.65 s | 5 | 1.76 / 0.84 mm | 15/15 receding, 61° | solid | Foot lack-of-fusion, 0.26 mm. Not a pool bubble. Stopped. |
+| cal78 | 0.60 s | 4 | 1.91 / 1.15 mm | 26/26 receding, 54° | solid | 15°/50° window lost the pin (2/7). Not continued. |
+| cal48 | 0.28 s | 3 | 1.30 / 1.15 mm | 23/23 receding | solid, gas sheet | Marangoni case. Gas layer on the center plane. |
 
-cal36 and cal35 both reach a trailing crest of 1.76 mm, which is one cell layer on this mesh, and both pin the wire line on that crest. They get there by different levers, and neither has a closed cavity.
+Earlier paragraphs below were written while an open wake still scored. The geometry in them is unchanged. The number that ranks a run now is the table above and `ranking.csv`.
+
+cal36 and cal35 both reach a trailing crest of 1.76 mm, which is one cell layer on this mesh, and both pin the wire line on that crest. They get there by different levers, and neither has a closed bubble. The plate line on both is receding and the substrate under the bead is solid.
 
 cal43 drops the front spots to 50 W and puts 650 W in the rear spot, at scan 3 mm/s and feed 18 mm/s. At 0.32 s the trailing crest is 1.61 mm and the leading crest is 0.99 mm, the lowest leading crest of the finished set. The wire line is pinned on 9 of 11 cells from 0.84 mm to 1.76 mm. The cavity is open and off the center plane. Three pinch-offs did not stay. It is continued to 0.80 s. Comparison: `cal43_vs_radiograph.png`.
 
@@ -205,4 +177,25 @@ The lowest lead with a tall trail is cal72: 50+50+650 W, scan 2 mm/s, feed 18 mm
 
 At 0.70 s the 30°/100° window on 100+100+700 W (cal66) has a 2.06 mm trail and a 0.99 mm lead, with all 10 wire cells pinned from 0.99 mm to 2.06 mm. The lead did not climb the way cal36's did after 0.80 s. It is continued to 0.90 s. Comparison: `cal66_vs_radiograph.png`. The 45°/120° window on 50+50+650 W (cal82) also drops the lead to 0.54 mm, and the wire line follows it down to 0.69 mm with only 3 of 8 cells pinned. It is not continued.
 
-On the full-width mesh (cal71, 70 528 cells, the same 100+100+700 W) the wake centroid is at y = −0.004 mm and the volume is 6.08 mm³, about twice the half-domain cavity. At 0.30 s the trail is only 1.30 mm and the lead is 1.15 mm, with 15 of 20 wire cells pinned. The cavity is open. It is continued to 0.55 s to see whether the trail grows once the wake is allowed to sit on the center plane. Comparison: `cal71_vs_radiograph.png`.
+On the full-width mesh (cal71, 70 528 cells, the same 100+100+700 W) the wake centroid is at y = −0.004 mm and the volume is 6.08 mm³, about twice the half-domain cavity. At 0.30 s the trail is only 1.30 mm and the lead is 1.15 mm, with 15 of 20 wire cells pinned. The cavity is open. It is continued to 0.55 s. That open volume is not the target. Comparison: `cal71_vs_radiograph.png`.
+
+At 0.90 s the slow 700 W run (cal62) has a 2.22 mm trail and a 0.84 mm lead, with the wire line pinned from 0.84 mm to 2.37 mm. The plate line is 26/26 receding at 54° and the substrate under the bead is solid, so the open wake is not a bubble. The run stops. Center-plane cut: `cal62_side_alpha_T.png`.
+
+At 1.05 s, cal43 still has the dome (trail 2.06 mm, lead 0.99 mm, wire line fully pinned) and the plate line is 34/34 receding at 47°. The substrate under the bead on the center plane is solid. The 0.96 s center-plane cut is `cal43_side_alpha_T.png`. The run stops. cal78 at 0.60 s lost the wire pin (2 of 7 cells) and the lead rose to 1.15 mm. It is not continued. Comparison: `cal78_vs_radiograph.png`.
+
+## Plate wetting and substrate melting
+
+The plate window on cal08 is 110°/150°. The molten line sits near 50°, so every cell is receding and the Young force lifts metal off the plate. That is the film TaoSun-01 called out on cal11. These screens keep the 30°/100° wire trail that holds the notch, and they lower the plate window. They do not repeat cal11 (refined 60°/140°) or cal12 (cal36 power on a refined mesh). cal63 is already that refined 700 W case here and is left running. Each new run is one rank at `nice -n 10`.
+
+| tag | plate window | melting change | beams |
+| --- | --- | --- | --- |
+| cal99 | 10°/40° | none | 100+100+700 W, scan 3 mm/s, to 0.40 s |
+| cal100 | 20°/55° | none | same |
+| cal101 | 5°/25° | none | same |
+| cal102 | 30°/80° | none (57° sits inside the window, so the line can pin) | same |
+| cal103 | 10°/40° | substrate absorptivity 0.55 | same |
+| cal104 | 10°/40° | preheat 900 K | same |
+| cal105 | 10°/40° | absorptivity 0.55, preheat 800 K, fronts 180 W | rear spot still 700 W |
+| cal106 | 15°/45° | absorptivity 0.60, preheat 700 K, scan 2 mm/s | 80+80+650 W, to 0.45 s |
+
+A run that wets the plate and melts the substrate, and then holds a 0.05–0.3 mm bubble, is the one to continue. An open wake on these screens is not.

@@ -1,0 +1,12 @@
+acquired 1 MPI slots (cap 32)
+laserWireDEDFoam -> /home/asb6102/OpenFOAM/asb6102-v2406/platforms/linux64GccDPInt32Opt/bin
+wmake laserWireDEDFoam
+[generate] --beam-powers sum to 810 W; using that as the total (was --power 1850 W)
+[generate] 3d config=triple wire=316L substrate=316L: P=810 W in 3 beam(s), A=0.35/0.6, end=0.45 s, v_scan=2.0 mm/s, WFS=18.0 mm/s, d_wire=1.00 mm @ 90 deg (front feed)
+[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):
+    beam1_az30: 80 W, 1/e^2 0.26 mm, aim (-0.52, 0.30, 0.08) mm, plate hit (-0.49, 0.28) mm
+    beam2_az-30: 80 W, 1/e^2 0.26 mm, aim (-0.52, -0.30, 0.08) mm, plate hit (-0.49, -0.28) mm
+    beam3_az180: 650 W, 1/e^2 0.26 mm, aim (0.24, 0.00, 0.55) mm, plate hit (-0.19, -0.00) mm
+[generate] mesh 64 x 19 x (8+21) = 35264 block cells -> 35264 cells, dx=150 um; capillary dt ~ 3.35e-05 s; expected bead area 7.07 mm^2; E_L = 405 J/mm
+[generate] single-track extras: contact-line pinning ON (thetaR 15 / thetaA 45 deg), wire pin ON (thetaR 25 / thetaA 70 deg, frame head), trailing wire sector 30/100 deg within 90 deg of +x (blend 30 deg), porosity ON, wire cavity ON
+[generate] wrote /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal106
