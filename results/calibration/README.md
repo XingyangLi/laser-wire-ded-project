@@ -169,4 +169,8 @@ The plate itself never melts. The top plate cell stays near 1274 K from 0.3 s to
 
 ## cal14 — hot plate, cold wire
 
-`launch_cal14.sh` is cal13 with the substrate initialised at 1100 K, including the substrate inlet. The wire stub, the wire inlet, the gas inlet and the radiation ambient stay at 300 K. Same beams, same 10°/40° plate window, same trailing wire sector. The 974 K rise seen on cal13's top cell would then put the plate through the solidus. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s.
+`launch_cal14.sh` is cal13 with the substrate initialised at 1100 K, including the substrate inlet. The wire stub, the wire inlet, the gas inlet and the radiation ambient stay at 300 K. Same beams, same 10°/40° plate window, same trailing wire sector. Refined mesh, 12 ranks, `nice -n 10`. Wall clock 6.3 h for 0.60 s.
+
+The plate under the bead melts. At 0.60 s the center-plane plate is above the 1658 K solidus from about x = −1.1 mm to x = 1.7 mm, with a peak of 1873 K, and the pool depth is 0.4 mm. The plate line has no receding cells (21 advancing, 6 pinned, mean angle 55°). There is no gas film under the bead. The trailing crest is 1.76 mm and the leading crest is 0.84 mm.
+
+No closed bubble persists. The porosity count is 0 at 0.60 s. A mobile one-cell pore, 0.06 mm, sat at z = 1.30 mm just behind the wire at 0.578 s and was gone by the end. Pinch-offs 68, closures 0. The largest closed volume in the run was 0.0006 mm³. The open-cavity report is still 2.84 mm³ beside the wire and is not the score. Side view: `cal14_sideview.png`.
