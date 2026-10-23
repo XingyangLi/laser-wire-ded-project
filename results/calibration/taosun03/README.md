@@ -218,6 +218,7 @@ The plate window on cal08 is 110°/150°. The molten line sits near 50°, so eve
 | cal111 | 20°/55° | same as cal110 | trail pin 20°/45° over 45° of +x, to 0.60 s |
 | cal112 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | trail pin 15°/50° over 60° of +x, to 0.60 s |
 | cal113 | 20°/55° | same heat as cal111 | wire floor 10°/70° over 60° of +x, to 0.65 s |
+| cal114 | 10°/40° | substrate absorptivity 0.65, no preheat | cal103 notch (trail 30°/100°), to 0.70 s |
 
 A run that wets the plate and melts the substrate is continued to at least 0.60 s. The wire angle on these heated plates sits near 17–33°. A 30°/100° trail puts the low end of that outside the window, so those cells recede. cal110–cal112 put a pinning window on the trailing face only. An open wake on these screens is not the target. No run has a closed bubble of 0.05–0.3 mm. Pinch-offs stay one-cell and mobile.
 
@@ -247,3 +248,20 @@ Finished slices, center plane at y = 20 µm. "Plate" is pinned / advancing / rec
 cal111 is the fused dome: trail 2.06 mm, lead 0.99 mm, every trail column melted, no receding plate cell, no gas sheet. The wire line does not make the notch. Its mean angle is 20°, which is the receding edge of the 20°/45° trail window, so 6 of 10 cells recede and the line stays at 1.30–1.45 mm. cal110 pins that line (9 of 11, window 15°/50°) and the trailing crest collapses to 0.69 mm. Center-plane cuts: `cal111_side_alpha_T.png`, `cal108_side_alpha_T.png`, `cal110_side_alpha_T.png`. The 0.40 s cuts of the runs that continue are `cal103_0p40_side_alpha_T.png` through `cal105_0p40_side_alpha_T.png`, `cal107_0p40_side_alpha_T.png`, `cal108_0p40_side_alpha_T.png`, `cal109_0p40_side_alpha_T.png`, and `cal106_0p45_side_alpha_T.png`.
 
 cal113 keeps cal111's heat and plate window and lowers the wire floor to 10°, with the advancing limit at 70°, on a 60° trailing sector. That puts the 20° cells inside the window instead of on the receding edge. It runs to 0.65 s.
+
+At 0.65 s the two runs that were continued from a wetted, partly fused bead are the new top of the table. Neither has a closed bubble. The plate line on both has no receding cell, and the center plane has no gas sheet.
+
+| tag | t | score | trail / lead | plate | melt | wire line |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal103 | 0.65 s | 7 | 1.76 / 1.15 mm | 0 of 38 receding | 4/13 | 9/9 pinned, z 1.30–1.91 mm, mean 39°, inside 30°/100°. The notch is on the crest. Continued to 0.90 s. |
+| cal108 | 0.65 s | 7 | 1.91 / 0.99 mm | 1 of 46 receding | 11/11 | 3/10 pinned, 7 receding, mean 24°, under the 30° floor. Full fusion. Continued to 0.90 s. |
+| cal109 | 0.65 s | 4 | 0.69 / 0.23 mm | 0 of 51 receding | 13/13 | Crest never grows. Not continued. |
+| cal104 | 0.65 s | 3 | 1.15 / 1.30 mm | 0 of 34 receding | 6/12 | Trail rose from 0.69 mm and is still under the lead. Not continued. |
+| cal105 | 0.65 s | 3 | 0.69 / 1.15 mm | 0 of 47 receding | 10/10 | Wire line up to 2.06 mm over a short trail. Not continued. |
+| cal106 | 0.65 s | 3 | 0.69 / 1.30 mm | 0 of 54 receding | 10/10 | Lead stays taller. Not continued. |
+| cal107 | 0.65 s | 2 | 0.84 / 1.15 mm | 1 of 49 receding | 5/14 | Crest stays low. Not continued. |
+| cal31 | 0.40 s | 4 | 1.76 / 0.84 mm | 40 of 45 receding, 58° | 0/9 | Refined cal08. Plate still receding, substrate solid. Stopped. |
+
+Center-plane cuts: `cal103_side_alpha_T.png`, `cal108_side_alpha_T.png`. The 0.65 s copies kept before the next continuation are `cal103_0p65_side_alpha_T.png` and `cal108_0p65_side_alpha_T.png`.
+
+cal103's 39° wire angle is why 30°/100° pins every cell. cal108's preheated pool sits at 24°, so the same window recedes. cal113 is that preheated pool with the floor lowered to 10°. At 0.36 s it already has 9 of 10 wire cells pinned and one receding plate cell. cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 0.65, and no preheat, to melt more of the trail columns.
