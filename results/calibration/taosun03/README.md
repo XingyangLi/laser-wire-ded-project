@@ -275,3 +275,5 @@ cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 
 cal113 at 0.90 s loses the crest the same way cal108 did. The trail is 0.84 mm and the lead is 0.99 mm, with the plate still wetted and 18 of 18 columns melted. Score 3. The score-8 slice remains the 0.65 s cut. The preheated pool is not continued further.
 
 cal115 keeps cal114's plate, power, and absorptivity, and lowers the wire floor from 30° to 15° so the 29° cells pin. It runs to 0.55 s.
+
+At 1.00 s cal114's crest has fallen. The trail is 1.15 mm and the lead is 0.99 mm, 12 of 22 columns are melted, and 8 of 13 wire cells recede at 24°. Score 3. The plate line is still not receding, and there is still no pool bubble. The score-8 cut is the 0.70 s one, `cal114_0p70_side_alpha_T.png`. The run stops.
