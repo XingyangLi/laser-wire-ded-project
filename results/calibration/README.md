@@ -174,3 +174,7 @@ The plate itself never melts. The top plate cell stays near 1274 K from 0.3 s to
 The plate under the bead melts. At 0.60 s the center-plane plate is above the 1658 K solidus from about x = −1.1 mm to x = 1.7 mm, with a peak of 1873 K, and the pool depth is 0.4 mm. The plate line has no receding cells (21 advancing, 6 pinned, mean angle 55°). There is no gas film under the bead. The trailing crest is 1.76 mm and the leading crest is 0.84 mm.
 
 No closed bubble persists. The porosity count is 0 at 0.60 s. A mobile one-cell pore, 0.06 mm, sat at z = 1.30 mm just behind the wire at 0.578 s and was gone by the end. Pinch-offs 68, closures 0. The largest closed volume in the run was 0.0006 mm³. The open-cavity report is still 2.84 mm³ beside the wire and is not the score. Side view: `cal14_sideview.png`.
+
+## cal15 — steeper trailing wire window, faster scan
+
+`launch_cal15.sh` keeps the 1100 K plate, the cold wire, and the 10°/40° plate window. The trailing wire window is 110°/160° with a 10° blend, so the face behind the wire is pulled toward a steeper angle over a sharper sector. The scan is 5 mm/s so that notch is carried into the pool before the melt fills it. Same beams, refined mesh, 12 ranks, `nice -n 10`, end 0.70 s. Oxygen stays off: the angle table would replace the 10°/40° plate window.
