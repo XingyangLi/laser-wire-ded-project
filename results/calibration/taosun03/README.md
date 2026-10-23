@@ -87,6 +87,9 @@ Every finished screen below still has a receding plate line and a solid substrat
 | cal89 | 0.45 s | 5 | 1.91 / 0.99 mm | 25/25 receding, 59° | solid | Scan 3.5 mm/s. Plate still unwetted. Stopped. |
 | cal88 | 0.45 s | 4 | 1.61 / 0.69 mm | 21/22 receding, 60° | solid | 50+50+700 W. Lead low and the wire line follows it to 0.69 mm. Stopped. |
 | cal86 | 0.45 s | 5 | 1.76 / 1.30 mm | 22/22 receding, 51° | solid | Wire gap 0.02 mm on 700 W. Fully pinned. Plate still unwetted. Stopped. |
+| cal72 | 0.70 s | 5 | 1.91 / 0.84 mm | 31/31 receding, 62° | solid | 50+50+650 W at 2 mm/s, to 0.75 s. Lead rose from 0.54 mm. Foot lack-of-fusion. Stopped. |
+| cal87 | 0.50 s | 5 | 2.06 / 1.15 mm | 19/19 receding, 61° | solid | 80+80+700 W. Plate still unwetted. Stopped. |
+| cal85 | 0.50 s | 5 | 1.91 / 1.30 mm | 23/23 receding, 50° | solid | Rear spot 600 W. Lead rose. Stopped. |
 | cal43 | 0.96 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 47° | solid | 50+50+650 W at 1.05 s. Dome held. Plate still unwetted. Stopped. |
 | cal36 | 1.00 s | 5 | 2.22 / 1.15 mm | 35/36 receding | solid | 700 W. Open wake, no locked bubble. Stopped. |
 | cal66 | 0.70 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 52° | solid | 30°/100° notch on 700 W. Continued to 0.90 s. |
