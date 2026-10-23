@@ -82,6 +82,10 @@ QUESTIONS = {
     "cal91": "powers 40/40/650 at scan 3 mm/s",
     "cal92": "powers 60/60/700",
     "cal94": "powers 60/60/560 at scan 2 mm/s",
+    "cal95": "650 W rear spot at scan 2.5 mm/s",
+    "cal96": "650 W rear spot with feed 16 mm/s",
+    "cal97": "powers 50/50/600 at scan 2 mm/s",
+    "cal98": "powers 70/70/650 at scan 2 mm/s",
 }
 
 
