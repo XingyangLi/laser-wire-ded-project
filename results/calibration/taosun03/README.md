@@ -253,8 +253,9 @@ At 0.65 s the two runs that were continued from a wetted, partly fused bead are 
 
 | tag | t | score | trail / lead | plate | melt | wire line |
 | --- | --- | --- | --- | --- | --- | --- |
-| cal103 | 0.65 s | 7 | 1.76 / 1.15 mm | 0 of 38 receding | 4/13 | 9/9 pinned, z 1.30–1.91 mm, mean 39°, inside 30°/100°. The notch is on the crest. Continued to 0.90 s. |
-| cal108 | 0.65 s | 7 | 1.91 / 0.99 mm | 1 of 46 receding | 11/11 | 3/10 pinned, 7 receding, mean 24°, under the 30° floor. Full fusion. Continued to 0.90 s. |
+| cal113 | 0.65 s | 8 | 1.61 / 0.99 mm | 0 of 50 receding, 42° | 11/11 | 10/15 pinned, z 1.45–1.76 mm, mean 18°. Dome, notch, and full fusion. No bubble. Continued to 0.90 s. |
+| cal103 | 0.65 s | 7 | 1.76 / 1.15 mm | 0 of 38 receding | 4/13 | 9/9 pinned, z 1.30–1.91 mm, mean 39°. At 0.90 s the trail is 1.91 / 1.15 mm but only 3 of 8 wire cells stay pinned (mean 15°) and 6 of 21 columns are melted. Score 6. Stopped. |
+| cal108 | 0.65 s | 7 | 1.91 / 0.99 mm | 1 of 46 receding | 11/11 | 3/10 pinned, mean 24°. At 0.90 s the trail falls to 0.84 mm and the lead is 0.99 mm. Score 3. The 0.65 s cut is `cal108_0p65_side_alpha_T.png`. Stopped. |
 | cal109 | 0.65 s | 4 | 0.69 / 0.23 mm | 0 of 51 receding | 13/13 | Crest never grows. Not continued. |
 | cal104 | 0.65 s | 3 | 1.15 / 1.30 mm | 0 of 34 receding | 6/12 | Trail rose from 0.69 mm and is still under the lead. Not continued. |
 | cal105 | 0.65 s | 3 | 0.69 / 1.15 mm | 0 of 47 receding | 10/10 | Wire line up to 2.06 mm over a short trail. Not continued. |
@@ -264,4 +265,8 @@ At 0.65 s the two runs that were continued from a wetted, partly fused bead are 
 
 Center-plane cuts: `cal103_side_alpha_T.png`, `cal108_side_alpha_T.png`. The 0.65 s copies kept before the next continuation are `cal103_0p65_side_alpha_T.png` and `cal108_0p65_side_alpha_T.png`.
 
-cal103's 39° wire angle is why 30°/100° pins every cell. cal108's preheated pool sits at 24°, so the same window recedes. cal113 is that preheated pool with the floor lowered to 10°. At 0.36 s it already has 9 of 10 wire cells pinned and one receding plate cell. cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 0.65, and no preheat, to melt more of the trail columns.
+cal103's 39° wire angle is why 30°/100° pins every cell at 0.65 s. By 0.90 s that angle has fallen to 15° and the pin is gone, while the trail has grown to 1.91 mm. cal108's preheated pool sits at 24° at 0.65 s, so the same 30° floor recedes, and by 0.90 s the trailing crest has fallen to 0.84 mm. Neither holds a bubble. The open wake on these slices is still about 2–3 mm³.
+
+cal113 is that preheated pool with the wire floor lowered to 10° and the ceiling at 70°, on a 60° trailing sector. At 0.65 s it is the first run to take the dome, the notch, and a fully melted plate together: trail 1.61 mm, lead 0.99 mm, 11 of 11 columns melted, no receding plate cell, no gas sheet, 10 of 15 wire cells pinned from 1.45 to 1.76 mm. Score 8. The cavity report is still open, 2.77 mm³, and the only gas pores sit below the plate (z ≈ −0.6 mm), so nothing in the pool scores. Center-plane cut: `cal113_side_alpha_T.png`. It is continued to 0.90 s. The 0.65 s copy is `cal113_0p65_side_alpha_T.png`.
+
+cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 0.65, and no preheat, to melt more of the trail columns. It is still running.
