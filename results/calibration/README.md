@@ -145,4 +145,4 @@ Verdict: the centerline behind the wire is solid metal. The gas the solver count
 
 ## cal11 — continue cal10 to 1.0 s
 
-`continue_cal11.sh` restarts `cases/wire_cavity_cal10` from the written 0.40 s to 1.0 s. Same beams, same 60°/140° trailing window, same 38 µm mesh. 12 ranks, `nice -n 10`. Travel from the feed start to 1.0 s is 3.8 mm, longer than the 2.55 mm pool at 0.40 s, so the trailing section can settle under the pinned line. TaoSun-03's coarse screens (cal31–cal58, best shape so far cal36: 100+100+700 W, scan 3 mm/s, trailing crest 1.76 mm, no sector) are not repeated here.
+`continue_cal11.sh` restarts `cases/wire_cavity_cal10` from the written 0.40 s to 1.0 s. Same beams, same 60°/140° trailing window, same 38 µm mesh. 12 ranks, `nice -n 10`. Travel from the feed start to 1.0 s is 3.8 mm, longer than the 2.55 mm pool at 0.40 s, so the trailing section can settle under the pinned line. Center-plane side view while the run is still going, at 0.8 s and at the latest write 0.9 s: `cal11_sideview.png`. TaoSun-03's coarse screens (cal31–cal58, best shape so far cal36: 100+100+700 W, scan 3 mm/s, trailing crest 1.76 mm, no sector) are not repeated here.
