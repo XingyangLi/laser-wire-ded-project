@@ -73,6 +73,12 @@ QUESTIONS = {
     "cal82": "650 W rear spot with 45/120 window",
     "cal83": "700 W with 45/120 window",
     "cal84": "700 W at scan 5 mm/s",
+    "cal85": "600 W rear spot",
+    "cal86": "700 W with wire gap 0.02 mm",
+    "cal87": "powers 80/80/700",
+    "cal88": "powers 50/50/700",
+    "cal89": "700 W at scan 3.5 mm/s",
+    "cal90": "700 W with force factor 10",
 }
 
 
