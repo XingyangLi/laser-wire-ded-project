@@ -68,6 +68,9 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | --- | --- | --- | --- | --- | --- | --- |
 | cal36 | 0.80 s | 8 | 2.22 / 0.84 mm | 0.99–2.22 mm, 10/10 pinned | open, 2.72 mm³, centre y = 1.17 mm | Tallest trail and lowest lead. Continued to 1.00 s. |
 | cal43 | 0.32 s | 8 | 1.61 / 0.99 mm | 0.84–1.76 mm, 9/11 pinned | open, 3.66 mm³, centre y = 1.01 mm | Lowest leading crest at the short time. Continued to 0.80 s. |
+| cal66 | 0.40 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 12/12 pinned | open, 3.08 mm³, centre y = 1.08 mm | 700 W with the 30°/100° window. Fully pinned. Continued to 0.70 s. |
+| cal74 | 0.36 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 10/10 pinned | open, 3.15 mm³, centre y = 1.07 mm | 0.18 mm rear spot on 700 W. Crest shorter than cal36. Not continued. |
+| cal78 | 0.36 s | 8 | 1.61 / 0.84 mm | 0.99–1.76 mm, 6/12 pinned | open, 3.20 mm³, centre y = 1.07 mm | 15°/50° window on 700 W. Lead already 0.84 mm. Continued to 0.60 s. |
 | cal35 | 0.45 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 8/8 pinned | open, 3.18 mm³, centre y = 1.08 mm | Same crest height, line fully pinned above it. Continued to 1.00 s. |
 | cal58 | 0.34 s | 8 | 1.61 / 1.15 mm | 0.99–1.61 mm, 10/10 pinned | open, 3.35 mm³, centre y = 1.01 mm | Front spots 80 W, rear 500 W, scan 2 mm/s. Continued to 0.70 s. |
 | cal32 | 0.70 s | 8 | 1.91 / 1.45 mm | 1.15–1.91 mm, 11/13 pinned | open, 2.61 mm³, centre y = 1.15 mm | 45°/120° window, given time. Tallest trail. Lead rose with it. Not continued further. |
@@ -148,3 +151,9 @@ The 45°/120° window is what grew the 1.91 mm trail, so it is crossed onto the 
 At 0.80 s, cal36 is the closest shape so far. The trailing crest is 2.22 mm and the leading crest has fallen to 0.84 mm. All 10 wire cells are pinned from 0.99 mm to 2.22 mm. All 21 molten plate cells are receding, mean angle 44°. The cavity is still open, 2.72 mm³, centred at y = 1.17 mm on the half mesh. Fifty-six pinch-offs were recorded. A single-cell gas pore near the center plane at the last sample did not stay. The crest is at the top of the radiograph's height, so the run is continued only to 1.00 s to see whether one of those pinch-offs locks. Comparison: `cal36_vs_radiograph.png`.
 
 cal84 is the same 100+100+700 W at scan 5 mm/s and feed 22 mm/s, to 0.32 s. The faster pass is a test of whether the tail can freeze around a pinch-off that the 3 mm/s pool keeps open.
+
+cal66 puts the 30°/100° window on the 100+100+700 W beams. At 0.40 s the trail is 1.61 mm, the lead is 0.99 mm, and all 12 wire cells are pinned from 0.99 mm to 1.76 mm. All 26 molten plate cells are receding, mean angle 59°. The 60°/140° window on this same power (cal61) pinned only 4 of 10 cells, so 30°/100° is the window that holds. The cavity is open. It is continued to 0.70 s. Comparison: `cal66_vs_radiograph.png`.
+
+cal74 tightens that rear spot to 0.18 mm. At 0.36 s the crests are the same pair, 1.61 mm and 0.99 mm, and all 10 wire cells are pinned. The trail is a cell below cal36 at the same time, so the tighter spot is not continued. Comparison: `cal74_vs_radiograph.png`.
+
+cal78 uses the 15°/50° wire window, with no sector, on the 700 W spot. At 0.36 s the lead is already 0.84 mm, matching cal36 at 0.80 s, and the trail is 1.61 mm. Only 6 of 12 wire cells are pinned; the other 6 are advancing. It is continued to 0.60 s to see whether that line finishes pinning while the trail grows. Comparison: `cal78_vs_radiograph.png`.
