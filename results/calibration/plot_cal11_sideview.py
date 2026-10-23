@@ -14,13 +14,11 @@ import numpy as np
 from matplotlib.tri import Triangulation
 
 ROOT = Path("/home/xingyang/laser-wire-ded-project")
-CASE = ROOT / "cases/wire_cavity_cal10"
-OUT = ROOT / "results/calibration/cal11_sideview.png"
 WIRE_R = 0.5  # mm
 
 
-def load(time_name):
-    path = CASE / "postProcessing/sidePlane" / time_name / "alpha.metal_xz.raw"
+def load(case, time_name):
+    path = case / "postProcessing/sidePlane" / time_name / "alpha.metal_xz.raw"
     rows = []
     with open(path) as fh:
         for line in fh:
@@ -91,10 +89,20 @@ def draw(ax, x, z, alpha, title):
 
 
 def main():
-    times = ["0.8", "0.9"]
-    fig, axes = plt.subplots(1, 2, figsize=(11.2, 5.2), sharey=True)
+    import argparse
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--case", default=str(ROOT / "cases/wire_cavity_cal10"))
+    ap.add_argument("--tag", default="cal11")
+    ap.add_argument("--times", nargs="+", default=["0.8", "0.9"])
+    ap.add_argument("--out", default="")
+    args = ap.parse_args()
+    case = Path(args.case)
+    times = args.times
+    out = Path(args.out) if args.out else ROOT / "results/calibration" / f"{args.tag}_sideview.png"
+    fig, axes = plt.subplots(1, len(times), figsize=(5.6 * len(times), 5.2), sharey=True, squeeze=False)
+    axes = axes[0]
     for ax, t in zip(axes, times):
-        x, z, alpha, y = load(t)
+        x, z, alpha, y = load(case, t)
         draw(ax, x, z, alpha, f"t = {t} s    y = {y[0]*1e3:.2f} mm")
         # Gas with metal both above and below, just behind the wire.
         world_x = -x * 1e-3
@@ -116,13 +124,13 @@ def main():
         else:
             print(f"t={t} enclosed gas behind wire: n={n_enc} z={zlo*1e3:.2f}..{zhi*1e3:.2f} mm")
     fig.suptitle(
-        "cal11 center plane. Dark is metal, white is gas. Orange is alpha = 0.5.\n"
+        f"{args.tag} center plane. Dark is metal, white is gas. Orange is alpha = 0.5.\n"
         "Green dashes: 1 mm wire. Yellow: rear-beam axis and front-spot plate hit.",
         fontsize=10,
     )
     fig.tight_layout()
-    fig.savefig(OUT, dpi=140, bbox_inches="tight")
-    print("wrote", OUT)
+    fig.savefig(out, dpi=140, bbox_inches="tight")
+    print("wrote", out)
 
 
 if __name__ == "__main__":

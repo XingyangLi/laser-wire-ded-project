@@ -151,4 +151,12 @@ At 1.0 s the centerline trailing crest is 1.61 mm and the leading crest is 0.84 
 
 On the center plane at 0.8 s and 0.9 s a gas region sits behind the wire under the trailing metal, from about 0.4 mm to 1.6 mm up (`cal11_sideview.png`). By 1.0 s that column is metal again. What remains on the centerline is a few cells along the plate. The open-cavity report is 3.02 mm³ centred at (0.44, 1.10, 1.17) mm, beside the wire, closed volume zero. Pinch-offs 216, closures 0. One locked entrapment cell, 0.07 mm, sits in the plate. Comparison: `cal11_vs_radiograph.png`.
 
-The lasting center-plane pocket did not form, so cal12 puts cal36's 100+100+700 W, 3 mm/s scan on this refined mesh with the same 60°/140° trailing window.
+The tall white region under the bead on `cal11_sideview.png` is a non-wetted film. The plate angle is 56° and every molten plate-line cell is receding, because the 110° receding floor sits above that angle and the Young force pulls the metal off the plate. That is not the radiograph's cavity. The target is a wetted plate and small closed bubbles, about 0.05–0.3 mm, pinched off at the wire.
+
+## cal12 — stopped immediately
+
+`launch_cal12.sh` had started with the same 110°/150° plate window. It was killed at t = 0.006 s, before any field write. Continuing it would have regrown the gas film.
+
+## cal13 — wet the plate
+
+`launch_cal13.sh` keeps the cal10 beams, speeds, and 60°/140° trailing wire window. The plate window is 10°/40°, so a ~56° foot is advancing and the force wets the plate. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s. Success is the count and size of closed bubbles in the pool, not the open-cavity volume.
