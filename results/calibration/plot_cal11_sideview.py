@@ -58,7 +58,13 @@ def draw(ax, x, z, alpha, title):
     tri = Triangulation(x, z)
     xt, zt = x[tri.triangles], z[tri.triangles]
     tri.set_mask((np.ptp(xt, axis=1) > 0.35) | (np.ptp(zt, axis=1) > 0.35))
-    ax.tricontourf(tri, alpha, levels=np.linspace(0, 1, 17), cmap="gray_r", vmin=0, vmax=1)
+    # tricontourf only fills strictly between levels, so a cell at exactly 0 or 1
+    # is left unfilled and the white axes background shows through. The solid
+    # wire and the plate are alpha = 1, and that hole was painting them as gas.
+    levels = np.linspace(0.0, 1.0, 17)
+    levels[0] = -1e-3
+    levels[-1] = 1.0 + 1e-3
+    ax.tricontourf(tri, alpha, levels=levels, cmap="gray_r", vmin=0, vmax=1)
     ax.tricontour(tri, alpha, levels=[0.5], colors=["#d94801"], linewidths=1.15)
     # Plate and the wire outline on this plane.
     ax.axhline(0.0, color="#1f4e79", lw=1.0)
