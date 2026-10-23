@@ -98,6 +98,9 @@ QUESTIONS = {
     "cal104": "plate 10/40 with preheat 900 K",
     "cal105": "plate 10/40, hotter fronts, preheat 800 K",
     "cal106": "plate 15/45, slow scan, absorptivity 0.60",
+    "cal107": "plate 20/55 with substrate absorptivity 0.55",
+    "cal108": "plate 20/55, absorptivity 0.55, preheat 900 K",
+    "cal109": "plate 20/55, hotter fronts, preheat 800 K",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.

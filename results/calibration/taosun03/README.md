@@ -83,6 +83,10 @@ Every finished screen below still has a receding plate line and a solid substrat
 | cal58 | 0.85 s | 5 | 2.06 / 1.30 mm | 29/29 receding, 51° | solid | 80+80+500 W to 0.95 s. Lead rose from 0.99 mm. Foot lack-of-fusion. Stopped. |
 | cal76 | 0.70 s | 5 | 1.91 / 0.84 mm | 31/31 receding, 48° | solid | 30°/100° on 50+50+650 W. Lead fell. Plate still unwetted. Stopped. |
 | cal90 | 0.40 s | 5 | 1.61 / 0.99 mm | 24/24 receding, 38° | solid | Force factor 10. Angle fell to 38° and the line is still entirely receding. Stopped. |
+| cal66 | 0.90 s | 5 | 2.22 / 1.15 mm | 23/23 receding, 48° | solid | 30°/100° on 700 W. Lead rose from 0.99 mm. Stopped. |
+| cal89 | 0.45 s | 5 | 1.91 / 0.99 mm | 25/25 receding, 59° | solid | Scan 3.5 mm/s. Plate still unwetted. Stopped. |
+| cal88 | 0.45 s | 4 | 1.61 / 0.69 mm | 21/22 receding, 60° | solid | 50+50+700 W. Lead low and the wire line follows it to 0.69 mm. Stopped. |
+| cal86 | 0.45 s | 5 | 1.76 / 1.30 mm | 22/22 receding, 51° | solid | Wire gap 0.02 mm on 700 W. Fully pinned. Plate still unwetted. Stopped. |
 | cal43 | 0.96 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 47° | solid | 50+50+650 W at 1.05 s. Dome held. Plate still unwetted. Stopped. |
 | cal36 | 1.00 s | 5 | 2.22 / 1.15 mm | 35/36 receding | solid | 700 W. Open wake, no locked bubble. Stopped. |
 | cal66 | 0.70 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 52° | solid | 30°/100° notch on 700 W. Continued to 0.90 s. |
@@ -200,7 +204,12 @@ The plate window on cal08 is 110°/150°. The molten line sits near 50°, so eve
 | cal104 | 10°/40° | preheat 900 K | same |
 | cal105 | 10°/40° | absorptivity 0.55, preheat 800 K, fronts 180 W | rear spot still 700 W |
 | cal106 | 15°/45° | absorptivity 0.60, preheat 700 K, scan 2 mm/s | 80+80+650 W, to 0.45 s |
+| cal107 | 20°/55° | absorptivity 0.55 | 100+100+700 W, to 0.40 s |
+| cal108 | 20°/55° | absorptivity 0.55, preheat 900 K | same |
+| cal109 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | rear spot 700 W |
 
 A run that wets the plate and melts the substrate, and then holds a 0.05–0.3 mm bubble, is the one to continue. An open wake on these screens is not.
 
-At about 0.06 s, cal99–cal106 already have no receding molten plate cells. cal100 (20°/55°) has 22 of 23 pinned, at 43°. The 110°/150° runs next to them are still entirely receding, including cal90, whose force factor of 10 only moved the angle down to 38°. The center-plane check that the substrate has melted waits for the 0.10 s slice. No bubble has locked.
+At about 0.06 s, cal99–cal106 already have no receding molten plate cells. cal100 (20°/55°) has 22 of 23 pinned, at 43°. The 110°/150° runs next to them are still entirely receding, including cal90, whose force factor of 10 only moved the angle down to 38°.
+
+At the 0.10 s center-plane cut the plate surface is still solid on the angle-only runs (about 1230–1440 K). It is above the 316L solidus where the substrate absorptivity or the preheat was raised: cal103 at 1752 K, cal104 at 1858 K, cal105 at 1819 K, cal106 at 1764 K. The bead is not tall yet, so that is a hot plate surface, not a fused dome. cal107–cal109 put that melting on the 20°/55° window that pinned the line. No bubble has locked.
