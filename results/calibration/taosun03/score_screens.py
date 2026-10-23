@@ -72,6 +72,7 @@ QUESTIONS = {
     "cal81": "powers 40/40/560 at scan 2 mm/s",
     "cal82": "650 W rear spot with 45/120 window",
     "cal83": "700 W with 45/120 window",
+    "cal84": "700 W at scan 5 mm/s",
 }
 
 
