@@ -210,8 +210,11 @@ The plate window on cal08 is 110°/150°. The molten line sits near 50°, so eve
 | cal107 | 20°/55° | absorptivity 0.55 | 100+100+700 W, to 0.40 s |
 | cal108 | 20°/55° | absorptivity 0.55, preheat 900 K | same |
 | cal109 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | rear spot 700 W |
+| cal110 | 20°/55° | absorptivity 0.55, preheat 900 K | trail pin 15°/50° over 60° of +x, to 0.60 s |
+| cal111 | 20°/55° | same as cal110 | trail pin 20°/45° over 45° of +x, to 0.60 s |
+| cal112 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | trail pin 15°/50° over 60° of +x, to 0.60 s |
 
-A run that wets the plate and melts the substrate, and then holds a 0.05–0.3 mm bubble, is the one to continue. An open wake on these screens is not.
+A run that wets the plate and melts the substrate is continued to at least 0.60 s. The wire angle on cal99–cal106 sits near 20–45°, and the 30°/100° trail puts the low end of that outside the window, so the line is receding. cal110–cal112 put a pinning window on that angle, on the trailing face only. An open wake on these screens is not the target.
 
 At about 0.06 s, cal99–cal106 already have no receding molten plate cells. cal100 (20°/55°) has 22 of 23 pinned, at 43°. The 110°/150° runs next to them are still entirely receding, including cal90, whose force factor of 10 only moved the angle down to 38°.
 

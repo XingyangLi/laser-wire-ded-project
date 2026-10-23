@@ -101,6 +101,9 @@ QUESTIONS = {
     "cal107": "plate 20/55 with substrate absorptivity 0.55",
     "cal108": "plate 20/55, absorptivity 0.55, preheat 900 K",
     "cal109": "plate 20/55, hotter fronts, preheat 800 K",
+    "cal110": "pinned trail 15/50 on the heated 20/55 plate",
+    "cal111": "narrow trail pin 20/45 on the heated 20/55 plate",
+    "cal112": "pinned trail 15/50 with hotter fronts",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.
