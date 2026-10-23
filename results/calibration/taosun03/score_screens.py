@@ -79,6 +79,9 @@ QUESTIONS = {
     "cal88": "powers 50/50/700",
     "cal89": "700 W at scan 3.5 mm/s",
     "cal90": "700 W with force factor 10",
+    "cal91": "powers 40/40/650 at scan 3 mm/s",
+    "cal92": "powers 60/60/700",
+    "cal94": "powers 60/60/560 at scan 2 mm/s",
 }
 
 

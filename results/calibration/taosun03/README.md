@@ -67,7 +67,7 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | tag | t | score | trail / lead | wire line | cavity | what it shows |
 | --- | --- | --- | --- | --- | --- | --- |
 | cal36 | 0.80 s | 8 | 2.22 / 0.84 mm | 0.99–2.22 mm, 10/10 pinned | open, 2.72 mm³, centre y = 1.17 mm | Tallest trail and lowest lead. Continued to 1.00 s. |
-| cal43 | 0.32 s | 8 | 1.61 / 0.99 mm | 0.84–1.76 mm, 9/11 pinned | open, 3.66 mm³, centre y = 1.01 mm | Lowest leading crest at the short time. Continued to 0.80 s. |
+| cal43 | 0.80 s | 8 | 1.91 / 0.84 mm | 0.99–2.06 mm, 10/10 pinned | open, 2.62 mm³, centre y = 1.11 mm | 50+50+650 W, given time. Lead fell to 0.84 mm. Continued to 1.05 s. |
 | cal66 | 0.40 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 12/12 pinned | open, 3.08 mm³, centre y = 1.08 mm | 700 W with the 30°/100° window. Fully pinned. Continued to 0.70 s. |
 | cal74 | 0.36 s | 8 | 1.61 / 0.99 mm | 0.99–1.76 mm, 10/10 pinned | open, 3.15 mm³, centre y = 1.07 mm | 0.18 mm rear spot on 700 W. Crest shorter than cal36. Not continued. |
 | cal78 | 0.36 s | 8 | 1.61 / 0.84 mm | 0.99–1.76 mm, 6/12 pinned | open, 3.20 mm³, centre y = 1.07 mm | 15°/50° window on 700 W. Lead already 0.84 mm. Continued to 0.60 s. |
@@ -80,8 +80,11 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal75 | 0.36 s | 8 | 1.61 / 1.15 mm | 1.15–1.76 mm, 8/11 pinned | open, 3.37 mm³, centre y = 1.05 mm | Rear aim z = 0.70 mm. Lead rose. Not continued. |
 | cal70 | 0.40 s | 8 | 1.45 / 0.99 mm | 0.84–1.61 mm, 5/9 pinned | open, 2.67 mm³, centre y = 1.09 mm | 650 W with 60°/140°. Trail only just 1.45 mm. Not continued. |
 | cal77 | 0.36 s | 8 | 1.45 / 0.99 mm | 1.30–1.76 mm, 5/7 pinned | open, 3.10 mm³, centre y = 1.06 mm | Rear inclination −28°. Trail stayed at 1.45 mm. Not continued. |
+| cal79 | 0.45 s | 8 | 1.61 / 1.15 mm | 1.15–1.76 mm, 6/8 pinned | open, 3.45 mm³, centre y = 1.04 mm | 80+80+500 W with 60°/140°. Same early crests as cal58. Not continued. |
 | cal35 | 0.45 s | 8 | 1.76 / 1.30 mm | 1.30–1.91 mm, 8/8 pinned | open, 3.18 mm³, centre y = 1.08 mm | Same crest height, line fully pinned above it. Continued to 1.00 s. |
-| cal58 | 0.34 s | 8 | 1.61 / 1.15 mm | 0.99–1.61 mm, 10/10 pinned | open, 3.35 mm³, centre y = 1.01 mm | Front spots 80 W, rear 500 W, scan 2 mm/s. Continued to 0.70 s. |
+| cal58 | 0.70 s | 8 | 1.91 / 0.99 mm | 0.99–2.06 mm, 9/9 pinned | open, 3.09 mm³, centre y = 1.07 mm | 80+80+500 W at 2 mm/s, given time. Fully pinned. Continued to 0.95 s. |
+| cal81 | 0.45 s | 8 | 1.76 / 0.69 mm | 0.99–1.91 mm, 10/11 pinned | open, 3.86 mm³, centre y = 1.02 mm | 40+40+560 W at 2 mm/s. Lowest lead. A foot pore locked. Continued to 0.65 s. |
+| cal76 | 0.40 s | 8 | 1.76 / 0.99 mm | 0.99–1.91 mm, 12/14 pinned | open, 3.60 mm³, centre y = 1.03 mm | 650 W with the 30°/100° window. Continued to 0.70 s. |
 | cal32 | 0.70 s | 8 | 1.91 / 1.45 mm | 1.15–1.91 mm, 11/13 pinned | open, 2.61 mm³, centre y = 1.15 mm | 45°/120° window, given time. Tallest trail. Lead rose with it. Not continued further. |
 | cal34 | 0.70 s | 8 | 1.76 / 1.15 mm | 1.15–1.91 mm, 9/13 pinned | open, 2.61 mm³, centre y = 1.14 mm | 60°/140° held the lead at 1.15 mm. Continued to 1.00 s. |
 | cal47 | 0.25 s | 7 | 1.45 / 1.15 mm | 1.15–1.61 mm, 12/13 pinned | open, 3.70 mm³, centre y = 0.98 mm | Milder plate window, same crests as cal34. Not continued. |
@@ -95,6 +98,8 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 | cal53 | 0.30 s | 7 | 1.61 / 1.30 mm | 0.84–1.61 mm, 8/8 pinned | open, 2.63 mm³, centre y = 1.03 mm | Feed 32 mm/s. Lead rises with the trail. Not continued. |
 | cal54 | 0.36 s | 7 | 1.61 / 1.30 mm | 1.30–1.76 mm, 11/11 pinned | open, 3.27 mm³, centre y = 1.01 mm | Scan 2.5 mm/s, feed 22 mm/s. Lead rises with the trail. Not continued. |
 | cal61 | 0.40 s | 7 | 1.61 / 1.15 mm | 1.15–1.76 mm, 4/10 pinned | open, 2.98 mm³, centre y = 1.09 mm | 700 W with the 60°/140° window. Line mostly receding. Not continued. |
+| cal68 | 0.40 s | 6 | 1.76 / 1.15 mm | 0.54–1.91 mm, 12/12 pinned | open, 2.55 mm³, centre y = 1.09 mm | Feed 32 mm/s on 700 W. Line slipped to 0.54 mm. Foot pore locked. Not continued. |
+| cal73 | 0.40 s | 6 | 1.45 / 0.69 mm | 0.69–1.76 mm, 8/10 pinned | open, 3.02 mm³, centre y = 1.06 mm | Front spots 25 W. Lead fell and the line slipped. Not continued. |
 | cal46 | 0.30 s | 6 | 1.45 / 0.99 mm | 0.69–1.61 mm, 9/9 pinned | open, 3.34 mm³, centre y = 1.01 mm | Rear aim at the foot. Line slips down. Not continued. |
 | cal48 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 10/10 pinned | open, 3.07 mm³, centre y = 1.01 mm | Marangoni on cools the pool. Not continued. |
 | cal39 | 0.28 s | 6 | 1.30 / 1.15 mm | 1.15–1.45 mm, 8/13 pinned | open, 3.17 mm³, centre y = 1.02 mm | Wide 90°/170° window. Foot pore, not a neck. Not continued. |
@@ -172,3 +177,15 @@ Slowing cal36's 100+100+700 W beams to 2 mm/s (cal62) reaches a 2.06 mm trail at
 Lowering the rear aim to 0.35 mm (cal67) keeps a fully pinned line and a 0.99 mm lead, with the trail at 1.61 mm. Raising it to 0.70 mm (cal75) lets the lead back up to 1.15 mm. A shallower rear beam, −28° (cal77), and the 60°/140° window on 50+50+650 W (cal70) leave the trail at 1.45 mm. Extra feed on the 650 W split (cal69) reaches 1.76 / 0.99 mm, but only 5 of 8 wire cells are pinned and 3 are receding. A lack-of-fusion cell showed up at the foot and was gone in the final sample. None of these four is continued.
 
 The free cores go to levers around the 700 W recipe. cal85 drops the rear spot to 600 W. cal86 closes the wire gap to 0.02 mm. cal87 cuts the front spots to 80 W and keeps 700 W behind. cal88 cuts them to 50 W. cal89 scans at 3.5 mm/s, between cal36 and the 5 mm/s freeze test. cal90 raises the contact-force factor from 6 to 10.
+
+At 0.80 s the 50+50+650 W run (cal43) matches cal36's leading crest, 0.84 mm, with the trail at 1.91 mm and all 10 wire cells pinned from 0.99 mm to 2.06 mm. It is continued to 1.05 s. Comparison: `cal43_vs_radiograph.png`.
+
+At 0.70 s the milder 80+80+500 W run (cal58) has a 1.91 mm trail and a 0.99 mm lead, with all 9 wire cells pinned from 0.99 mm to 2.06 mm. It is continued to 0.95 s. Comparison: `cal58_vs_radiograph.png`.
+
+Cutting the front spots to 40 W at that slow scan (cal81, rear 560 W) drops the lead to 0.69 mm and keeps 10 of 11 wire cells pinned, with the trail at 1.76 mm. A lack-of-fusion pore is locked at the foot, one cell, at about (x, y, z) = (−0.03, 0.66, 0.38) mm. It is continued to 0.65 s to see whether the trail grows and whether that pore stays. Comparison: `cal81_vs_radiograph.png`.
+
+The 30°/100° window on 50+50+650 W (cal76) reaches 1.76 / 0.99 mm at 0.40 s with 12 of 14 wire cells pinned. It is continued to 0.70 s. The same window on 80+80+500 W (cal79) does not beat the plain cal58 crests. Comparison: `cal76_vs_radiograph.png`.
+
+Feed 32 mm/s on the 700 W spot (cal68) pins every wire cell but the line runs down to 0.54 mm, and a lack-of-fusion cell locks at z = 0.38 mm. Front spots of 25 W (cal73) drop the lead to 0.69 mm and the line follows it down. Both are not continued. Comparisons: `cal68_vs_radiograph.png`, `cal73_vs_radiograph.png`.
+
+cal91 keeps 40 W fronts and raises the rear spot to 650 W at scan 3 mm/s, to see if the foot pore in cal81 was the slow scan. cal92 puts 60 W in each front spot with 700 W behind. cal94 is cal81's slow scan with the front spots raised from 40 W to 60 W.
