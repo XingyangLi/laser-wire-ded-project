@@ -218,7 +218,8 @@ The plate window on cal08 is 110°/150°. The molten line sits near 50°, so eve
 | cal111 | 20°/55° | same as cal110 | trail pin 20°/45° over 45° of +x, to 0.60 s |
 | cal112 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | trail pin 15°/50° over 60° of +x, to 0.60 s |
 | cal113 | 20°/55° | same heat as cal111 | wire floor 10°/70° over 60° of +x, to 0.65 s |
-| cal114 | 10°/40° | substrate absorptivity 0.65, no preheat | cal103 notch (trail 30°/100°), to 0.70 s |
+| cal114 | 10°/40° | substrate absorptivity 0.65, no preheat | cal103 notch (trail 30°/100°), to 0.70 s, then 1.00 s |
+| cal115 | 10°/40° | same as cal114 | wire floor 15°/80°, to 0.55 s |
 
 A run that wets the plate and melts the substrate is continued to at least 0.60 s. The wire angle on these heated plates sits near 17–33°. A 30°/100° trail puts the low end of that outside the window, so those cells recede. cal110–cal112 put a pinning window on the trailing face only. An open wake on these screens is not the target. No run has a closed bubble of 0.05–0.3 mm. Pinch-offs stay one-cell and mobile.
 
@@ -269,4 +270,8 @@ cal103's 39° wire angle is why 30°/100° pins every cell at 0.65 s. By 0.90 s 
 
 cal113 is that preheated pool with the wire floor lowered to 10° and the ceiling at 70°, on a 60° trailing sector. At 0.65 s it is the first run to take the dome, the notch, and a fully melted plate together: trail 1.61 mm, lead 0.99 mm, 11 of 11 columns melted, no receding plate cell, no gas sheet, 10 of 15 wire cells pinned from 1.45 to 1.76 mm. Score 8. The cavity report is still open, 2.77 mm³, and the only gas pores sit below the plate (z ≈ −0.6 mm), so nothing in the pool scores. Center-plane cut: `cal113_side_alpha_T.png`. It is continued to 0.90 s. The 0.65 s copy is `cal113_0p65_side_alpha_T.png`.
 
-cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 0.65, and no preheat, to melt more of the trail columns. It is still running.
+cal114 is cal103's pinned notch with substrate absorptivity raised from 0.55 to 0.65, and no preheat. At 0.70 s it matches cal113's score of 8 from the other direction: trail 1.91 mm, lead 1.15 mm, 9 of 15 columns melted, no receding plate cell, 6 of 10 wire cells pinned from 1.45 to 1.76 mm (mean 29°, four cells still under the 30° floor). No closed bubble. The open wake is still there. It is continued to 1.00 s. Center-plane cut: `cal114_side_alpha_T.png`.
+
+cal113 at 0.90 s loses the crest the same way cal108 did. The trail is 0.84 mm and the lead is 0.99 mm, with the plate still wetted and 18 of 18 columns melted. Score 3. The score-8 slice remains the 0.65 s cut. The preheated pool is not continued further.
+
+cal115 keeps cal114's plate, power, and absorptivity, and lowers the wire floor from 30° to 15° so the 29° cells pin. It runs to 0.55 s.
