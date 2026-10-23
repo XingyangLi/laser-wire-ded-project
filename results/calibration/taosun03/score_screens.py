@@ -107,6 +107,20 @@ QUESTIONS = {
     "cal113": "wire floor 10/70 on the cal111 fused dome",
     "cal114": "cal103 notch with substrate absorptivity 0.65",
     "cal115": "cal114 heat with the wire floor lowered to 15",
+    "cal116": "cal114 with 10 ppm oxygen, Marangoni on",
+    "cal117": "cal114 with 100 ppm oxygen, Marangoni on",
+    "cal118": "cal114 with 500 ppm oxygen, Marangoni on",
+    "cal119": "cal113 with 10 ppm oxygen, Marangoni on",
+    "cal120": "cal113 with 100 ppm oxygen, Marangoni on",
+    "cal121": "cal113 with 500 ppm oxygen, Marangoni on",
+    "cal122": "cal114 with trail receding angle 55",
+    "cal123": "cal114 with trail receding angle 70",
+    "cal124": "cal113 with trail receding angle 50",
+    "cal125": "cal114 with feed 28 mm/s",
+    "cal126": "cal114 with rear spot 600 W",
+    "cal127": "cal113 with feed 26 mm/s",
+    "cal128": "cal113 with rear spot 800 W",
+    "cal129": "cal113 at wire-refine 2",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.
@@ -491,7 +505,7 @@ def score(r):
 
 
 def main(argv):
-    tags = argv[1:] or [f"cal{i}" for i in range(31, 120)]
+    tags = argv[1:] or [f"cal{i}" for i in range(31, 160)]
     recs = []
     for tag in tags:
         case = CASES / f"wire_cavity_{tag}"

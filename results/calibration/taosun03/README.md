@@ -279,3 +279,28 @@ cal115 keeps cal114's plate, power, and absorptivity, and lowers the wire floor 
 At 1.00 s cal114's crest has fallen. The trail is 1.15 mm and the lead is 0.99 mm, 12 of 22 columns are melted, and 8 of 13 wire cells recede at 24°. Score 3. The plate line is still not receding, and there is still no pool bubble. The score-8 cut is the 0.70 s one, `cal114_0p70_side_alpha_T.png`. The run stops.
 
 cal115 at 0.55 s lowers that wire floor to 15°. Eight of ten wire cells pin, but the line stays at 1.30–1.45 mm while the trail grows to 2.37 mm, above the 2.30 mm cap, and the lead is 1.30 mm. All six trail columns on that slice are melted and the plate line is not receding. Score 5. No closed bubble. Nothing is left running.
+
+## Notch pinch-off
+
+cal113 at 0.65 s and cal114 at 0.70 s are the fused, wetted bases (score 8). The crest to hold is a trail of at least 1.6 mm and a lead of at most 1.0 mm. cal113 meets that (1.61 / 0.99 mm) and then loses the crest by 0.90 s. cal114's lead is 1.15 mm at the score-8 slice. These runs stop near that slice instead of running on into the collapse. TaoSun-01 is on stronger trailing-sector pinning, a faster scan, and oxygen on its cal14 (1100 K, plate 10°/40°). The cases here are the other levers, one rank each, `nice -n 10`.
+
+Sahoo–Belton `dsigma/dT` at 1723 K is still negative at 10 ppm and positive from 100 ppm up, so the Marangoni stress reverses. `--marangoni` turns that stress on over the helper's `--no-marangoni`. `--oxygen-sigma-only` keeps the plate and wire windows of the base recipe. The placeholder oxygen angle table would replace them.
+
+| tag | base | change | end |
+| --- | --- | --- | --- |
+| cal116 | cal114 | 10 ppm, Marangoni on, scalar angles | 0.70 s |
+| cal117 | cal114 | 100 ppm | 0.70 s |
+| cal118 | cal114 | 500 ppm | 0.70 s |
+| cal119 | cal113 | 10 ppm | 0.65 s |
+| cal120 | cal113 | 100 ppm | 0.65 s |
+| cal121 | cal113 | 500 ppm | 0.65 s |
+| cal122 | cal114 | trail receding 55°/90° over 60° of +x, front floor 20°/70° | 0.70 s |
+| cal123 | cal114 | trail receding 70°/110°, front floor 25°/70° | 0.70 s |
+| cal124 | cal113 | trail receding 50°/85°, front floor 15°/70° | 0.65 s |
+| cal125 | cal114 | feed 28 mm/s, scan still 3 mm/s | 0.70 s |
+| cal126 | cal114 | rear spot 600 W | 0.70 s |
+| cal127 | cal113 | feed 26 mm/s | 0.65 s |
+| cal128 | cal113 | rear spot 800 W | 0.65 s |
+| cal129 | cal113 | `--wire-refine 2` (38 µm in x, y) | 0.40 s |
+
+The higher trailing receding angle is only on the back of the wire. A cell whose angle sits under that floor recedes there, while the rest of the wire keeps a 15–30° floor. cal129 is the crest-compliant score-8 recipe on the cal63 mesh, one rank. It is not the refined 60°/140° case.
