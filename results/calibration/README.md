@@ -8,6 +8,8 @@ Negative inclination reverses that. The beam moves inward as it descends, so the
 
 Side views put the trailing side (+x) on the left. Scores are against the radiograph, not against the previous iteration.
 
+From cal13 on, the open-cavity volume is not the score. The bead has to wet a molten plate with no gas film under it, keep the trailing-tall dome, and shed closed bubbles of about 0.05–0.3 mm at the wire.
+
 ## cal01 — plate spots outside the wire
 
 Command: `results/calibration/launch_cal01.sh`. Coarse mesh, 150 µm, 30305 cells, 24 ranks. Wall clock 470 s for 0.10 s.
@@ -159,4 +161,12 @@ The tall white region under the bead on `cal11_sideview.png` is a non-wetted fil
 
 ## cal13 — wet the plate
 
-`launch_cal13.sh` keeps the cal10 beams, speeds, and 60°/140° trailing wire window. The plate window is 10°/40°, so a ~56° foot is advancing and the force wets the plate. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s. Success is the count and size of closed bubbles in the pool, not the open-cavity volume.
+`launch_cal13.sh` keeps the cal10 beams, speeds, and 60°/140° trailing wire window. The plate window is 10°/40°. Refined mesh, 57014 cells, 12 ranks, `nice -n 10`. Wall clock 5.8 h for 0.60 s.
+
+The plate line is wetting: 22 pinned, 17 advancing, 1 receding, mean angle 53°. At 0.40 s a one-cell gas layer still sits under the downstream bead. By 0.60 s that layer is metal, and the center plane is metal from the plate up through the bead. The trailing crest is 1.45 mm and the leading crest is 0.84 mm. The junction still holds an open gas notch beside the wire, from about 1.15 mm to 1.9 mm, not a closed bubble. The open-cavity report is 2.66 mm³ centred at (0.48, 1.09, 1.08) mm. Pinch-offs 48, closures 0. One locked lack-of-fusion patch, 0.31 mm, sits on the plate at z = 0.11 mm.
+
+The plate itself never melts. The top plate cell stays near 1274 K from 0.3 s to 0.6 s, under the 1658 K solidus, and the pool depth is 0. The liquid starts about 0.4 mm above the plate. Conduction into the 300 K plate is real and smooth; there is not enough of it. Side view: `cal13_sideview.png`.
+
+## cal14 — hot plate, cold wire
+
+`launch_cal14.sh` is cal13 with the substrate initialised at 1100 K, including the substrate inlet. The wire stub, the wire inlet, the gas inlet and the radiation ambient stay at 300 K. Same beams, same 10°/40° plate window, same trailing wire sector. The 974 K rise seen on cal13's top cell would then put the plate through the solidus. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s.
