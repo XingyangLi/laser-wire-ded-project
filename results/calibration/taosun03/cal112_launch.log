@@ -10,3 +10,78 @@ wmake laserWireDEDFoam
 [generate] mesh 64 x 19 x (8+21) = 35264 block cells -> 35264 cells, dx=150 um; capillary dt ~ 3.35e-05 s; expected bead area 5.24 mm^2; E_L = 353 J/mm
 [generate] single-track extras: contact-line pinning ON (thetaR 20 / thetaA 55 deg), wire pin ON (thetaR 25 / thetaA 70 deg, frame head), trailing wire sector 15/50 deg within 60 deg of +x (blend 20 deg), porosity ON, wire cavity ON
 [generate] wrote /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal112
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_metrics.csv
+  n_bead_samples: 121
+  n_liquid_samples: 258
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -2.7303653
+  bead_x_max_mm: 3.125
+  trail_z_max_mm: 0.84117647
+  lead_z_max_mm: 0.53529412
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 3213.835
+  T_max_slice_K: 3213.835
+  t_slice_s: 0.6
+  t_contact_s: 0.6
+  n_wire: 13.0
+  n_wire_pinned: 9.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 4.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 0.9941176429999999
+  contact_x_min_mm: -2.73036527
+  contact_x_max_mm: 3.1250000300000003
+  contact_y_max_mm: 2.28640936
+  t_cavity_s: 0.6
+  cavity_status: open
+  cavity_volume_mm3: 2.73509919
+  cavity_depth_mm: 1.5329411700000002
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.46774980299999996
+  cavity_cy_mm: 0.860852089
+  cavity_cz_mm: 0.9977112629999999
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_projection.png
+bead z max mm 0.8411764574702829
+bead x min/max mm -2.730365260504186 3.124999930150807
+trail z max mm 0.8411764574702829 n 877
+lead z max mm 0.5352941225282848 n 290
+wake gas n 580 x 1.1274138220148322 y 0.8448505987526632 z 1.1336105473736975
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal112
+porosity (last sample):
+  time_s: 6.00000000e-01
+  nPores: 3
+  nLocked: 0
+  nEntrapment: 1
+  nLackOfFusion: 0
+  nKeyhole: 2
+  poreVolume_m3: 9.73292342e-12
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.26705098e-08
+  volumeFraction: 1.17717644e-04
+  eqDiameterMean_m: 1.97967157e-04
+  eqDiameterMax_m: 2.25915560e-04
+pores at t = 6.00000000e-01: 3
+  id 0  keyhole  mobile  V=6.037e-12 m3  d_eq=0.226 mm  centre=(-8.755e-04, 7.333e-05, -7.764e-04) m  cells=3  shell_fl=1.000
+  id 1  keyhole  mobile  V=1.927e-12 m3  d_eq=0.154 mm  centre=(-1.750e-04, 7.333e-05, -8.857e-04) m  cells=1  shell_fl=1.000
+  id 2  gasEntrapment  mobile  V=1.769e-12 m3  d_eq=0.150 mm  centre=(-6.250e-04, 7.333e-05, -5.600e-04) m  cells=1  shell_fl=1.000
+contact line (last sample):
+  time_s: 6.00000000e-01
+  nMolten: 72  nPinnedHysteresis: 43  nAdvancing: 27  nReceding: 2  nFrozenSolidification: 49
+  thetaMean_deg: 5.38756168e+01  thetaMin_deg: 1.43006906e+01  thetaMax_deg: 9.87517770e+01
+  lengthPinned_m: 1.55655679e-02  lengthMobile_m: 4.99901531e-03
+  nWire: 13  nWirePinned: 9  nWireAdvancing: 0  nWireReceding: 4
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 9.94117643e-04  thetaMeanWire_deg: 3.26317616e+01
+wire cavity (last sample):
+  time_s: 6.00000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 9.94117643e-04
+  cavityVolume_m3: 2.73509919e-09  open_m3: 2.73509919e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.53294117e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (4.67749803e-04, 8.60852089e-04, 9.97711263e-04)  nOpenCells: 843  nClosedCells: 0
+cavity events: pinchoff=45  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal112_vs_radiograph.png
+CAL112_DONE
+released 1 MPI slots; 3 still held

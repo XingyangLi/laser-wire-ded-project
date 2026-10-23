@@ -104,6 +104,7 @@ QUESTIONS = {
     "cal110": "pinned trail 15/50 on the heated 20/55 plate",
     "cal111": "narrow trail pin 20/45 on the heated 20/55 plate",
     "cal112": "pinned trail 15/50 with hotter fronts",
+    "cal113": "wire floor 10/70 on the cal111 fused dome",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.

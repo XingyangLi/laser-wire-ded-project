@@ -75,7 +75,7 @@ The radiograph is a rounded dome about 1.5–2 mm tall, higher on the trailing s
 
 Bubble points are withheld while the plate line is receding. A one-cell mobile pore and an open wake do not score. A locked lack-of-fusion pore at the foot does not score. The center-plane cut is `sidePlane` at y = 20 µm, drawn in `<tag>_side_alpha_T.png` and in the lower-left panel of `<tag>_vs_radiograph.png`. The full table is `ranking.csv`.
 
-Every finished screen below still has a receding plate line and a solid substrate under the bead (center-plane temperature stays below the 316L solidus). The best dome is therefore 5, and none of them has a scored bubble. cal48 (Marangoni on) is the one center-plane slice with a gas sheet under the bead.
+The 110°/150° screens in the table below still have a receding plate line and a solid substrate under the bead. They top out at 5, and none of them has a scored bubble. cal48 (Marangoni on) is the one center-plane slice with a gas sheet under the bead. The wetted and fused runs are in "Plate wetting and substrate melting".
 
 | tag | t | score | trail / lead | plate line | substrate | what it shows |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -217,9 +217,33 @@ The plate window on cal08 is 110°/150°. The molten line sits near 50°, so eve
 | cal110 | 20°/55° | absorptivity 0.55, preheat 900 K | trail pin 15°/50° over 60° of +x, to 0.60 s |
 | cal111 | 20°/55° | same as cal110 | trail pin 20°/45° over 45° of +x, to 0.60 s |
 | cal112 | 20°/55° | absorptivity 0.60, preheat 800 K, fronts 180 W | trail pin 15°/50° over 60° of +x, to 0.60 s |
+| cal113 | 20°/55° | same heat as cal111 | wire floor 10°/70° over 60° of +x, to 0.65 s |
 
-A run that wets the plate and melts the substrate is continued to at least 0.60 s. The wire angle on cal99–cal106 sits near 20–45°, and the 30°/100° trail puts the low end of that outside the window, so the line is receding. cal110–cal112 put a pinning window on that angle, on the trailing face only. An open wake on these screens is not the target.
+A run that wets the plate and melts the substrate is continued to at least 0.60 s. The wire angle on these heated plates sits near 17–33°. A 30°/100° trail puts the low end of that outside the window, so those cells recede. cal110–cal112 put a pinning window on the trailing face only. An open wake on these screens is not the target. No run has a closed bubble of 0.05–0.3 mm. Pinch-offs stay one-cell and mobile.
 
 At about 0.06 s, cal99–cal106 already have no receding molten plate cells. cal100 (20°/55°) has 22 of 23 pinned, at 43°. The 110°/150° runs next to them are still entirely receding, including cal90, whose force factor of 10 only moved the angle down to 38°.
 
-At the 0.10 s center-plane cut the plate surface is still solid on the angle-only runs (about 1230–1440 K). It is above the 316L solidus where the substrate absorptivity or the preheat was raised: cal103 at 1752 K, cal104 at 1858 K, cal105 at 1819 K, cal106 at 1764 K. The bead is not tall yet, so that is a hot plate surface, not a fused dome. cal107–cal109 put that melting on the 20°/55° window that pinned the line. No bubble has locked.
+At the 0.10 s center-plane cut the plate surface is still solid on the angle-only runs (about 1230–1440 K). It is above the 316L solidus where the substrate absorptivity or the preheat was raised: cal103 at 1752 K, cal104 at 1858 K, cal105 at 1819 K, cal106 at 1764 K. The bead is not tall yet, so that is a hot plate surface, not a fused dome.
+
+Finished slices, center plane at y = 20 µm. "Plate" is pinned / advancing / receding. Gap fraction is 0 on every row. cal63 (refined 700 W, stopped at 0.25 s) and cal71 (full width, 0.55 s) stay on 110°/150° with the whole plate line receding and a solid substrate, so they are not continued.
+
+| tag | t | score | trail / lead | plate | melt | wire line |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal111 | 0.60 s | 6 | 2.06 / 0.99 mm | 39/13/0, 49° | 12/12, 2142 K | 4/10 pinned, 6 receding, z 1.30–1.45 mm, mean 20°. The 20° trail floor is the angle itself, so the line sits 0.6 mm below the crest. |
+| cal108 | 0.40 s | 6 | 1.91 / 0.84 mm | 40/4/0, 43° | 5/5, 2071 K | 4/8 pinned, 4 receding, mean 27°, under the 30° floor. Continued to 0.65 s. |
+| cal100 | 0.40 s | 6 | 1.45 / 0.99 mm | 13/11/0, 54° | 0/9, 1380 K | Wetted dome, solid plate. Not continued. |
+| cal101 | 0.40 s | 6 | 1.45 / 0.84 mm | 4/25/0, 46° | 0/11, 1364 K | Same. The 5°/25° window advances the line. Not continued. |
+| cal102 | 0.40 s | 6 | 1.61 / 1.15 mm | 26/0/4, 52° | 0/10, 1361 K | Mostly pinned, four cells still receding. Solid plate. Not continued. |
+| cal99 | 0.40 s | 5 | 1.45 / 1.15 mm | 9/17/0, 48° | 0/10, 1358 K | Wetted, solid. Not continued. |
+| cal109 | 0.40 s | 4 | 0.69 / 0.23 mm | 28/3/0, 43° | 5/5, 2197 K | All 9 wire cells recede at 17°. Crest stays low. Continued to 0.65 s. |
+| cal110 | 0.60 s | 3 | 0.69 / 1.15 mm | 47/7/0, 45° | 10/10, 2204 K | 9/11 pinned at 27° inside 15°/50°, but the trail crest never grows. |
+| cal112 | 0.60 s | 3 | 0.84 / 0.54 mm | 43/27/2, 54° | 13/13, 2017 K | 9/13 pinned. Hotter fronts, short dome. |
+| cal103 | 0.40 s | 3 | 0.69 / 1.15 mm | 8/24/0, 46° | 4/7, 1881 K | Fused and wetted, lead taller than the trail. Continued to 0.65 s. |
+| cal104 | 0.40 s | 3 | 0.69 / 1.30 mm | 5/25/0, 51° | 4/7, 1719 K | Same. Continued to 0.65 s. |
+| cal105 | 0.40 s | 3 | 0.69 / 0.69 mm | 12/30/0, 47° | 7/7, 2001 K | Fully fused columns, short crests. Continued to 0.65 s. |
+| cal106 | 0.45 s | 3 | 0.54 / 1.15 mm | 23/17/0, 46° | 3/3, 1941 K | Slow scan, lead taller. Continued to 0.65 s. |
+| cal107 | 0.40 s | 3 | 0.69 / 1.15 mm | 32/11/1, 48° | 6/7, 2097 K | Plate pinned, crest still low. Continued to 0.65 s. |
+
+cal111 is the fused dome: trail 2.06 mm, lead 0.99 mm, every trail column melted, no receding plate cell, no gas sheet. The wire line does not make the notch. Its mean angle is 20°, which is the receding edge of the 20°/45° trail window, so 6 of 10 cells recede and the line stays at 1.30–1.45 mm. cal110 pins that line (9 of 11, window 15°/50°) and the trailing crest collapses to 0.69 mm. Center-plane cuts: `cal111_side_alpha_T.png`, `cal108_side_alpha_T.png`, `cal110_side_alpha_T.png`. The 0.40 s cuts of the runs that continue are `cal103_0p40_side_alpha_T.png` through `cal105_0p40_side_alpha_T.png`, `cal107_0p40_side_alpha_T.png`, `cal108_0p40_side_alpha_T.png`, `cal109_0p40_side_alpha_T.png`, and `cal106_0p45_side_alpha_T.png`.
+
+cal113 keeps cal111's heat and plate window and lowers the wire floor to 10°, with the advancing limit at 70°, on a 60° trailing sector. That puts the 20° cells inside the window instead of on the receding edge. It runs to 0.65 s.
