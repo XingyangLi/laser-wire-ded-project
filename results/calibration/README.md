@@ -145,4 +145,10 @@ Verdict: the centerline behind the wire is solid metal. The gas the solver count
 
 ## cal11 — continue cal10 to 1.0 s
 
-`continue_cal11.sh` restarts `cases/wire_cavity_cal10` from the written 0.40 s to 1.0 s. Same beams, same 60°/140° trailing window, same 38 µm mesh. 12 ranks, `nice -n 10`. Travel from the feed start to 1.0 s is 3.8 mm, longer than the 2.55 mm pool at 0.40 s, so the trailing section can settle under the pinned line. Center-plane side view while the run is still going, at 0.8 s and at the latest write 0.9 s: `cal11_sideview.png`. TaoSun-03's coarse screens (cal31–cal58, best shape so far cal36: 100+100+700 W, scan 3 mm/s, trailing crest 1.76 mm, no sector) are not repeated here.
+`continue_cal11.sh` restarted `cases/wire_cavity_cal10` from 0.40 s to 1.0 s. Same beams, same 60°/140° trailing window, same 38 µm mesh. 12 ranks, `nice -n 10`. The continuation took 5.5 h. Travel from the feed start is 3.8 mm, longer than the 2.79 mm pool.
+
+At 1.0 s the centerline trailing crest is 1.61 mm and the leading crest is 0.84 mm. Behind the wire the track holds about 1.0–1.3 mm out to x ≈ 3.5 mm. The probed section is 2.23 mm² against the 3.93 mm² feed area. The mirrored metal volume rose by 9.0 mm³; the wire fed in 0.95 s is 14.9 mm³. The wire line is at z = 0.84–1.76 mm, 9 of 28 cells pinned, none advancing. The plate angle is 56°, and all 77 molten plate-line cells are receding.
+
+On the center plane at 0.8 s and 0.9 s a gas region sits behind the wire under the trailing metal, from about 0.4 mm to 1.6 mm up (`cal11_sideview.png`). By 1.0 s that column is metal again. What remains on the centerline is a few cells along the plate. The open-cavity report is 3.02 mm³ centred at (0.44, 1.10, 1.17) mm, beside the wire, closed volume zero. Pinch-offs 216, closures 0. One locked entrapment cell, 0.07 mm, sits in the plate. Comparison: `cal11_vs_radiograph.png`.
+
+The lasting center-plane pocket did not form, so cal12 puts cal36's 100+100+700 W, 3 mm/s scan on this refined mesh with the same 60°/140° trailing window.
