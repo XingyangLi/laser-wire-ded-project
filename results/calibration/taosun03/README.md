@@ -277,3 +277,5 @@ cal113 at 0.90 s loses the crest the same way cal108 did. The trail is 0.84 mm a
 cal115 keeps cal114's plate, power, and absorptivity, and lowers the wire floor from 30° to 15° so the 29° cells pin. It runs to 0.55 s.
 
 At 1.00 s cal114's crest has fallen. The trail is 1.15 mm and the lead is 0.99 mm, 12 of 22 columns are melted, and 8 of 13 wire cells recede at 24°. Score 3. The plate line is still not receding, and there is still no pool bubble. The score-8 cut is the 0.70 s one, `cal114_0p70_side_alpha_T.png`. The run stops.
+
+cal115 at 0.55 s lowers that wire floor to 15°. Eight of ten wire cells pin, but the line stays at 1.30–1.45 mm while the trail grows to 2.37 mm, above the 2.30 mm cap, and the lead is 1.30 mm. All six trail columns on that slice are melted and the plate line is not receding. Score 5. No closed bubble. Nothing is left running.
