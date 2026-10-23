@@ -91,6 +91,7 @@ Every finished screen below still has a receding plate line and a solid substrat
 | cal87 | 0.50 s | 5 | 2.06 / 1.15 mm | 19/19 receding, 61° | solid | 80+80+700 W. Plate still unwetted. Stopped. |
 | cal85 | 0.50 s | 5 | 1.91 / 1.30 mm | 23/23 receding, 50° | solid | Rear spot 600 W. Lead rose. Stopped. |
 | cal91 | 0.50 s | 5 | 1.61 / 0.69 mm | receding, penetration 0 | solid | 40+40+650 W. Low lead, wire line held, plate unwetted. Stopped. |
+| cal92 | 0.50 s | 5 | 2.06 / 0.69 mm | receding | solid | 60+60+700 W. Tall trail, low lead, plate unwetted. Stopped. |
 | cal43 | 0.96 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 47° | solid | 50+50+650 W at 1.05 s. Dome held. Plate still unwetted. Stopped. |
 | cal36 | 1.00 s | 5 | 2.22 / 1.15 mm | 35/36 receding | solid | 700 W. Open wake, no locked bubble. Stopped. |
 | cal66 | 0.70 s | 5 | 2.06 / 0.99 mm | 34/34 receding, 52° | solid | 30°/100° notch on 700 W. Continued to 0.90 s. |
