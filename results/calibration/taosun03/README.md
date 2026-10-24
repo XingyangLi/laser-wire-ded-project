@@ -331,3 +331,7 @@ cal117 and cal131 continue from 0.70 s to 1.05 s on the same mesh. Their 0.70 s 
 | cal141 | cal114 with the rear beam at 0.20× for 80 ms starting at 0.55 s |
 
 The rear-beam window is `--rear-power-dip tStart,tEnd,factor`. It writes `laser.powerDip` and scales only beam 3. cal129 stays on its refined cal113 mesh. Each new job is one rank at `nice -n 10`.
+
+cal117 and cal131 both reached 1.05 s. Neither held a closed 0.05–0.3 mm bubble. On cal117 the trail fell from 2.06 mm at 0.70 s to 1.15 mm, with the lead at 1.30 mm (score 3). A 5-cell gas region, 0.25 mm at z ≈ 1.1 mm, showed up near 0.93 s with a liquid shell near 0.95 and was gone within about 20 ms. On cal131 the trail is still 1.91 mm and the lead 1.15 mm, but a gas film sits under the bead, so the plate is unwetted (score 5). The 0.70 s domes are `cal117_0p70_side_alpha_T.png` and `cal131_0p70_side_alpha_T.png`. The 1.05 s cuts are `cal117_1p05_side_alpha_T.png` and `cal131_1p05_side_alpha_T.png`.
+
+cal142 and cal143 repeat those two heats with the rear beam at 0.30× for 80 ms starting at 0.84 s, so the dip lands on the window where those liquid-shelled pores appeared. Both run to 1.10 s.

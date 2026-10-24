@@ -133,6 +133,8 @@ QUESTIONS = {
     "cal139": "cal113 heat, trail window 100/140 over 30 deg",
     "cal140": "cal117 with rear power x0.40 for 80 ms at 0.55 s",
     "cal141": "cal114 with rear power x0.20 for 80 ms at 0.55 s",
+    "cal142": "cal117 with rear power x0.30 for 80 ms at 0.84 s",
+    "cal143": "cal131 with rear power x0.30 for 80 ms at 0.84 s",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.
