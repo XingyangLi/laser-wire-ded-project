@@ -314,3 +314,20 @@ At 0.70 s the 100 ppm case on the cal114 heat (cal117) is the one that holds a s
 Raising the feed to 28 mm/s (cal125) pins all 10 wire cells on a 2.06 / 1.15 mm dome and holds a 4-cell gas region, 0.24 mm, for 233 ms at about (0.7, 1.1) mm. The shell stays liquid and the region is gone before 0.70 s, so it does not score. The 70° trailing floor (cal123) makes a 2-cell region with a shell fraction of 0.40 for 179 ms, then that is gone too, and the lead is 1.45 mm. Feed 26 mm/s on cal113 (cal127) scores 8 with a 1.76 mm trail and a 1.30 mm lead. Rear power of 800 W (cal128) drops the trail to 0.54 mm. Center-plane cuts: `cal117_side_alpha_T.png`, `cal125_side_alpha_T.png`, `cal127_side_alpha_T.png`.
 
 cal130 cuts the cal117 fronts to 70 W so the lead can fall. That drops the trail to 0.99 mm against a 1.30 mm lead. Score 3. cal131 crosses 100 ppm with the 28 mm/s feed and scores 8: trail 1.76 mm, lead 1.30 mm, 12 of 18 columns melted, 7 of 11 wire cells pinned from 1.30 to 1.76 mm. The lead is still above 1.0 mm, and there is no bubble. cal132 puts the 55° trailing floor on that feed: trail 1.91 mm, lead 1.15 mm, the wire line runs up to the crest, and only 6 of 18 columns are melted. Score 7. cal133 keeps the feed and cuts the rear spot to 600 W. The crests match cal132, but the substrate under the bead stays solid. Center-plane cuts: `cal131_side_alpha_T.png`, `cal132_side_alpha_T.png`. cal129 is still on the refined mesh. No run has held a closed 0.05–0.3 mm bubble through the last sample.
+
+## Weekend batch
+
+cal117 and cal131 continue from 0.70 s to 1.05 s on the same mesh. Their 0.70 s side views are `cal117_0p70_side_alpha_T.png` and `cal131_0p70_side_alpha_T.png`.
+
+| tag | idea |
+| --- | --- |
+| cal134 | cal117 at `--wire-refine 2`, to 0.50 s |
+| cal135 | cal131 at `--wire-refine 2`, to 0.50 s |
+| cal136 | cal127 at `--wire-refine 2`, to 0.50 s |
+| cal137 | cal114 heat, trail window 110°/150° over a 30° arc |
+| cal138 | cal114 heat, trail window 130°/165° over a 25° arc |
+| cal139 | cal113 heat, trail window 100°/140° over a 30° arc |
+| cal140 | cal117 with the rear beam at 0.40× for 80 ms starting at 0.55 s |
+| cal141 | cal114 with the rear beam at 0.20× for 80 ms starting at 0.55 s |
+
+The rear-beam window is `--rear-power-dip tStart,tEnd,factor`. It writes `laser.powerDip` and scales only beam 3. cal129 stays on its refined cal113 mesh. Each new job is one rank at `nice -n 10`.

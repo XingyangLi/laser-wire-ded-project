@@ -338,6 +338,9 @@ def build_parser():
       help="with --oxygen-ppm: Sahoo-Belton sigma(T, a_O) only. The scalar "
            "contact angles stay as set, so a wetting window is not replaced "
            "by the placeholder oxygen angle table")
+    a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
+      help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
+           "then restore it. A brief notch perturbation. Example: 0.48,0.56,0.25")
     a("--wire-pin-frame", default="head", choices=["head", "wire"],
       help="pinned wire line: 'head' holds it still in the lab/head frame so a kink "
            "stays at a fixed height while the wire feeds through (default); "
@@ -1481,6 +1484,27 @@ sigma           {f(self.ms['sigma'])};   // not used: see constant/meltPropertie
         return out
 
 
+    def power_dip_block(self):
+        """Optional rear-beam power window written into the laser dictionary."""
+        raw = getattr(self.a, "rear_power_dip", None)
+        if not raw:
+            return ""
+        parts = [float(x) for x in str(raw).split(",")]
+        if len(parts) != 3:
+            raise SystemExit("--rear-power-dip needs tStart,tEnd,factor")
+        t0, t1, fac = parts
+        if not (0.0 <= t0 < t1) or not (0.0 < fac < 1.0):
+            raise SystemExit("--rear-power-dip needs 0 <= tStart < tEnd and factor in (0, 1)")
+        return (
+            "    powerDip        // rear beam only; other beams stay at full power\n"
+            "    {\n"
+            "        beam    2;\n"
+            f"        tStart  {t0:g};\n"
+            f"        tEnd    {t1:g};\n"
+            f"        factor  {fac:g};\n"
+            "    }\n"
+        )
+
     def spot_size_at_z(self, z_plane):
         """1/e^2 radius of a coaxial beam at plane z=z_plane [m], with optional Rayleigh growth."""
         import math
@@ -1643,7 +1667,7 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
     alphaHit        {f(self.alpha_hit)};
     tStart          0;
     tRamp           {f(a.laser_ramp)};
-    shadowing       {'false' if a.no_shadowing else 'true'};
+{self.power_dip_block()}    shadowing       {'false' if a.no_shadowing else 'true'};
     planar2D        {'true' if self.d2 else 'false'};
     width2D         {f(self.width2D)};
 }}

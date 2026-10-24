@@ -125,6 +125,14 @@ QUESTIONS = {
     "cal131": "100 ppm on cal114 with feed 28 mm/s",
     "cal132": "feed 28 mm/s with trail receding 55",
     "cal133": "feed 28 mm/s with rear spot 600 W",
+    "cal134": "cal117 at wire-refine 2, to 0.50 s",
+    "cal135": "cal131 at wire-refine 2, to 0.50 s",
+    "cal136": "cal127 at wire-refine 2, to 0.50 s",
+    "cal137": "cal114 heat, trail window 110/150 over 30 deg",
+    "cal138": "cal114 heat, trail window 130/165 over 25 deg",
+    "cal139": "cal113 heat, trail window 100/140 over 30 deg",
+    "cal140": "cal117 with rear power x0.40 for 80 ms at 0.55 s",
+    "cal141": "cal114 with rear power x0.20 for 80 ms at 0.55 s",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.
