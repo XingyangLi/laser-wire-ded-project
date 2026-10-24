@@ -177,4 +177,10 @@ No closed bubble persists. The porosity count is 0 at 0.60 s. A mobile one-cell 
 
 ## cal15 — steeper trailing wire window, faster scan
 
-`launch_cal15.sh` keeps the 1100 K plate, the cold wire, and the 10°/40° plate window. The trailing wire window is 110°/160° with a 10° blend, so the face behind the wire is pulled toward a steeper angle over a sharper sector. The scan is 5 mm/s so that notch is carried into the pool before the melt fills it. Same beams, refined mesh, 12 ranks, `nice -n 10`, end 0.70 s. Oxygen stays off: the angle table would replace the 10°/40° plate window.
+`launch_cal15.sh` keeps the 1100 K plate and the 10°/40° plate window. The trailing wire window is 110°/160° with a 10° blend, and the scan is 5 mm/s. Refined mesh, 12 ranks, `nice -n 10`. Wall clock 7.0 h for 0.70 s.
+
+The plate stays molten (center-plane peak 1921 K, pool depth 0.56 mm) and the plate line has no receding cells. The trailing crest is 1.61 mm and the leading crest is 0.69 mm. The early notch, gas from about 0.4 mm to 1.9 mm at 0.10 s, has closed back to two cells at the wire top by 0.30 s and stays there. The Young force was already at its cap on cal14, so the higher receding angle did not deepen it. No bubble persists: porosity is 0 at 0.70 s. A mobile 0.09 mm, 3-cell pore at z = 1.30 mm was present at 0.697 s and gone at the end. Pinch-offs 46, closures 0. Side view: `cal15_sideview.png`.
+
+## cal16 — oxygen surface tension on the cal14 bead
+
+`launch_cal16.sh` returns to the cal14 speeds and the 60°/140° trailing window. Dissolved oxygen is 500 ppm, so `sigma(T, a_O)` replaces the linear law. The oxygen contact-angle table is removed after generation, leaving the 10°/40° plate window and the wire sector as written. Marangoni stays off. The neck is cooler than the pool surface, so adsorption lowers sigma there more than on the hot cap. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s.
