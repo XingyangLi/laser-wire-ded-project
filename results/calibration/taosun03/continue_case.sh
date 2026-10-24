@@ -14,8 +14,10 @@ if [[ ! -d "$CASE" ]]; then
 fi
 for d in /proc/[0-9]*; do
     cwd=$(readlink "$d/cwd" 2>/dev/null || true)
-    comm=$(cat "$d/comm" 2>/dev/null || true)
-    if [[ "$cwd" == "$CASE" && "$comm" == "laserWireDEDFoam" ]]; then
+    [[ "$cwd" == "$CASE" ]] || continue
+    # comm is truncated to 15 characters, so match the full command line.
+    cmd=$(tr '\0' ' ' < "$d/cmdline" 2>/dev/null || true)
+    if [[ "$cmd" == *laserWireDEDFoam* ]]; then
         echo "$TAG is still running" >&2
         exit 0
     fi

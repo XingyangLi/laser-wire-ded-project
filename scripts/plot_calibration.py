@@ -147,6 +147,9 @@ def parse_contact(rows):
     return {
         "t_contact_s": f(0),
         "n_wire": f(15),
+        "n_wire_pinned": f(16),
+        "n_wire_advancing": f(17),
+        "n_wire_receding": f(18),
         "z_wire_max_mm": None if f(19) is None or f(19) < -0.4 else f(19) * 1e3,
         "z_wire_min_mm": None if f(20) is None or f(20) < -0.4 else f(20) * 1e3,
         "contact_x_min_mm": None if f(11) is None else f(11) * 1e3,
@@ -173,6 +176,7 @@ def parse_cavity(rows):
         "cavity_depth_mm": None if f(7) is None else f(7) * 1e3,
         "cavity_length_mm": None if f(8) is None else f(8) * 1e3,
         "cavity_cx_mm": None if f(9) is None else f(9) * 1e3,
+        "cavity_cy_mm": None if f(10) is None else f(10) * 1e3,
         "cavity_cz_mm": None if f(11) is None else f(11) * 1e3,
     }
 

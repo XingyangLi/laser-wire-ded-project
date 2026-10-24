@@ -1,0 +1,84 @@
+acquired 1 MPI slots (cap 32)
+laserWireDEDFoam -> /home/asb6102/OpenFOAM/asb6102-v2406/platforms/linux64GccDPInt32Opt/bin
+wmake laserWireDEDFoam
+[generate] --beam-powers sum to 740 W; using that as the total (was --power 1850 W)
+[generate] 3d config=triple wire=316L substrate=316L: P=740 W in 3 beam(s), A=0.35/0.35, end=0.28 s, v_scan=4.0 mm/s, WFS=20.0 mm/s, d_wire=1.00 mm @ 90 deg (front feed)
+[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):
+    beam1_az30: 160 W, 1/e^2 0.26 mm, aim (-0.52, 0.30, 0.08) mm, plate hit (-0.49, 0.28) mm
+    beam2_az-30: 160 W, 1/e^2 0.26 mm, aim (-0.52, -0.30, 0.08) mm, plate hit (-0.49, -0.28) mm
+    beam3_az180: 420 W, 1/e^2 0.26 mm, aim (0.24, 0.00, 0.55) mm, plate hit (-0.19, -0.00) mm
+[generate] mesh 64 x 19 x (8+21) = 35264 block cells -> 35264 cells, dx=150 um; capillary dt ~ 3.35e-05 s; expected bead area 3.93 mm^2; E_L = 185 J/mm
+[generate] single-track extras: contact-line pinning ON (thetaR 110 / thetaA 150 deg), wire pin ON (thetaR 25 / thetaA 70 deg, frame head), trailing wire sector 100/165 deg within 90 deg of +x (blend 30 deg), porosity ON, wire cavity ON
+[generate] wrote /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal41
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_metrics.csv
+  n_bead_samples: 104
+  n_liquid_samples: 53
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -1.675
+  bead_x_max_mm: 1.625
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2783.032
+  T_max_slice_K: 2783.032
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 7.0
+  n_wire_pinned: 1.0
+  n_wire_advancing: 2.0
+  n_wire_receding: 4.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 1.2999999899999999
+  contact_x_min_mm: -0.774999965
+  contact_x_max_mm: 1.02500003
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.39837879
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.6749233099999999
+  cavity_cy_mm: 0.971997468
+  cavity_cz_mm: 0.844613473
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.6749999485909939 1.6250000335276127
+trail z max mm 1.3000000035390258 n 107
+lead z max mm 1.3000000035390258 n 166
+wake gas n 935 x 1.2608289039746066 y 0.8756862995482454 z 0.8817426874962222
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal41
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.01068570e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.17226975e-01: 1
+  id 0  lackOfFusion  locked  V=1.843e-11 m3  d_eq=0.328 mm  centre=(4.979e-05, 6.600e-04, 2.294e-04) m  cells=6  shell_fl=0.201
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 22  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 22  nFrozenSolidification: 107
+  thetaMean_deg: 7.03750733e+01  thetaMin_deg: 3.03791817e+01  thetaMax_deg: 1.09624866e+02
+  lengthPinned_m: 1.61835126e-02  lengthMobile_m: 4.19572549e-03
+  nWire: 7  nWirePinned: 1  nWireAdvancing: 2  nWireReceding: 4
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 1.29999999e-03  thetaMeanWire_deg: 4.98352803e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 1.29999999e-03
+  cavityVolume_m3: 3.39837879e-09  open_m3: 3.39837879e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.74923310e-04, 9.71997468e-04, 8.44613473e-04)  nOpenCells: 1043  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_vs_radiograph.png
+CAL41_DONE
+released 1 MPI slots; 22 still held
