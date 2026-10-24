@@ -282,7 +282,7 @@ def build_parser():
     a("--no-marangoni", action="store_true")
     a("--marangoni", action="store_true",
       help="tangential Marangoni stress. Used when a helper already passed "
-           "--no-marangoni: this flag wins")
+           "--no-marangoni: this flag wins. --oxygen-ppm also turns it on")
     a("--no-recoil", action="store_true")
     a("--no-evaporation", action="store_true")
     a("--no-radiation", action="store_true")
@@ -1585,7 +1585,7 @@ surfaceTension
     dSigmadT            {f(m['dsigma_dT'])};
     Tref                {f(m['Tliq'])};
     sigmaMin            {f(0.3*min(m['sigma'], mw['sigma']))};
-    marangoni           {'true' if (a.marangoni or not a.no_marangoni) else 'false'};
+    marangoni           {'true' if (a.marangoni or not a.no_marangoni or a.oxygen_ppm is not None) else 'false'};
     liquidOnly          true;
     alphaMin            1e-3;
     capillaryDtFactor   {f(a.capillary_dt_factor)};
@@ -2271,7 +2271,7 @@ def main(argv=None):
               f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
     if getattr(a, "oxygen_ppm", None) is not None:
         angles = "scalar contact angles kept" if a.oxygen_sigma_only else "placeholder angle table"
-        stress = "on" if (a.marangoni or not a.no_marangoni) else "off"
+        stress = "on" if (a.marangoni or not a.no_marangoni or a.oxygen_ppm is not None) else "off"
         print(f"[generate] oxygen model ON: chamberOxygenPpm = {a.oxygen_ppm:g} "
               f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off. "
               f"Marangoni {stress}. {angles}.")

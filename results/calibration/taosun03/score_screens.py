@@ -121,6 +121,10 @@ QUESTIONS = {
     "cal127": "cal113 with feed 26 mm/s",
     "cal128": "cal113 with rear spot 800 W",
     "cal129": "cal113 at wire-refine 2",
+    "cal130": "100 ppm on cal114 with 70 W fronts",
+    "cal131": "100 ppm on cal114 with feed 28 mm/s",
+    "cal132": "feed 28 mm/s with trail receding 55",
+    "cal133": "feed 28 mm/s with rear spot 600 W",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.

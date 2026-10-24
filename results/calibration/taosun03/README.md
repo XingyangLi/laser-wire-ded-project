@@ -302,5 +302,15 @@ Sahoo–Belton `dsigma/dT` at 1723 K is still negative at 10 ppm and positive fr
 | cal127 | cal113 | feed 26 mm/s | 0.65 s |
 | cal128 | cal113 | rear spot 800 W | 0.65 s |
 | cal129 | cal113 | `--wire-refine 2` (38 µm in x, y) | 0.40 s |
+| cal130 | cal117 | fronts 70 W, still 100 ppm | 0.70 s |
+| cal131 | cal114 | 100 ppm and feed 28 mm/s | 0.70 s |
+| cal132 | cal114 | feed 28 mm/s, trail receding 55°/90° | 0.70 s |
+| cal133 | cal114 | feed 28 mm/s, rear spot 600 W | 0.70 s |
 
 The higher trailing receding angle is only on the back of the wire. A cell whose angle sits under that floor recedes there, while the rest of the wire keeps a 15–30° floor. cal129 is the crest-compliant score-8 recipe on the cal63 mesh, one rank. It is not the refined 60°/140° case.
+
+At 0.70 s the 100 ppm case on the cal114 heat (cal117) is the one that holds a score-8 dome: trail 2.06 mm, lead 1.15 mm, 10 of 16 columns melted, no receding plate cell, 11 of 13 wire cells pinned. The lead is still above 1.0 mm. 10 ppm (cal116) and 500 ppm (cal118) drop the trail to 0.84 mm and 1.15 mm. The same three levels on the preheated cal113 heat (cal119–cal121) leave the trail under 1.0 mm. Inward Marangoni did not leave a pool bubble. A one-cell pore on cal117 lasted 69 ms with a liquid shell and was gone at the end.
+
+Raising the feed to 28 mm/s (cal125) pins all 10 wire cells on a 2.06 / 1.15 mm dome and holds a 4-cell gas region, 0.24 mm, for 233 ms at about (0.7, 1.1) mm. The shell stays liquid and the region is gone before 0.70 s, so it does not score. The 70° trailing floor (cal123) makes a 2-cell region with a shell fraction of 0.40 for 179 ms, then that is gone too, and the lead is 1.45 mm. Feed 26 mm/s on cal113 (cal127) scores 8 with a 1.76 mm trail and a 1.30 mm lead. Rear power of 800 W (cal128) drops the trail to 0.54 mm. Center-plane cuts: `cal117_side_alpha_T.png`, `cal125_side_alpha_T.png`, `cal127_side_alpha_T.png`.
+
+cal130 cuts the cal117 fronts to 70 W so the lead can fall. cal131 crosses 100 ppm with the 28 mm/s feed. cal132 puts the 55° trailing floor on that feed. cal133 keeps the feed and cuts the rear spot to 600 W, to freeze the 4-cell region. Each stops at 0.70 s. cal129 is still on the refined mesh.
