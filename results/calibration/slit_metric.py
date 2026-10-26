@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Slit on the trailing wire face, measured on the center-plane side sample.
 
-The gap is the gas between the wire surface (x = 0.50 mm) and the first metal
-outside it. Depth is the contiguous run of that gap that reaches highest, in
-millimetres along z. Width is the median of the gap in that run. Open means
-the run reaches gas with no metal above it. A run is counted as still there
-when the depth is at least 0.10 mm.
+The gap is the gas between the wire surface (x = 0.50 mm) and the metal wall
+outside it. A wall is two consecutive 0.02 mm bins that are mostly metal, so
+a single cell on the wire surface does not close the gap. Depth is the
+contiguous run of a thin gap (at most 0.15 mm) that reaches highest.
+Width is the median of that run. Open means the next slice is not metal
+against the wire. A run persists when it is open, at least 0.10 mm deep,
+and between 0.02 mm and 0.12 mm wide. Wider than that is a bare trailing
+face, not the radiograph slit.
 """
 import argparse
 from pathlib import Path
@@ -53,23 +56,38 @@ def side_times(case):
 
 
 def _gap_width(x, alpha):
-    """Millimetres from the wire surface to the metal wall. 0 if shut."""
-    gas = alpha < 0.5
-    metal = ~gas
-    near = gas & (x > WIRE_R_MM - 0.04) & (x < WIRE_R_MM + 0.12)
-    if not np.any(near):
+    """Millimetres from the wire surface to a sustained metal wall.
+
+    0 if metal already occupies the face. Bins that stay gas out to the
+    search limit return the cap (0.40 mm): the trailing face is bare.
+    """
+    band = (x > WIRE_R_MM - 0.02) & (x < WIRE_R_MM + 0.55)
+    if not np.any(band):
         return 0.0
-    wall = metal & (x > WIRE_R_MM)
-    if not np.any(wall):
-        far = x[gas & (x > WIRE_R_MM)]
-        if far.size == 0:
-            return 0.0
-        return float(min(far.max() - WIRE_R_MM, 0.40))
-    x_wall = float(x[wall].min())
-    between = gas & (x >= WIRE_R_MM - 0.02) & (x <= x_wall + 0.01)
-    if not np.any(between) or x_wall <= WIRE_R_MM:
+    xb = x[band]
+    ab = alpha[band]
+    edges = np.arange(WIRE_R_MM, WIRE_R_MM + 0.56, 0.02)
+    metal_bin = []
+    gas_bin = []
+    for a0, b0 in zip(edges[:-1], edges[1:]):
+        m = (xb >= a0) & (xb < b0)
+        if not np.any(m):
+            metal_bin.append(False)
+            gas_bin.append(False)
+            continue
+        frac = float(np.mean(ab[m] >= 0.5))
+        metal_bin.append(frac >= 0.5)
+        gas_bin.append(frac < 0.5)
+    # The first 0.06 mm has to be gas. Otherwise the melt is on the wire.
+    if not any(gas_bin[:3]):
         return 0.0
-    return float(x_wall - WIRE_R_MM)
+    for i in range(len(metal_bin) - 1):
+        if metal_bin[i] and metal_bin[i + 1]:
+            return float(edges[i] - WIRE_R_MM)
+    if any(gas_bin):
+        last = max(i for i, g in enumerate(gas_bin) if g)
+        return float(min(edges[last + 1] - WIRE_R_MM, 0.40))
+    return 0.0
 
 
 def measure(x, z, alpha):
@@ -80,16 +98,17 @@ def measure(x, z, alpha):
         m = (z >= z0) & (z < z1) & (x > 0.40) & (x < 1.30)
         if np.any(m):
             widths[i] = _gap_width(x[m], alpha[m])
-    open_gap = widths >= GAP_MIN_MM
+    # A thin slit, not the bare face (those slices are near the 0.40 mm cap).
+    thin = (widths >= GAP_MIN_MM) & (widths <= 0.15)
     best = None
     i = 0
-    n = open_gap.size
+    n = thin.size
     while i < n:
-        if not open_gap[i]:
+        if not thin[i]:
             i += 1
             continue
         j = i
-        while j < n and open_gap[j]:
+        while j < n and thin[j]:
             j += 1
         # Prefer the run that climbs highest. Ties: the deeper one.
         span = (float(mids[i] - 0.5 * DZ_MM), float(mids[j - 1] + 0.5 * DZ_MM))
@@ -98,25 +117,26 @@ def measure(x, z, alpha):
             abs(span[1] - best[0][1]) <= 1e-6 and depth > best[1]
         ):
             w = widths[i:j]
-            w = w[w >= GAP_MIN_MM]
-            best = (span, depth, float(np.median(w)), float(w.max()), int(w.size))
+            w = w[(w >= GAP_MIN_MM) & (w <= 0.15)]
+            best = (span, depth, float(np.median(w)), float(w.max()), int(w.size), j)
         i = j
+    n_wide = int(np.sum(widths >= 0.15))
     if best is None:
         return dict(
             depth_mm=0.0, width_mm=0.0, width_max_mm=0.0,
-            z_lo_mm=None, z_hi_mm=None, open=False, persists=False, n_slices=0,
+            z_lo_mm=None, z_hi_mm=None, open=False, persists=False,
+            n_slices=0, wide=n_wide >= 4,
         )
-    span, depth, width, width_max, n_slices = best
-    # Open when the run's top slice is gas with no metal sitting above the gap.
-    top = span[1]
-    above = (z > top) & (z < top + 0.15) & (x > WIRE_R_MM) & (x < WIRE_R_MM + max(width, 0.05) + 0.04)
-    metal_above = np.any(above & (alpha >= 0.5))
-    gas_above = np.any(above & (alpha < 0.5))
-    is_open = (not metal_above) or gas_above and not metal_above
-    # A gap that simply runs out of samples at the top of the window is open
-    # if metal does not cap it.
-    if not np.any(above):
+    span, depth, width, width_max, n_slices, j = best
+    # Capped when the next measured slice is metal on the wire. A wide or
+    # missing slice above the run is the mouth opening into the gas.
+    if j >= n:
         is_open = True
+    else:
+        is_open = not (widths[j] < GAP_MIN_MM)
+    persists = bool(
+        depth >= 0.10 and is_open and 0.02 <= width <= 0.12
+    )
     return dict(
         depth_mm=depth,
         width_mm=width,
@@ -124,8 +144,9 @@ def measure(x, z, alpha):
         z_lo_mm=span[0],
         z_hi_mm=span[1],
         open=bool(is_open),
-        persists=bool(depth >= 0.10 and is_open),
+        persists=persists,
         n_slices=n_slices,
+        wide=False,
     )
 
 
@@ -133,7 +154,12 @@ def fmt(row):
     zlo = "—" if row["z_lo_mm"] is None else f"{row['z_lo_mm']:.2f}"
     zhi = "—" if row["z_hi_mm"] is None else f"{row['z_hi_mm']:.2f}"
     state = "open" if row["open"] else "capped"
-    stay = "persists" if row["persists"] else "gone"
+    if row.get("wide"):
+        stay = "bare face"
+    elif row["persists"]:
+        stay = "persists"
+    else:
+        stay = "gone"
     return (
         f"depth {row['depth_mm']:.3f} mm  width {row['width_mm']:.3f} mm "
         f"(max {row['width_max_mm']:.3f})  z {zlo}..{zhi} mm  {state}, {stay}"
