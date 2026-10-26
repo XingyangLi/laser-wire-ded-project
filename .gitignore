@@ -43,6 +43,7 @@ local/
 gui/jobs/*
 !gui/jobs/.gitkeep
 *.mp4
+!results/calibration/taosun03/*.mp4
 *.zip
 *.tgz
 *.tar.gz

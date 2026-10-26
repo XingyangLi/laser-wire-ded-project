@@ -421,4 +421,4 @@ A cold start on this mesh holds the capillary step. The mapped dome does not: th
 | smokeE | 100 ppm, σ(T) only | 24 mm/s | 1100 K | 70°/150° |
 | smokeF | 100 ppm, wire angles from the table | 24 mm/s | 1600 K | 12°/140° |
 
-The table windows are the wide pin (a film that is already there stays). smokeD and smokeE raise the receding angle so a wetted face can pull back. A width reported at 0.10 mm is the search cap, not a 0.05 mm slit. Zoomed centre-plane frames are `smoke*_slit_neck.png`, next to the radiograph crop.
+The table windows are the wide pin (a film that is already there stays). smokeD and smokeE raise the receding angle so a wetted face can pull back. A width reported at 0.10 mm is the search cap, not a 0.05 mm slit. `render_slit_video.py` builds `slit_demo.mp4`: radiograph, centre plane, zoomed neck, and the metal surface, trailing side on the left. It is rebuilt as new times are written.
