@@ -92,7 +92,11 @@ generate_one() {
 mesh_map_one() {
     local tag="$1"
     local case
-    case="$(case_of "$tag")"
+    if [[ -n "${CASE_OVERRIDE:-}" ]]; then
+        case="$CASE_OVERRIDE"
+    else
+        case="$(case_of "$tag")"
+    fi
     echo "MESH $tag $(date --iso-8601=seconds)"
     tao_source_foam
     (
@@ -383,8 +387,59 @@ cmd_run() {
 }
 
 usage() {
-    echo "usage: $0 mesh [tag] | probe TAG NP | run NP" >&2
+    echo "usage: $0 mesh [tag] | probe TAG NP | run NP | prepare-full TAG | run-full" >&2
     exit 1
+}
+
+cmd_prepare_full() {
+    local tag="$1"
+    local spec case
+    spec="$(spec_for "$tag")"
+    set -- $spec
+    case="$TAO_ROOT/cases/wire_cavity_slitfull"
+    echo "FULL from $tag -> $case"
+    printf '%s\n' "$tag" > "$DIR/slitfull_source.txt"
+    local angles=()
+    if [[ "$5" == "table" ]]; then
+        angles=(--oxygen-wire-angles)
+    else
+        angles=(--oxygen-sigma-only)
+    fi
+    tao_cal08_case "$case" \
+        --scan-speed 0.003 --wire-feed-speed "$3" \
+        --beam-powers 100,100,700 \
+        --absorptivity-substrate 0.65 \
+        --preheat 300 --wire-preheat "$4" \
+        --upstream 4e-3 --downstream 7e-3 --half-width 3.5e-3 \
+        --substrate-thickness 2e-3 --gas-height 3.5e-3 --gas-uniform-height 2.6e-3 \
+        --end-time 0.80 --write-interval 0.005 --np 32 \
+        --neck-refine 3 --capillary-dt-factor 3 \
+        --theta-receding 10 --theta-advancing 40 \
+        --theta-receding-wire 25 --theta-advancing-wire 70 \
+        --wire-sector \
+        --theta-receding-wire-trail "$6" --theta-advancing-wire-trail "$7" \
+        --wire-sector-half-angle 90 --wire-sector-blend 30 \
+        --oxygen-ppm "$2" \
+        "${angles[@]}"
+    CASE_OVERRIDE="$case" mesh_map_one "$tag"
+    echo "FULL_READY $tag"
+}
+
+cmd_run_full() {
+    local np=32
+    local case="$TAO_ROOT/cases/wire_cavity_slitfull"
+    if [[ ! -d "$case/${MAP_TIME}.mapbak" ]]; then
+        echo "slitfull has no mapped backup; prepare-full first" >&2
+        exit 1
+    fi
+    tao_acquire "$np"
+    trap 'tao_release '"$np" EXIT
+    restore_map "$case"
+    set_end "$case" 0.80
+    decompose_x "$case" "$np"
+    echo "LAUNCH slitfull np=$np $(date --iso-8601=seconds)"
+    run_solver "$case" "$np" "$case/log.laserWireDEDFoam"
+    echo "SLITFULL_DONE $(date --iso-8601=seconds)"
 }
 
 main() {
@@ -398,6 +453,13 @@ main() {
         run)
             [[ $# -eq 2 ]] || usage
             cmd_run "$2"
+            ;;
+        prepare-full)
+            [[ $# -eq 2 ]] || usage
+            cmd_prepare_full "$2"
+            ;;
+        run-full)
+            cmd_run_full
             ;;
         *) usage ;;
     esac
