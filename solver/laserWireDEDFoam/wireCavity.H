@@ -350,66 +350,53 @@
             slit[celli] = 1;
         }
 
-        DynamicList<label> sq(16);
+        // The bare shielding gas also touches the wire. A slit cell is gas
+        // that has melt on its outer side (the film between wire and bead).
+        // One extra cell of the same band, within 40 um of that film, picks
+        // up the open mouth and the wire-side half of a two-cell gap. It does
+        // not walk up the dry wire.
+        labelList wall(nCells, 0);
         forAll(slit, celli)
         {
             if (slit[celli] != 1) continue;
-            bool touch = false;
             for (const label n : cCells[celli])
             {
-                if (inWireZone[n] && lwdUnmeltedWire(n) && alpha1[n] > 0.5)
-                {
-                    touch = true;
-                    break;
-                }
-            }
-            if (!touch) continue;
-            slit[celli] = 2;
-            sq.append(celli);
-        }
-        for (label qi = 0; qi < sq.size(); ++qi)
-        {
-            for (const label n : cCells[sq[qi]])
-            {
-                if (slit[n] == 1)
-                {
-                    slit[n] = 2;
-                    sq.append(n);
-                }
+                if (alpha1[n] <= 0.5) continue;
+                if (inWireZone[n] && lwdUnmeltedWire(n)) continue;
+                wall[celli] = 1;
+                break;
             }
         }
-        if (Pstream::parRun())
+        scalar zWallMin = GREAT, zWallMax = -GREAT;
+        forAll(wall, celli)
         {
-            label guard = 0;
-            while (guard++ < 1000)
+            if (!wall[celli]) continue;
+            zWallMin = min(zWallMin, C[celli].z());
+            zWallMax = max(zWallMax, C[celli].z());
+        }
+        reduce(zWallMin, minOp<scalar>());
+        reduce(zWallMax, maxOp<scalar>());
+        if (zWallMax > -0.5*GREAT)
+        {
+            const scalar pad = 4.0e-5;
+            forAll(slit, celli)
             {
-                List<label> nei;
-                lwdSwapCells(slit, nei);
-                DynamicList<label> nq;
-                const label nInt = mesh.nInternalFaces();
-                for (label fi = nInt; fi < mesh.nFaces(); ++fi)
+                if (slit[celli] != 1 && !wall[celli]) continue;
+                const scalar z = C[celli].z();
+                if (z < zWallMin - pad || z > zWallMax + pad) continue;
+                if (wall[celli])
                 {
-                    const label c = mesh.faceOwner()[fi];
-                    if (slit[c] == 1 && nei[fi - nInt] == 2)
+                    slit[celli] = 2;
+                    continue;
+                }
+                for (const label n : cCells[celli])
+                {
+                    if (wall[n])
                     {
-                        slit[c] = 2;
-                        nq.append(c);
+                        slit[celli] = 2;
+                        break;
                     }
                 }
-                for (label qi = 0; qi < nq.size(); ++qi)
-                {
-                    for (const label n : cCells[nq[qi]])
-                    {
-                        if (slit[n] == 1)
-                        {
-                            slit[n] = 2;
-                            nq.append(n);
-                        }
-                    }
-                }
-                label changed = nq.size();
-                reduce(changed, sumOp<label>());
-                if (!changed) break;
             }
         }
 
@@ -453,11 +440,12 @@
             if (sNew)
             {
                 sos << "# time[s] nCells zMin[m] zMax[m] depth[m] width[m] open\n"
-                    << "# Film of gas on the trailing wire face, |y| < 0.15 mm,\n"
-                    << "# within 0.10 mm outside the wire radius, z in 0.3-2.0 mm.\n"
+                    << "# Gas with melt on its outer side, on the trailing wire\n"
+                    << "# face, |y| < 0.15 mm, within 0.10 mm of the wire radius.\n"
+                    << "# Bare gas around the cold wire is not counted.\n"
                     << "# depth is centre-to-centre. open = 1 if the film still\n"
-                    << "# touches the atmosphere. Target: depth ~ 0.4 mm,\n"
-                    << "# width ~ 0.05 mm, open, persisting.\n";
+                    << "# touches the atmosphere. Width is capped by the 0.10 mm\n"
+                    << "# search band. Target: depth ~ 0.4 mm, width ~ 0.05 mm.\n";
             }
             sos.setf(std::ios::scientific);
             sos.precision(8);
