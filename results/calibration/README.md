@@ -185,7 +185,7 @@ The plate stays molten (center-plane peak 1921 K, pool depth 0.56 mm) and the pl
 
 `launch_cal16.sh` returns to the cal14 speeds and the 60°/140° trailing window. Dissolved oxygen is 500 ppm, so `sigma(T, a_O)` replaces the linear law. The oxygen contact-angle table is removed after generation, leaving the 10°/40° plate window and the wire sector as written. Marangoni stays off. The neck is cooler than the pool surface, so adsorption lowers sigma there more than on the hot cap. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s.
 
-The solver was killed at t = 0.438 s on 24 Oct 2026 (wall clock 3.6 h, log `cases/wire_cavity_cal16/log.laserWireDEDFoam`). Nothing was running on 26 Oct, and there is no cal17 directory. The last written field is 0.40 s.
+The solver was killed at t = 0.438 s on 24 Oct 2026 (wall clock 3.6 h, log `cases/wire_cavity_cal16/log.laserWireDEDFoam`). Nothing was running on the morning of 26 Oct. The last written field is 0.40 s.
 
 At 0.40 s the plate is still molten (center-plane peak 1895 K) and the plate line has no receding cells (6 pinned, 20 advancing, mean 60°). The trailing crest is 1.61 mm and the leading crest is 0.84 mm. The wire line reaches 1.76 mm, but 24 of 36 cells are receding: the wire angle sits near 29°, under the 60° floor, same as cal14. `OxygenSigma` at the kill reports 500 ppm, sigma from 0.88 to 1.17 N/m. The open-cavity report is 2.95 mm³ beside the wire and is not the score. Side view: `cal16_sideview.png`.
 
@@ -203,4 +203,30 @@ Same 10-point radiograph score as the other workstation: 2 if the trailing crest
 
 The wire-pin points stay at 0 on all three: the line reaches the crest and then recedes. None of these runs has a closed 0.05–0.3 mm bubble at its last sample.
 
-`continue_cal16.sh` restarts the 0.40 s field to 0.70 s on the same 12 ranks. The binary is the one that wrote 0.40 s, so the 500 ppm bead is finished before the rear-beam dip is turned on. `launch_cal17.sh` is the next recipe if that pore does not stay: 100 ppm with `--oxygen-sigma-only`, and a trailing window of 15°/45° over 45° of +x, on the same 1100 K plate. The 60° floor cannot pin a 22–29° wire angle. 100 ppm is the level that held a score-8 dome on the other workstation; 500 ppm is the level that dropped their trail, and it has not dropped this refined bead by 0.40 s.
+A restart of that 0.40 s field ran until t = 0.461 s on 26 Oct 2026 (about 31 min on this continuation) and was then stopped. The next field write would have been 0.50 s, so the last saved field is still 0.40 s. The pore had come back (0.07 mm at 0.402 s, growing, liquid shell) and the center plane was still the filled cal14 neck. That continuation was holding all 12 ranks. Closed bubbles are no longer the target.
+
+## Why the center plane is solid
+
+The half mesh is a symmetry plane at y = 0 (`symmetry` is a `symmetryPlane`, every face point has y = 0). The front beams are a ±30° pair and the rear beam is on y = 0, so the heating is symmetric. Rays of a beam with y < 0 are folded with `y -> |y|` and each ray carries half the beam power, which rebuilds the missing half. The reported cavity centroid near y = 1.1 mm is not that fold, and it is not the centre of mass of a cavity that includes the symmetry plane.
+
+On cal14 the wire-touching cavity (`cavityMarker`) was reconstructed at 0.2 s and 0.6 s. At 0.2 s, 0.19 mm³ of it lies in y < 0.2 mm and reaches down to z = 0.08 mm: the center plane does have a gas column behind the wire. At 0.6 s that column is gone below z = 1.30 mm. Only 0.08 mm³ remains on y < 0.2 mm, and it sits at z = 1.30–1.76 mm, the crown. Ninety-one percent of the marker volume is at y > 0.4 mm, and the gas that still reaches the plate is at y = 1.2–1.6 mm. The rear spot is 0.26 mm wide and aimed at (x, y, z) = (0.24, 0, 0.55) mm, so it heats the center-plane flank and closes the neck. The sides of the wire stay outside that spot, and the open volume lives there. A full-width copy would put the same groove at ±y. Its centroid would fall on y = 0 without putting gas on the center plane. That is what the other workstation's full-width centroid was measuring. Comparison of the center plane with the radiograph: `cal14_center_vs_radiograph.png`. At 0.2 s the gas behind the wire spans about z = 0.54–1.61 mm. At 0.6 s it is a cap at z = 1.45–1.61 mm.
+
+## Thin gas slit on the trailing face
+
+The radiograph feature to reproduce is a thin gas slit on the trailing face of the wire, on the center plane, under the notch and beside the fused dome. It is about 0.05 mm wide and about 0.4 mm deep (z about 1.2 mm down to 0.75 mm on the 1 mm wire), open where the melt meets the wire, and tapered to a point. Depth and width are expected to move with oxygen and with wire feed. The plate stays the cal14 plate: 1100 K, window 10°/40°, the same three beams, scan 4 mm/s. The runs stay 3D.
+
+The mesh is the 150 µm track with three nested refinement passes in x, y and z on the trailing face only (`--neck-refine 3`, box x 0.32–0.90 mm, y 0–0.22 mm, z 0.55–1.45 mm). Each pass is two cells larger than the next, so every interface is a 2:1 jump. OpenFOAM v2406 names that third axis `normal` in `refineMeshDict`. The neck spacing is 19 µm. A mesh-only check of the 100 ppm case has 61402 cells, shortest edge 19 µm, maximum non-orthogonality 26° and maximum aspect ratio 4.7 (`checkMesh`: Mesh OK). The capillary step uses that spacing (`maxDeltaT` about 2.4×10⁻⁶ s). There is no full-height `--wire-refine`: stacking it on the neck passes would take the gap cells well below 19 µm and the time step with them. `dx_min` is the product of the wire-box levels and the neck levels when both are set.
+
+The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-angles` writes a 7-column table and `oxygenWireAnglesOnly`, so the solver applies the wire and trailing columns and leaves the plate at 10°/40°. The table is a stand-in for an oxide film, not a sessile-drop fit: higher ppm, higher angles, poorer wetting, a slit that can stay open. Knots (ppm, wire receding/advancing, trailing receding/advancing): 0 → 25/70 and 30/80; 50 → 32/80 and 45/100; 100 → 42/100 and 60/120; 300 → 58/125 and 85/150; 1000 → 70/140 and 110/165. The trailing sector is 40° about +x with a 15° blend, so the oxide window is the center-back of the wire and not the side groove at y ≈ 1 mm.
+
+Sahoo–Belton `sigma(T, a_O)` is on, and Marangoni is on, so `dσ/dT` can change sign as oxygen adsorption overtakes the clean-metal slope. Recoil is on. The wire inlet stays at 300 K: the slit sits on solid unmelted wire, and preheating that face would melt it. Dissolved-gas transport is not solved: the slit is an open meniscus, and the oxygen entry is the uniform melt activity `a_O = ppm × 10⁻⁴` already used by the surface-tension model.
+
+`launch_slit_sweep.sh` runs the neck on the cal14 base, 4 ranks each, `nice -n 10`, end 0.20 s, write every 0.05 s. Wave 1 is feed 24 mm/s at 50, 100 and 300 ppm (cal26, cal29, cal32). Wave 2, when the rank budget is free, is feed 18 and 28 mm/s at the same three oxygen levels (cal25, cal27, cal28, cal30, cal31, cal33). That is the cal14 bead, not the cal113 / cal117 / cal140 bases. `launch_cal17.sh` remains the older 100 ppm bubble recipe and is not part of this sweep.
+
+The score is the center-plane gap between the wire surface and the first metal outside it (`slit_metric.py`): depth along z, median width, and whether that run is open at the bead surface and still at least 0.10 mm deep. The target is about 0.4 mm deep and 0.05 mm wide. Zoomed neck views go next to the radiograph crop (`plot_slit_neck.py`).
+
+| tag | ppm | feed | depth | width | open |
+| --- | --- | --- | --- | --- | --- |
+| cal26 | 50 | 24 mm/s | — | — | — |
+| cal29 | 100 | 24 mm/s | — | — | — |
+| cal32 | 300 | 24 mm/s | — | — | — |

@@ -55,9 +55,9 @@ scalar contactThetaAwire =
 // Trailing-sector window. Absent or wireSector false: one window on the wire.
 const bool contactWireSector =
     contactPinWire && contactDict.getOrDefault<bool>("wireSector", false);
-const scalar contactThetaRtrail =
+scalar contactThetaRtrail =
     contactDict.getOrDefault<scalar>("thetaRecedingWireTrail", 60.0)*contactDeg;
-const scalar contactThetaAtrail =
+scalar contactThetaAtrail =
     contactDict.getOrDefault<scalar>("thetaAdvancingWireTrail", 140.0)*contactDeg;
 const scalar contactWireSectorHalf =
     contactDict.getOrDefault<scalar>("wireSectorHalfAngle", 90.0)*contactDeg;
@@ -67,22 +67,14 @@ const scalar contactWireSectorBlend =
         contactDict.getOrDefault<scalar>("wireSectorBlend", 30.0),
         scalar(0)
     )*contactDeg;
-if (contactWireSector && contactThetaAtrail < contactThetaRtrail)
-{
-    FatalErrorInFunction
-        << "contactLine: thetaAdvancingWireTrail ("
-        << contactThetaAtrail/contactDeg
-        << " deg) is below thetaRecedingWireTrail ("
-        << contactThetaRtrail/contactDeg << " deg)" << nl
-        << exit(FatalError);
-}
-
 // Oxygen / oxide hysteresis. oxygenAngleTable rows are
-// (ppm  thetaReceding  thetaAdvancing  thetaRecedingWire  thetaAdvancingWire)
+// (ppm  thetaReceding  thetaAdvancing  thetaRecedingWire  thetaAdvancingWire
+//  [thetaRecedingWireTrail  thetaAdvancingWireTrail])
 // in degrees, linearly interpolated in ppm and clamped outside the table.
 // Used only when surfaceTension/oxygenDependent is true, so the linear-sigma
-// cases keep the scalar angles. The default table is a placeholder, not a
-// sessile-drop measurement (see generate_case.py / README).
+// cases keep the scalar angles. oxygenWireAnglesOnly leaves the plate window
+// at the scalar values and applies the wire (and optional trailing) columns.
+// The default 5-column table is a placeholder, not a sessile-drop measurement.
 scalarListList contactOxygenAngles;
 contactDict.readIfPresent("oxygenAngleTable", contactOxygenAngles);
 auto lwdOxygenAngle = [&](const label col, const scalar fallbackDeg) -> scalar
@@ -96,10 +88,9 @@ auto lwdOxygenAngle = [&](const label col, const scalar fallbackDeg) -> scalar
         if (row.size() <= col)
         {
             FatalErrorInFunction
-                << "contactLine/oxygenAngleTable rows need 5 numbers: "
-                << "ppm thetaReceding thetaAdvancing thetaRecedingWire "
-                << "thetaAdvancingWire" << nl
-                << "got " << row << exit(FatalError);
+                << "contactLine/oxygenAngleTable rows need at least "
+                << (col + 1) << " numbers, got " << row << nl
+                << exit(FatalError);
         }
         xs[nRow] = row[0];
         ys[nRow] = row[col];
@@ -133,12 +124,31 @@ auto lwdOxygenAngle = [&](const label col, const scalar fallbackDeg) -> scalar
     }
     return ys[nRow - 1];
 };
+const bool contactOxygenWireOnly =
+    contactDict.getOrDefault<bool>("oxygenWireAnglesOnly", false);
 if (oxygenDependent && contactOxygenAngles.size())
 {
-    contactThetaR0 = lwdOxygenAngle(1, contactThetaR0/contactDeg)*contactDeg;
-    contactThetaA0 = lwdOxygenAngle(2, contactThetaA0/contactDeg)*contactDeg;
+    if (!contactOxygenWireOnly)
+    {
+        contactThetaR0 = lwdOxygenAngle(1, contactThetaR0/contactDeg)*contactDeg;
+        contactThetaA0 = lwdOxygenAngle(2, contactThetaA0/contactDeg)*contactDeg;
+    }
     contactThetaRwire = lwdOxygenAngle(3, contactThetaRwire/contactDeg)*contactDeg;
     contactThetaAwire = lwdOxygenAngle(4, contactThetaAwire/contactDeg)*contactDeg;
+    if (contactOxygenAngles[0].size() >= 7)
+    {
+        contactThetaRtrail = lwdOxygenAngle(5, contactThetaRtrail/contactDeg)*contactDeg;
+        contactThetaAtrail = lwdOxygenAngle(6, contactThetaAtrail/contactDeg)*contactDeg;
+    }
+}
+if (contactWireSector && contactThetaAtrail < contactThetaRtrail)
+{
+    FatalErrorInFunction
+        << "contactLine: thetaAdvancingWireTrail ("
+        << contactThetaAtrail/contactDeg
+        << " deg) is below thetaRecedingWireTrail ("
+        << contactThetaRtrail/contactDeg << " deg)" << nl
+        << exit(FatalError);
 }
 const word contactWireVelocity(contactDict.getOrDefault<word>("wireVelocity", "head"));
 // head: pinned wire line is stationary in the lab/head frame (default).
@@ -257,7 +267,8 @@ if (contactEnabled)
     if (oxygenDependent && contactOxygenAngles.size())
     {
         Info<< nl << "    oxygen angles at " << chamberOxygenPpm
-            << " ppm from oxygenAngleTable (placeholder unless you replaced it)";
+            << " ppm from oxygenAngleTable"
+            << (contactOxygenWireOnly ? " (plate window kept)" : "");
     }
     else if (oxygenDependent)
     {

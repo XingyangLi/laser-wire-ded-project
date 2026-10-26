@@ -101,12 +101,21 @@ def main():
     ap.add_argument("--tag", default="cal11")
     ap.add_argument("--times", nargs="+", default=["0.8", "0.9"])
     ap.add_argument("--out", default="")
+    ap.add_argument("--with-radiograph", action="store_true",
+                    help="put the radiograph in the first panel")
     args = ap.parse_args()
     case = Path(args.case)
     times = args.times
     out = Path(args.out) if args.out else ROOT / "results/calibration" / f"{args.tag}_sideview.png"
-    fig, axes = plt.subplots(1, len(times), figsize=(5.6 * len(times), 5.2), sharey=True, squeeze=False)
-    axes = axes[0]
+    n = len(times) + (1 if args.with_radiograph else 0)
+    fig, axes = plt.subplots(1, n, figsize=(5.2 * n, 5.2), squeeze=False)
+    axes = list(axes[0])
+    if args.with_radiograph:
+        radio = plt.imread(ROOT / "results/calibration/radiograph.png")
+        axes[0].imshow(radio, cmap="gray")
+        axes[0].set_title("Radiograph")
+        axes[0].axis("off")
+        axes = axes[1:]
     for ax, t in zip(axes, times):
         x, z, alpha, y = load(case, t)
         draw(ax, x, z, alpha, f"t = {t} s    y = {y[0]*1e3:.2f} mm")

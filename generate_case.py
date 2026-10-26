@@ -335,6 +335,19 @@ def build_parser():
       help="with --oxygen-ppm: Sahoo-Belton sigma(T, a_O) only. The scalar "
            "contact angles stay as set, so a wetting window is not replaced "
            "by the placeholder oxygen angle table")
+    a("--oxygen-wire-angles", action="store_true",
+      help="with --oxygen-ppm: the plate window stays at --theta-receding and "
+           "--theta-advancing. The wire window and the trailing-sector window "
+           "are interpolated in ppm from an oxide-film table (poorer wetting "
+           "as oxygen rises). Sahoo-Belton sigma(T, a_O) stays on")
+    a("--neck-refine", type=int, default=0,
+      help="halving levels inside --neck-box, in x, y and z. On the 150 um mesh, "
+           "3 levels is about 19 um. Each level is a nested box, two coarse "
+           "cells larger than the next, so the jump at every interface is 2:1. "
+           "Local to the trailing wire face; the rest of the track stays coarse")
+    a("--neck-box", default="0.32e-3:0.90e-3:0:0.22e-3:0.55e-3:1.45e-3",
+      help="trailing-face box x0:x1:y0:y1:z0:z1 [m] about the wire axis. "
+           "On a half mesh the plane y = 0 is included")
     a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
       help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
            "then restore it. A brief notch perturbation. Example: 0.42,0.50,0.30")
@@ -426,6 +439,33 @@ OXYGEN_ANGLE_TABLE = (
     (500, 40, 120, 48, 115),
     (1000, 50, 130, 58, 130),
 )
+
+# Oxide film on the solid wire, not a sessile-drop fit. Columns [deg]:
+# ppm, wire receding, wire advancing, trailing receding, trailing advancing.
+# The plate window is not in this table. Higher ppm stands in for a thicker
+# oxide: the trailing face wets less, so a gas slit can stay open.
+WIRE_OXIDE_TABLE = (
+    (0, 25, 70, 30, 80),
+    (50, 32, 80, 45, 100),
+    (100, 42, 100, 60, 120),
+    (300, 58, 125, 85, 150),
+    (1000, 70, 140, 110, 165),
+)
+
+
+def oxide_wire_angles(ppm):
+    """Return (wireR, wireA, trailR, trailA) [deg] at this oxygen level."""
+    tab = WIRE_OXIDE_TABLE
+    if ppm <= tab[0][0]:
+        return tab[0][1:]
+    if ppm >= tab[-1][0]:
+        return tab[-1][1:]
+    for lo, hi in zip(tab, tab[1:]):
+        if ppm <= hi[0]:
+            span = hi[0] - lo[0]
+            w = (ppm - lo[0]) / span if span else 0.0
+            return tuple(lo[i] + w * (hi[i] - lo[i]) for i in range(1, 5))
+    return tab[-1][1:]
 
 
 class Case:
@@ -573,6 +613,18 @@ class Case:
             raise SystemExit("--oxygen-ppm must be >= 0")
         if a.oxygen_sigma_only and a.oxygen_ppm is None:
             raise SystemExit("--oxygen-sigma-only needs --oxygen-ppm")
+        if a.oxygen_wire_angles and a.oxygen_ppm is None:
+            raise SystemExit("--oxygen-wire-angles needs --oxygen-ppm")
+        if a.oxygen_wire_angles and a.oxygen_sigma_only:
+            raise SystemExit("--oxygen-wire-angles cannot be combined with --oxygen-sigma-only")
+        if a.neck_refine < 0:
+            raise SystemExit("--neck-refine must be >= 0")
+        if a.oxygen_wire_angles:
+            wr, wa, tr, ta = oxide_wire_angles(a.oxygen_ppm)
+            a.theta_receding_wire = wr
+            a.theta_advancing_wire = wa
+            a.theta_receding_wire_trail = tr
+            a.theta_advancing_wire_trail = ta
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
         # weave: the laser focus and the wire axis travel a triangular zigzag in y.
@@ -598,7 +650,12 @@ class Case:
                 print(f"[generate] weave: domain half-width {a.half_width*1e3:.2f} -> {need*1e3:.2f} mm "
                       "so the zigzag stays inside the mesh")
                 a.half_width = need
-        self.dx_min = self.dx / 2 ** a.wire_refine
+        # The neck box is refined again after the wire box, in x, y and z.
+        # The capillary limit has to see that product, not the coarser of the two.
+        neck_levels = int(getattr(a, "neck_refine", 0) or 0)
+        z_levels = (a.wire_refine if a.wire_refine_z else 0) + neck_levels
+        xy_levels = a.wire_refine + neck_levels
+        self.dx_min = self.dx / 2 ** max(xy_levels, z_levels, 0)
         # stranded wire geometry
         a.wire_feed_speed_nominal = a.wire_feed_speed
         self.strands = None
@@ -954,6 +1011,63 @@ useHexTopology  no;
 geometricCut    no;
 writeMesh       no;
 """ + FOOT
+
+    def neck_box_level(self, level):
+        """Box for one refineMesh pass. level 0 is the outer 2:1 shell."""
+        x0, x1, y0, y1, z0, z1 = self.neck_bounds()
+        n = self.a.neck_refine
+        if level < 0 or level >= n:
+            raise SystemExit(f"neck refine level {level} is outside 0..{n - 1}")
+        # Two cells of the spacing that exists before this pass. The next
+        # pass is smaller by that pad, so the interface is one 2:1 jump.
+        pad = 0.0
+        for i in range(level, n - 1):
+            pad += 2.0 * self.dx / (2 ** i)
+        return (x0 - pad, x1 + pad, y0 - pad, y1 + pad, z0 - pad, z1 + pad)
+
+    def topo_set_neck(self, level=0):
+        """Trailing-face box. Local in z as well as x and y."""
+        x0, x1, y0, y1, z0, z1 = self.neck_box_level(level)
+        dx_here = self.dx / 2 ** (level + 1)
+        return header("dictionary", f"topoSetDict.neck{level}", "system") + f"""// trailing face of the wire, neck band, refine pass {level} of {self.a.neck_refine}
+// spacing after this pass is about {dx_here*1e6:.1f} um
+actions
+(
+    {{
+        name    neckBox;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        box     ({f(x0)} {f(y0)} {f(z0)}) ({f(x1)} {f(y1)} {f(z1)});
+    }}
+);
+""" + FOOT
+
+    def refine_mesh_dict_neck(self):
+        return header("dictionary", "refineMeshDict.neck", "system") + """set             neckBox;
+coordinateSystem global;
+globalCoeffs
+{
+    tan1        (1 0 0);
+    tan2        (0 1 0);
+    tan3        (0 0 1);
+}
+directions      (tan1 tan2 normal);  // x, y and z; v2406 names the third axis "normal"
+useHexTopology  no;
+geometricCut    no;
+writeMesh       no;
+""" + FOOT
+
+    def neck_bounds(self):
+        parts = [float(x) for x in str(self.a.neck_box).split(":")]
+        if len(parts) != 6:
+            raise SystemExit("--neck-box needs x0:x1:y0:y1:z0:z1")
+        x0, x1, y0, y1, z0, z1 = parts
+        if not self.full:
+            y0 = min(y0, -1e-4)
+        if not (x0 < x1 and y0 < y1 and z0 < z1):
+            raise SystemExit("--neck-box is not a positive volume")
+        return x0, x1, y0, y1, z0, z1
 
     def topo_set(self):
         s_top = self.zt / math.sin(self.th)
@@ -1709,21 +1823,40 @@ statistics
         every = 1 if a.end_time <= 0.05 else 10
         pin_wire = bool(getattr(a, "pin_wire", False))
         angle_table = ""
+        wire_only = getattr(a, "oxygen_wire_angles", False)
         if getattr(a, "oxygen_ppm", None) is not None and not getattr(a, "oxygen_sigma_only", False):
-            rows = "\n".join(
-                f"        ({f(ppm)} {f(tr)} {f(ta)} {f(wr)} {f(wa)})"
-                for ppm, tr, ta, wr, wa in OXYGEN_ANGLE_TABLE
-            )
-            angle_table = (
-                "    // PLACEHOLDER. Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire.\n"
-                "    // Linear in ppm, clamped outside the knots. Ignored if oxygenDependent is false.\n"
-                "    // Replace with sessile-drop advancing/receding angles before treating\n"
-                "    // the cavity as a prediction. 10 ppm reproduces 20/90 and 25/70.\n"
-                "    oxygenAngleTable\n"
-                "    (\n"
-                f"{rows}\n"
-                "    );\n"
-            )
+            if wire_only:
+                rows = "\n".join(
+                    f"        ({f(ppm)} {f(a.theta_receding)} {f(a.theta_advancing)} "
+                    f"{f(wr)} {f(wa)} {f(tr)} {f(ta)})"
+                    for ppm, wr, wa, tr, ta in WIRE_OXIDE_TABLE
+                )
+                angle_table = (
+                    "    // Oxide film on the wire. Plate columns repeat the scalar plate window.\n"
+                    "    // Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire\n"
+                    "    //                 thetaRWireTrail thetaAWireTrail.\n"
+                    "    // oxygenWireAnglesOnly: the plate columns are not applied.\n"
+                    "    oxygenWireAnglesOnly true;\n"
+                    "    oxygenAngleTable\n"
+                    "    (\n"
+                    f"{rows}\n"
+                    "    );\n"
+                )
+            else:
+                rows = "\n".join(
+                    f"        ({f(ppm)} {f(tr)} {f(ta)} {f(wr)} {f(wa)})"
+                    for ppm, tr, ta, wr, wa in OXYGEN_ANGLE_TABLE
+                )
+                angle_table = (
+                    "    // PLACEHOLDER. Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire.\n"
+                    "    // Linear in ppm, clamped outside the knots. Ignored if oxygenDependent is false.\n"
+                    "    // Replace with sessile-drop advancing/receding angles before treating\n"
+                    "    // the cavity as a prediction. 10 ppm reproduces 20/90 and 25/70.\n"
+                    "    oxygenAngleTable\n"
+                    "    (\n"
+                    f"{rows}\n"
+                    "    );\n"
+                )
         if pin_wire:
             sector_txt = ""
             if getattr(a, "wire_sector", False):
@@ -2088,6 +2221,11 @@ statistics
         refine = "".join(f"topoSet -dict system/topoSetDict.refine > log.topoSet.refine{i} 2>&1\n"
                          f"refineMesh -overwrite -dict system/refineMeshDict > log.refineMesh{i} 2>&1\n"
                          for i in range(self.a.wire_refine))
+        if self.a.neck_refine > 0:
+            refine += "".join(
+                f"topoSet -dict system/topoSetDict.neck{i} > log.topoSet.neck{i} 2>&1\n"
+                f"refineMesh -overwrite -dict system/refineMeshDict.neck > log.refineMesh.neck{i} 2>&1\n"
+                for i in range(self.a.neck_refine))
         exprf = "setExprFields > log.setExprFields 2>&1\n" if self.strands is not None else ""
         return f"""#!/bin/bash
 # Laser wire DED case: mesh, initial fields, run (np={np_}).  Usage: ./Allrun [np]
@@ -2132,6 +2270,10 @@ fi
         if self.a.wire_refine > 0:
             write(s / "topoSetDict.refine", self.topo_set_refine())
             write(s / "refineMeshDict", self.refine_mesh_dict())
+        if self.a.neck_refine > 0:
+            for level in range(self.a.neck_refine):
+                write(s / f"topoSetDict.neck{level}", self.topo_set_neck(level))
+            write(s / "refineMeshDict.neck", self.refine_mesh_dict_neck())
         write(s / "controlDict", self.control_dict())
         write(s / "fvSchemes", self.fv_schemes())
         write(s / "fvSolution", self.fv_solution())
@@ -2290,8 +2432,23 @@ def main(argv=None):
         print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
               f"refined {a.wire_refine}x in {axes} "
               f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+    if a.neck_refine:
+        x0, x1, y0, y1, z0, z1 = c.neck_bounds()
+        print(f"[generate] neck box x {x0*1e3:.2f}..{x1*1e3:.2f} y {y0*1e3:.2f}..{y1*1e3:.2f} "
+              f"z {z0*1e3:.2f}..{z1*1e3:.2f} mm, {a.neck_refine} nested xyz levels "
+              f"-> dx_min = {c.dx_min*1e6:.0f} um")
     if getattr(a, "oxygen_ppm", None) is not None:
-        angles = "scalar contact angles kept" if a.oxygen_sigma_only else "placeholder angle table"
+        if a.oxygen_sigma_only:
+            angles = "scalar contact angles kept"
+        elif a.oxygen_wire_angles:
+            angles = (
+                "plate window kept, wire "
+                f"{a.theta_receding_wire:.0f}/{a.theta_advancing_wire:.0f} and trailing "
+                f"{a.theta_receding_wire_trail:.0f}/{a.theta_advancing_wire_trail:.0f} "
+                "from the oxide table"
+            )
+        else:
+            angles = "placeholder angle table"
         print(f"[generate] oxygen model ON: chamberOxygenPpm = {a.oxygen_ppm:g} "
               f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off. {angles}.")
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
