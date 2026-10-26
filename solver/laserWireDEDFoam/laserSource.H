@@ -22,6 +22,27 @@
     if (!lOn || t < lStart || t > lStop) ramp = 0.0;
     else if (lRamp > SMALL) ramp = min((t - lStart)/lRamp, 1.0);
 
+    // Optional brief scale on one beam (index into the beams list, 0-based).
+    // Absent from the dictionary, every beam keeps ramp*powerScale.
+    scalar dipScale = 1.0;
+    label dipBeam = -1;
+    if (lDict.found("powerDip"))
+    {
+        const dictionary& dip = lDict.subDict("powerDip");
+        dipBeam = dip.getOrDefault<label>("beam", 2);
+        const scalar t0 = dip.get<scalar>("tStart");
+        const scalar t1 = dip.get<scalar>("tEnd");
+        const scalar fac = dip.getOrDefault<scalar>("factor", 0.3);
+        if (t >= t0 && t < t1) dipScale = fac;
+        static bool dipNoted = false;
+        if (!dipNoted && t >= t0 && t < t1)
+        {
+            Info<< "Laser powerDip: beam " << dipBeam
+                << " x" << fac << " on [" << t0 << ", " << t1 << ") s" << endl;
+            dipNoted = true;
+        }
+    }
+
     const scalarField& V = mesh.V();
     scalarField& Q = Qheat.primitiveFieldRef();
     Q = 0.0;
@@ -42,7 +63,12 @@
     scalar incident = 0, missed = 0;
     forAll(rayCells, ri)
     {
-        const scalar Pr = ramp*pScale*rayPower[ri];
+        scalar bscale = 1.0;
+        if (dipBeam >= 0 && ri < rayBeam.size() && rayBeam[ri] == dipBeam)
+        {
+            bscale = dipScale;
+        }
+        const scalar Pr = ramp*pScale*bscale*rayPower[ri];
         if (Pstream::master()) incident += Pr;
         if (hit[ri] == labelMax)
         {

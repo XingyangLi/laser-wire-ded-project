@@ -331,6 +331,13 @@ def build_parser():
            "the chamber set-point. Turns on Sahoo-Belton sigma(T, a_O) and, with "
            "contact-line pinning, the oxygen contact-angle table. Omit to keep "
            "the linear sigma(T) model and the scalar angles")
+    a("--oxygen-sigma-only", action="store_true",
+      help="with --oxygen-ppm: Sahoo-Belton sigma(T, a_O) only. The scalar "
+           "contact angles stay as set, so a wetting window is not replaced "
+           "by the placeholder oxygen angle table")
+    a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
+      help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
+           "then restore it. A brief notch perturbation. Example: 0.42,0.50,0.30")
     a("--wire-pin-frame", default="head", choices=["head", "wire"],
       help="pinned wire line: 'head' holds it still in the lab/head frame so a kink "
            "stays at a fixed height while the wire feeds through (default); "
@@ -564,6 +571,8 @@ class Case:
             raise SystemExit("--wire-refine-z needs --wire-refine of at least 1")
         if a.oxygen_ppm is not None and a.oxygen_ppm < 0:
             raise SystemExit("--oxygen-ppm must be >= 0")
+        if a.oxygen_sigma_only and a.oxygen_ppm is None:
+            raise SystemExit("--oxygen-sigma-only needs --oxygen-ppm")
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
         # weave: the laser focus and the wire axis travel a triangular zigzag in y.
@@ -1634,7 +1643,7 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
     alphaHit        {f(self.alpha_hit)};
     tStart          0;
     tRamp           {f(a.laser_ramp)};
-    shadowing       {'false' if a.no_shadowing else 'true'};
+{self.power_dip_block()}    shadowing       {'false' if a.no_shadowing else 'true'};
     planar2D        {'true' if self.d2 else 'false'};
     width2D         {f(self.width2D)};
 }}
@@ -1651,6 +1660,27 @@ statistics
     beadHeightThreshold {f(0.2*self.dx)};
 }}
 {self.contact_line_block()}{self.porosity_block()}""" + FOOT
+
+    def power_dip_block(self):
+        """Optional rear-beam power window written into the laser dictionary."""
+        raw = getattr(self.a, "rear_power_dip", None)
+        if not raw:
+            return ""
+        parts = [float(x) for x in str(raw).split(",")]
+        if len(parts) != 3:
+            raise SystemExit("--rear-power-dip needs tStart,tEnd,factor")
+        t0, t1, fac = parts
+        if not (0.0 <= t0 < t1) or not (0.0 < fac < 1.0):
+            raise SystemExit("--rear-power-dip needs 0 <= tStart < tEnd and factor in (0, 1)")
+        return (
+            "    powerDip        // rear beam only; other beams stay at full power\n"
+            "    {\n"
+            "        beam    2;\n"
+            f"        tStart  {t0:g};\n"
+            f"        tEnd    {t1:g};\n"
+            f"        factor  {fac:g};\n"
+            "    }\n"
+        )
 
     def oxygen_surface_block(self):
         """Sahoo-Belton coefficients. Empty when --oxygen-ppm is omitted."""
@@ -1679,7 +1709,7 @@ statistics
         every = 1 if a.end_time <= 0.05 else 10
         pin_wire = bool(getattr(a, "pin_wire", False))
         angle_table = ""
-        if getattr(a, "oxygen_ppm", None) is not None:
+        if getattr(a, "oxygen_ppm", None) is not None and not getattr(a, "oxygen_sigma_only", False):
             rows = "\n".join(
                 f"        ({f(ppm)} {f(tr)} {f(ta)} {f(wr)} {f(wa)})"
                 for ppm, tr, ta, wr, wa in OXYGEN_ANGLE_TABLE
@@ -2261,8 +2291,9 @@ def main(argv=None):
               f"refined {a.wire_refine}x in {axes} "
               f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
     if getattr(a, "oxygen_ppm", None) is not None:
+        angles = "scalar contact angles kept" if a.oxygen_sigma_only else "placeholder angle table"
         print(f"[generate] oxygen model ON: chamberOxygenPpm = {a.oxygen_ppm:g} "
-              f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off.")
+              f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off. {angles}.")
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
           f"capillary dt ~ {s['capillary_dt']:.2e} s; expected bead area {c.bead_area*1e6:.2f} mm^2; "
           f"E_L = {s['energy_per_length_J_per_mm']:.0f} J/mm")

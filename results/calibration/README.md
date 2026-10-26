@@ -1,6 +1,6 @@
 # Wire-cavity calibration (oxygen off)
 
-Goal: a 3D melt pool that looks like the side-view radiograph. A 1 mm vertical wire melts into a dome on the plate, taller on the trailing side, with a notch where the three-phase line sits on the wire near the top of the dome, and a gas cavity in the wake. Process parameters are free. Oxygen stays off.
+Goal: a 3D melt pool that looks like the side-view radiograph. A 1 mm vertical wire melts into a dome on the plate, taller on the trailing side, with a notch where the three-phase line sits on the wire near the top of the dome, and small closed bubbles in the melt. Process parameters are free. Oxygen stays off through cal15. From cal16, Sahoo–Belton `sigma(T, a_O)` can be on while the plate and wire windows stay as written (`--oxygen-sigma-only`).
 
 The reference run (`results/reference`) aimed the beams outward. With shadowing on, each ray deposits on the first metal it meets, and those rays met the wire at the top of the domain (front-beam axis at z = 3.44 mm). The plate pool was wide and shallow and the wire contact line sat at z ≈ 3.3 mm.
 
@@ -184,3 +184,23 @@ The plate stays molten (center-plane peak 1921 K, pool depth 0.56 mm) and the pl
 ## cal16 — oxygen surface tension on the cal14 bead
 
 `launch_cal16.sh` returns to the cal14 speeds and the 60°/140° trailing window. Dissolved oxygen is 500 ppm, so `sigma(T, a_O)` replaces the linear law. The oxygen contact-angle table is removed after generation, leaving the 10°/40° plate window and the wire sector as written. Marangoni stays off. The neck is cooler than the pool surface, so adsorption lowers sigma there more than on the hot cap. Refined mesh, 12 ranks, `nice -n 10`, end 0.60 s.
+
+The solver was killed at t = 0.438 s on 24 Oct 2026 (wall clock 3.6 h, log `cases/wire_cavity_cal16/log.laserWireDEDFoam`). Nothing was running on 26 Oct, and there is no cal17 directory. The last written field is 0.40 s.
+
+At 0.40 s the plate is still molten (center-plane peak 1895 K) and the plate line has no receding cells (6 pinned, 20 advancing, mean 60°). The trailing crest is 1.61 mm and the leading crest is 0.84 mm. The wire line reaches 1.76 mm, but 24 of 36 cells are receding: the wire angle sits near 29°, under the 60° floor, same as cal14. `OxygenSigma` at the kill reports 500 ppm, sigma from 0.88 to 1.17 N/m. The open-cavity report is 2.95 mm³ beside the wire and is not the score. Side view: `cal16_sideview.png`.
+
+No closed bubble is present at a finished end. The longest liquid-shelled pore still in the pool is 51 ms: 0.15 mm, 15 cells, shell fraction 1, z = 1.15–1.30 mm, from 0.382 s to 0.433 s, alive when the process stopped. Pinch-offs 29, closures 0. The largest closed volume in the cavity report is 0.0003 mm³.
+
+## Scores at the restart
+
+Same 10-point radiograph score as the other workstation: 2 if the trailing crest is 1.45–2.30 mm, 1 if it stands at least 0.35 mm above the lead, 2 if the wire line is pinned on that neck, 1 if the molten plate line is not receding, 2 if the substrate under the bead is melted and there is no gas sheet, 2 if a closed bubble of 0.05–0.3 mm is still in the pool at the end. A pore that has already vanished does not score. The gas at z ≈ 1.8 mm on the center plane is the notch against the wire, not a bubble and not a film under the bead.
+
+| tag | t | score | trail / lead | plate | bubble in the pool |
+| --- | --- | --- | --- | --- | --- |
+| cal14 | 0.60 s | 6 | 1.76 / 0.84 mm | 0 receding, 1873 K | 0.17 mm, 22 cells, liquid shell, 112 ms, gone by 0.60 s |
+| cal15 | 0.70 s | 6 | 1.61 / 0.69 mm | 0 receding, 1921 K | 0.11 mm, 34 ms, gone before the end |
+| cal16 | 0.40 s | 6 | 1.61 / 0.84 mm | 0 receding, 1895 K | 0.15 mm, 15 cells, 51 ms, still present at the kill |
+
+The wire-pin points stay at 0 on all three: the line reaches the crest and then recedes. None of these runs has a closed 0.05–0.3 mm bubble at its last sample.
+
+`continue_cal16.sh` restarts the 0.40 s field to 0.70 s on the same 12 ranks. The binary is the one that wrote 0.40 s, so the 500 ppm bead is finished before the rear-beam dip is turned on. `launch_cal17.sh` is the next recipe if that pore does not stay: 100 ppm with `--oxygen-sigma-only`, and a trailing window of 15°/45° over 45° of +x, on the same 1100 K plate. The 60° floor cannot pin a 22–29° wire angle. 100 ppm is the level that held a score-8 dome on the other workstation; 500 ppm is the level that dropped their trail, and it has not dropped this refined bead by 0.40 s.
