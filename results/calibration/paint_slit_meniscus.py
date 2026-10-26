@@ -164,7 +164,7 @@ def replace_internal(path, declaration):
 def write_scalar(path, values):
     lines = "\n".join(f"{v:.8g}" for v in values)
     decl = (
-        f"internalField   nonuniform List<scalar>\n{len(values)}\n(\n{lines}\n)"
+        f"internalField   nonuniform List<scalar>\n{len(values)}\n(\n{lines}\n);"
     )
     replace_internal(path, decl)
 
@@ -172,7 +172,7 @@ def write_scalar(path, values):
 def write_vector(path, values):
     lines = "\n".join(f"({v[0]:.8g} {v[1]:.8g} {v[2]:.8g})" for v in values)
     decl = (
-        f"internalField   nonuniform List<vector>\n{len(values)}\n(\n{lines}\n)"
+        f"internalField   nonuniform List<vector>\n{len(values)}\n(\n{lines}\n);"
     )
     replace_internal(path, decl)
 
