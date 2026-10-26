@@ -938,7 +938,8 @@ actions
 """ + FOOT
 
     def refine_mesh_dict(self):
-        dirs = "(tan1 tan2 tan3)" if self.a.wire_refine_z else "(tan1 tan2)"
+        # OpenFOAM.com v2406 names the third cut "normal" (tan1 x tan2), not tan3.
+        dirs = "(tan1 tan2 normal)" if self.a.wire_refine_z else "(tan1 tan2)"
         note = (
             "x, y and z. Full-height box: the laser still keys columns by cell-centre x,y"
             if self.a.wire_refine_z else
