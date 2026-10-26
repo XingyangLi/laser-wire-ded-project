@@ -385,3 +385,23 @@ The next screens aim at the two liquid gas windows, and at a mesh that can hold 
 | cal164 | 100 ppm, feed 24 mm/s | 0.75 s |
 | cal165 | cal117, trail window 70°/120° over 30° | 0.75 s |
 | cal166 | cal131, rear beam ×0.30 from 0.64 to 0.80 s | 1.00 s |
+
+## Gas slit on the trailing face
+
+The radiograph's feature at the neck is a thin gas slit on the trailing face of the wire, not the open wake and not a closed 0.05–0.3 mm bubble. It is about 0.05 mm wide and about 0.4 mm deep (z about 1.2 mm down to 0.75 mm on the 1 mm wire), open where the melt meets the wire, tapering to a point in the melt, with a curved meniscus. It sits on the centre plane, under the notch, beside the fused dome that is taller on the trailing side. Its depth depends on oxygen and on the wire feed. The bubble-dip batch (cal144–cal166 and the weekend continuations) was stopped to free the 32 ranks for this.
+
+The half mesh is a symmetry plane at y = 0 (`symmetry` / `symmetryPlane`, laser `symmetryY` folds rays with y → |y| and half power). The wire-sector window is symmetric about +x, and the y grading is uniform out to 2.2 mm, so neither the sector nor the mesh grading shoves the film off the plane. Every half-mesh wake has its volume centroid near y = 1 mm because the open wake is a slab from the symmetry plane out to about 1.7 mm: that centroid is the middle of the slab. On the fused-dome recipes the centre-plane cut through that slab is mostly metal against the wire, with only a shallow gas notch, while y = 1 mm (outside the wire) is the tall open hole. cal71, the one full-width run, puts the same wake on y = 0. The slit itself is the film on the wire, which belongs on the symmetry plane, so these runs stay on the half mesh. A full-width copy would spend the refined cells twice.
+
+`--neck-refine 3` halves the trailing face three times. x and y are refined on the whole column (the laser keys columns by cell-centre x, y). z is refined only from 0.45 mm to 1.55 mm, which is the slit. On the 150 µm mesh that is about 19 µm: two cells across 0.05 mm, and about twenty cells along a 0.4 mm depth. The rest of the mesh stays coarse. A check of that mesh is 65 042 cells, minimum cell volume of a 19 µm cube, non-orthogonality 49°, and `checkMesh` reports Mesh OK. Capillary Δt is about 1.5×10⁻⁶ s, so each run is slow. End time is 0.40 s, one rank, `nice -n 10`.
+
+`--oxygen-wire-angles` keeps the plate window that fuses the bead (20°/55° on the cal113 heat, 10°/40° on the cal117 and cal140 heats) and sets the wire window and the trailing-wire window from oxygen ppm. The trailing window widens as ppm rises (50 ppm is 18°/110°, 100 ppm is 12°/140°, 300 ppm is 8°/160°), which is the oxide film on the +x face. Sahoo–Belton σ(T, a_O) stays on, so dσ/dT changes sign between 10 and 100 ppm and Marangoni follows it. Recoil and evaporation stay on. The unmelted wire starts at 1100 K; the plate stays at the recipe preheat (900 K or 300 K). There is no dissolved-gas model: the slit is an open meniscus against the wire, not a nucleated bubble.
+
+`WireSlit:` and `postProcessing/wireSlit/wireSlit.dat` measure that film (|y| < 0.15 mm, within 0.10 mm of the wire radius, trailing side). Depth is centre-to-centre. The target is about 0.4 mm deep, about 0.05 mm wide, open, and still present at the last sample. `measure_slit.py` prints the table. `render_slit_neck.py` draws the centre-plane neck, binned at 0.02 mm, next to a crop of the radiograph.
+
+| tags | heat | oxygen | feed | end |
+| --- | --- | --- | --- | --- |
+| cal167–cal175 | cal113 (plate 20/55, absorptivity 0.55, preheat 900 K, sector 60°) | 50, 100, 300 ppm | 18, 24, 28 mm/s | 0.40 s |
+| cal176–cal184 | cal117 (plate 10/40, absorptivity 0.65, sector 90°) | 50, 100, 300 ppm | 18, 24, 28 mm/s | 0.40 s |
+| cal185–cal193 | cal140 (cal117 heat, rear beam ×0.40 on 0.55–0.63 s) | 50, 100, 300 ppm | 18, 24, 28 mm/s | 0.40 s |
+
+Within each block the order is ppm, then feed. cal167 is 50 ppm at 18 mm/s. cal193 is 300 ppm at 28 mm/s.

@@ -55,9 +55,9 @@ scalar contactThetaAwire =
 // Trailing-sector window. Absent or wireSector false: one window on the wire.
 const bool contactWireSector =
     contactPinWire && contactDict.getOrDefault<bool>("wireSector", false);
-const scalar contactThetaRtrail =
+scalar contactThetaRtrail =
     contactDict.getOrDefault<scalar>("thetaRecedingWireTrail", 60.0)*contactDeg;
-const scalar contactThetaAtrail =
+scalar contactThetaAtrail =
     contactDict.getOrDefault<scalar>("thetaAdvancingWireTrail", 140.0)*contactDeg;
 const scalar contactWireSectorHalf =
     contactDict.getOrDefault<scalar>("wireSectorHalfAngle", 90.0)*contactDeg;
@@ -133,12 +133,37 @@ auto lwdOxygenAngle = [&](const label col, const scalar fallbackDeg) -> scalar
     }
     return ys[nRow - 1];
 };
+// oxygenPlateAngles false: the plate window stays at the scalar angles (the
+// fused-bead recipe). The wire window still follows the table. A 7-column
+// row also sets the trailing-wire window (oxide film on +x).
+const bool contactOxygenPlate =
+    contactDict.getOrDefault<bool>("oxygenPlateAngles", true);
+bool contactOxygenTrail = false;
 if (oxygenDependent && contactOxygenAngles.size())
 {
-    contactThetaR0 = lwdOxygenAngle(1, contactThetaR0/contactDeg)*contactDeg;
-    contactThetaA0 = lwdOxygenAngle(2, contactThetaA0/contactDeg)*contactDeg;
+    contactOxygenTrail = true;
+    for (const scalarList& row : contactOxygenAngles)
+    {
+        if (row.size() < 7) contactOxygenTrail = false;
+    }
+    if (contactOxygenPlate)
+    {
+        contactThetaR0 = lwdOxygenAngle(1, contactThetaR0/contactDeg)*contactDeg;
+        contactThetaA0 = lwdOxygenAngle(2, contactThetaA0/contactDeg)*contactDeg;
+    }
     contactThetaRwire = lwdOxygenAngle(3, contactThetaRwire/contactDeg)*contactDeg;
     contactThetaAwire = lwdOxygenAngle(4, contactThetaAwire/contactDeg)*contactDeg;
+    if (contactOxygenTrail)
+    {
+        contactThetaRtrail =
+            lwdOxygenAngle(5, contactThetaRtrail/contactDeg)*contactDeg;
+        contactThetaAtrail =
+            lwdOxygenAngle(6, contactThetaAtrail/contactDeg)*contactDeg;
+        if (contactThetaAtrail < contactThetaRtrail)
+        {
+            contactThetaAtrail = contactThetaRtrail;
+        }
+    }
 }
 const word contactWireVelocity(contactDict.getOrDefault<word>("wireVelocity", "head"));
 // head: pinned wire line is stationary in the lab/head frame (default).
@@ -257,7 +282,15 @@ if (contactEnabled)
     if (oxygenDependent && contactOxygenAngles.size())
     {
         Info<< nl << "    oxygen angles at " << chamberOxygenPpm
-            << " ppm from oxygenAngleTable (placeholder unless you replaced it)";
+            << " ppm from oxygenAngleTable";
+        if (!contactOxygenPlate)
+        {
+            Info<< " (plate window kept at the scalar angles)";
+        }
+        if (contactOxygenTrail)
+        {
+            Info<< nl << "    trailing wire window from the oxygen table";
+        }
     }
     else if (oxygenDependent)
     {

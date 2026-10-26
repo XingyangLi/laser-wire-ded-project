@@ -308,4 +308,162 @@
         os << runTime.value()
            << " 0 -1 -1 0 0 0 0 0 0 0 0 0 0\n";
     }
+
+    // Thin gas film on the trailing face of the wire, near y = 0.
+    // The radiograph slit is about 0.05 mm wide and about 0.4 mm deep
+    // (z about 1.2 mm down to 0.75 mm). It is not the open wake, which
+    // extends a millimetre off the centre plane. Depth is centre-to-centre
+    // of the film cells. open = 1 if any of those cells still sees the
+    // atmosphere.
+    if
+    (
+        porWireCavity
+     && pimple.finalIter()
+     && (
+            runTime.timeIndex() % max(porInterval, 1) == 0
+         || runTime.writeTime()
+        )
+    )
+    {
+        const scalar yBand = 1.5e-4;
+        const scalar rGap = 1.0e-4;
+        const scalar rIn = 3.0e-5;
+        const scalar zLo = 3.0e-4;
+        const scalar zHi = 2.0e-3;
+        const scalar cosTrail = 0.75;
+        const vector trail(1, 0, 0);
+
+        labelList slit(nCells, 0);
+        forAll(alpha1, celli)
+        {
+            if (alpha1[celli] >= porAlphaOpen) continue;
+            if (gasState[celli] == 0) continue;
+            if (mag(C[celli].y()) > yBand) continue;
+            const scalar z = C[celli].z();
+            if (z < zLo || z > zHi) continue;
+            const vector d = C[celli] - wireOrigin;
+            const scalar s = d & wireUp;
+            const vector rad = d - s*wireUp;
+            const scalar r = mag(rad);
+            if (r < wireRadius - rIn || r > wireRadius + rGap) continue;
+            if (r > SMALL && (rad & trail)/(r + VSMALL) < cosTrail) continue;
+            slit[celli] = 1;
+        }
+
+        DynamicList<label> sq(16);
+        forAll(slit, celli)
+        {
+            if (slit[celli] != 1) continue;
+            bool touch = false;
+            for (const label n : cCells[celli])
+            {
+                if (inWireZone[n] && lwdUnmeltedWire(n) && alpha1[n] > 0.5)
+                {
+                    touch = true;
+                    break;
+                }
+            }
+            if (!touch) continue;
+            slit[celli] = 2;
+            sq.append(celli);
+        }
+        for (label qi = 0; qi < sq.size(); ++qi)
+        {
+            for (const label n : cCells[sq[qi]])
+            {
+                if (slit[n] == 1)
+                {
+                    slit[n] = 2;
+                    sq.append(n);
+                }
+            }
+        }
+        if (Pstream::parRun())
+        {
+            label guard = 0;
+            while (guard++ < 1000)
+            {
+                List<label> nei;
+                lwdSwapCells(slit, nei);
+                DynamicList<label> nq;
+                const label nInt = mesh.nInternalFaces();
+                for (label fi = nInt; fi < mesh.nFaces(); ++fi)
+                {
+                    const label c = mesh.faceOwner()[fi];
+                    if (slit[c] == 1 && nei[fi - nInt] == 2)
+                    {
+                        slit[c] = 2;
+                        nq.append(c);
+                    }
+                }
+                for (label qi = 0; qi < nq.size(); ++qi)
+                {
+                    for (const label n : cCells[nq[qi]])
+                    {
+                        if (slit[n] == 1)
+                        {
+                            slit[n] = 2;
+                            nq.append(n);
+                        }
+                    }
+                }
+                label changed = nq.size();
+                reduce(changed, sumOp<label>());
+                if (!changed) break;
+            }
+        }
+
+        scalar zMin = GREAT, zMax = -GREAT, width = 0;
+        label nSlit = 0, nAtm = 0;
+        forAll(slit, celli)
+        {
+            if (slit[celli] != 2) continue;
+            zMin = min(zMin, C[celli].z());
+            zMax = max(zMax, C[celli].z());
+            const vector d = C[celli] - wireOrigin;
+            const scalar s = d & wireUp;
+            const scalar r = mag(d - s*wireUp);
+            width = max(width, max(r - wireRadius, scalar(0)));
+            nSlit += 1;
+            if (gasState[celli] == 1) nAtm += 1;
+        }
+        reduce(zMin, minOp<scalar>());
+        reduce(zMax, maxOp<scalar>());
+        reduce(width, maxOp<scalar>());
+        reduce(nSlit, sumOp<label>());
+        reduce(nAtm, sumOp<label>());
+        const scalar depth = (nSlit > 0) ? max(zMax - zMin, scalar(0)) : 0;
+        const label open = nAtm > 0 ? 1 : 0;
+
+        if (Pstream::master())
+        {
+            Info<< "WireSlit: n = " << nSlit
+                << "  depth = " << depth << " m"
+                << "  width = " << width << " m"
+                << "  z = " << (nSlit ? zMin : 0) << ".."
+                << (nSlit ? zMax : 0) << " m"
+                << "  open = " << open
+                << endl;
+
+            const fileName sdir(runTime.globalPath()/"postProcessing"/"wireSlit");
+            mkDir(sdir);
+            const fileName sfn(sdir/"wireSlit.dat");
+            const bool sNew = !isFile(sfn);
+            std::ofstream sos(sfn.c_str(), std::ios::app);
+            if (sNew)
+            {
+                sos << "# time[s] nCells zMin[m] zMax[m] depth[m] width[m] open\n"
+                    << "# Film of gas on the trailing wire face, |y| < 0.15 mm,\n"
+                    << "# within 0.10 mm outside the wire radius, z in 0.3-2.0 mm.\n"
+                    << "# depth is centre-to-centre. open = 1 if the film still\n"
+                    << "# touches the atmosphere. Target: depth ~ 0.4 mm,\n"
+                    << "# width ~ 0.05 mm, open, persisting.\n";
+            }
+            sos.setf(std::ios::scientific);
+            sos.precision(8);
+            sos << runTime.value() << ' ' << nSlit << ' '
+                << (nSlit ? zMin : 0) << ' ' << (nSlit ? zMax : 0) << ' '
+                << depth << ' ' << width << ' ' << open << '\n';
+        }
+    }
 }

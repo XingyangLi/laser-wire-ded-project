@@ -685,6 +685,8 @@ with `T` in the adsorption term also evaluated at `max(T, T_m)`. `sigma_m`, `A` 
 
 `oxygenAngleTable` is interpolated linearly in ppm for the plate and wire windows. The shipped knots are placeholders (10 ppm recovers 20°/90° and 25°/70°; 1000 ppm is 50°/130° and 58°/130°). Freezing still opens the active window to `[0, π]`.
 
+`--oxygen-wire-angles` keeps the plate window at the scalar angles (so a fused bead is not replaced by that placeholder) and drives the wire window, and the trailing-wire window, from a 7-column table. Higher ppm widens the trailing window: the oxide film on the +x face is what the sector stands in for. `--wire-preheat` sets the unmelted wire's initial temperature without heating the plate. `--neck-refine N` halves the trailing face N times (x and y on the whole column, z only from 0.45 mm to 1.55 mm). On the 150 µm mesh, N = 3 is about 19 µm, which puts two cells across a 0.05 mm slit. `WireSlit:` / `postProcessing/wireSlit/wireSlit.dat` is that film: gas within 0.10 mm of the wire radius, |y| < 0.15 mm, on the trailing side. Depth is centre-to-centre; the target is about 0.4 mm deep and 0.05 mm wide, open at the bead surface.
+
 A pinch-off of the wake is an increase of the entrapment count (`PinchOff:`). The wire cavity itself becoming closed is `CavityClosure:`. Neither is resolved on the 150 µm mesh; `--wire-refine 3 --wire-refine-z` is the optional ~19 µm box, and it is a much longer run (README).
 
 ## Local GUI (Windows)
