@@ -1315,7 +1315,16 @@ functions
 """ + FOOT
 
     def fv_schemes(self):
-        return header("dictionary", "fvSchemes", "system") + """ddtSchemes
+        # A 2:1 neck refinement cuts the wire surface. Unbounded "corrected"
+        # snGrad on that face threw the gas to 10^4 m/s and collapsed deltaT.
+        # limited corrected 0.5 keeps the capillary step (about 1.5 us).
+        if self.a.neck_refine:
+            laplacian = "Gauss linear limited corrected 0.5"
+            sn_grad = "limited corrected 0.5"
+        else:
+            laplacian = "Gauss linear corrected"
+            sn_grad = "corrected"
+        txt = header("dictionary", "fvSchemes", "system") + """ddtSchemes
 {
     default         Euler;
 }
@@ -1341,7 +1350,7 @@ divSchemes
 
 laplacianSchemes
 {
-    default         Gauss linear corrected;
+    default         LAPLACIAN;
 }
 
 interpolationSchemes
@@ -1351,9 +1360,10 @@ interpolationSchemes
 
 snGradSchemes
 {
-    default         corrected;
+    default         SNGRAD;
 }
-""" + FOOT
+"""
+        return txt.replace("LAPLACIAN", laplacian).replace("SNGRAD", sn_grad) + FOOT
 
     def fv_solution(self):
         # refined wire box (hanging faces, many thin gas gaps in the stranded wire): the default GAMG
@@ -1373,7 +1383,10 @@ snGradSchemes
             # (residual reduction ~0.97/V-cycle, 1000 cycles per solve); the default coarsest solve converges
             # in 0-3 cycles. Near the 1e-7 tolerance it can stall at round-off: cap at 10 cycles.
             coarsest = "        maxIter         10;\n"
-        return header("dictionary", "fvSolution", "system") + """solvers
+        # Same refinement face: one non-orthogonal pass was not enough.
+        # Two passes keep max Courant ~0.002 at the capillary deltaT.
+        n_ortho = 2 if self.a.neck_refine else 0
+        txt = header("dictionary", "fvSolution", "system") + """solvers
 {
     "alpha.metal.*"
     {
@@ -1429,7 +1442,7 @@ PIMPLE
     momentumPredictor   yes;
     nOuterCorrectors    1;
     nCorrectors         3;
-    nNonOrthogonalCorrectors 0;
+    nNonOrthogonalCorrectors NORTHO;
 }
 
 relaxationFactors
@@ -1439,7 +1452,8 @@ relaxationFactors
         ".*"            1;
     }
 }
-""" + FOOT
+"""
+        return txt.replace("NORTHO", str(n_ortho)) + FOOT
 
     def decompose(self):
         np_ = self.a.np
@@ -1747,8 +1761,8 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
 {beams}
     );
     symmetryY       {'false' if (self.d2 or self.full) else 'true'};   // rays folded at the y = 0 symmetry plane
-    raySpacingFactor 0.5;
-    rayStepFactor   0.33;
+    raySpacingFactor {2 if self.a.neck_refine else 0.5};   // neck: ~2 dx_min, so a 19 um cell does not build a 9 um ray grid
+    rayStepFactor   {1.5 if self.a.neck_refine else 0.33};
     alphaHit        {f(self.alpha_hit)};
     tStart          0;
     tRamp           {f(a.laser_ramp)};
@@ -2198,9 +2212,11 @@ statistics
                          f"refineMesh -overwrite -dict system/refineMeshDict > log.refineMesh{i} 2>&1\n"
                          for i in range(self.a.wire_refine))
         if self.a.neck_refine:
-            # x,y over the whole column first, so the laser still sees one
-            # x-y key from the substrate to the top. z only in the neck band,
-            # where the radiograph slit sits (about 0.75-1.2 mm).
+            # x,y and z in the neck band only. Refining x,y up the whole
+            # column left 19 um x 150 um cells on the wire surface, and the
+            # gas there ran away (Courant collapse before the pool exists).
+            # Laser heat is deposited by findCell, so the columns need not
+            # share one x-y key from the plate to the top.
             refine += "".join(
                 "topoSet -dict system/topoSetDict.neckXy > log.topoSet.neckXy{i} 2>&1\n"
                 "refineMesh -overwrite -dict system/refineMeshDict.neckXy "
@@ -2258,10 +2274,10 @@ fi
             write(s / "topoSetDict.refine", self.topo_set_refine())
             write(s / "refineMeshDict", self.refine_mesh_dict())
         if self.a.neck_refine > 0:
-            write(s / "topoSetDict.neckXy", self.topo_set_neck("neckXy", self.zb - self.dx, self.zt + self.dx))
+            write(s / "topoSetDict.neckXy", self.topo_set_neck("neckXy", 0.45e-3, 1.55e-3))
             write(s / "refineMeshDict.neckXy", self.refine_mesh_dict_named(
                 "neckXy", "(tan1 tan2)",
-                "x and y only, full column, trailing wire face"))
+                "x and y only, neck band 0.45-1.55 mm, trailing wire face"))
             write(s / "topoSetDict.neckZ", self.topo_set_neck("neckZ", 0.45e-3, 1.55e-3))
             write(s / "refineMeshDict.neckZ", self.refine_mesh_dict_named(
                 "neckZ", "(normal)",
@@ -2427,8 +2443,8 @@ def main(argv=None):
     if a.neck_refine:
         x0, x1, y0, y1 = c.neck_xy_box()
         print(f"[generate] neck refine {a.neck_refine}x on the trailing face "
-              f"x {x0*1e3:.2f}..{x1*1e3:.2f} mm, |y| <= {y1*1e3:.2f} mm; "
-              f"z refined only on 0.45..1.55 mm; dx_min = {c.dx_min*1e6:.0f} um")
+              f"x {x0*1e3:.2f}..{x1*1e3:.2f} mm, |y| <= {y1*1e3:.2f} mm, "
+              f"z 0.45..1.55 mm; dx_min = {c.dx_min*1e6:.0f} um")
     if getattr(a, "oxygen_ppm", None) is not None:
         if a.oxygen_sigma_only:
             angles = "scalar contact angles kept"
