@@ -392,7 +392,7 @@ The radiograph's feature at the neck is a thin gas slit on the trailing face of 
 
 The half mesh is a symmetry plane at y = 0 (`symmetry` / `symmetryPlane`, laser `symmetryY` folds rays with y → |y| and half power). The wire-sector window is symmetric about +x, and the y grading is uniform out to 2.2 mm, so neither the sector nor the mesh grading shoves the film off the plane. Every half-mesh wake has its volume centroid near y = 1 mm because the open wake is a slab from the symmetry plane out to about 1.7 mm: that centroid is the middle of the slab. On the fused-dome recipes the centre-plane cut through that slab is mostly metal against the wire, with only a shallow gas notch, while y = 1 mm (outside the wire) is the tall open hole. cal71, the one full-width run, puts the same wake on y = 0. The slit itself is the film on the wire, which belongs on the symmetry plane, so these runs stay on the half mesh. A full-width copy would spend the refined cells twice.
 
-`--neck-refine 3` halves the trailing face three times in x, y and z, only from 0.45 mm to 1.55 mm. On the 150 µm mesh that is about 19 µm: two cells across 0.05 mm, and about twenty cells along a 0.4 mm depth. The rest stays coarse. Refining x and y up the whole column left flat cells on the wire; a check of the band-only mesh is 56 726 cells, aspect ratio 4.7, non-orthogonality 49°, `checkMesh` Mesh OK. The 2:1 face still cuts the wire surface. With unbounded `corrected` snGrad the gas there reached 10⁴ m/s and Δt fell to 10⁻¹¹ s. Neck cases use `limited corrected 0.5` and two non-orthogonal correctors, which hold the capillary Δt of about 1.5×10⁻⁶ s (Courant about 0.002 on a cold start). Rays are spaced at about 37 µm so the 19 µm cells do not build a 9 µm ray grid. End time is 0.40 s, one rank, `nice -n 10`.
+`--neck-refine 3` halves the trailing face three times in x, y and z, only from 0.45 mm to 1.55 mm. On the 150 µm mesh that is about 19 µm: two cells across 0.05 mm, and about twenty cells along a 0.4 mm depth. The rest stays coarse. Refining x and y up the whole column left flat cells on the wire; a check of the band-only mesh is 56 726 cells, aspect ratio 4.7, non-orthogonality 49°, `checkMesh` Mesh OK. The 2:1 face still cuts the wire surface. With unbounded `corrected` snGrad the gas there reached 10⁴ m/s and Δt fell to 10⁻¹¹ s. Neck cases use `limited corrected 0.5` and two non-orthogonal correctors, which hold the capillary Δt of about 1.5×10⁻⁶ s (Courant about 0.002 on a cold start). Rays are spaced at about 37 µm so the 19 µm cells do not build a 9 µm ray grid. The full-domain cal167–cal193 runs (end 0.40 s, one rank, `nice -n 10`) were stopped before the feed started. The slit test moved to the small-domain smokes below.
 
 `--oxygen-wire-angles` keeps the plate window that fuses the bead (20°/55° on the cal113 heat, 10°/40° on the cal117 and cal140 heats) and sets the wire window and the trailing-wire window from oxygen ppm. The trailing window widens as ppm rises (50 ppm is 18°/110°, 100 ppm is 12°/140°, 300 ppm is 8°/160°), which is the oxide film on the +x face. Sahoo–Belton σ(T, a_O) stays on, so dσ/dT changes sign between 10 and 100 ppm and Marangoni follows it. Recoil and evaporation stay on. The unmelted wire starts at 1100 K; the plate stays at the recipe preheat (900 K or 300 K). There is no dissolved-gas model: the slit is an open meniscus against the wire, not a nucleated bubble.
 
@@ -404,4 +404,21 @@ The half mesh is a symmetry plane at y = 0 (`symmetry` / `symmetryPlane`, laser 
 | cal176–cal184 | cal117 (plate 10/40, absorptivity 0.65, sector 90°) | 50, 100, 300 ppm | 18, 24, 28 mm/s | 0.40 s |
 | cal185–cal193 | cal140 (cal117 heat, rear beam ×0.40 on 0.55–0.63 s) | 50, 100, 300 ppm | 18, 24, 28 mm/s | 0.40 s |
 
-Within each block the order is ppm, then feed. cal167 is 50 ppm at 18 mm/s. cal193 is 300 ppm at 28 mm/s.
+Within each block the order is ppm, then feed. cal167 is 50 ppm at 18 mm/s. cal193 is 300 ppm at 28 mm/s. Those runs were killed with the feed still off.
+
+## Neck smokes
+
+`launch_slit_smoke.sh` is the slit test that fits in about an hour. The domain is the half mesh from x = −2 mm to 3.5 mm, y = 0 to 1.6 mm, z = −0.8 mm to 2.2 mm, with the same 19 µm neck. `checkMesh` reports 32 668 cells, aspect ratio 4.0, Mesh OK. The initial field is cal117 at 0.70 s (fused dome, 100 ppm) mapped with `mapFields -mapMethod interpolate`. Boundary conditions are put back afterwards, including the wire-feed table and the wire-inlet temperature. The mapped pool is already hot (about 490 K to 3030 K). The run is 0.70 s to 0.73 s, so 30 ms after a pool that has been feeding since 0.05 s. Plate window stays 10°/40°. `--wire-preheat` is the wire inlet as well as the initial wire, so a mapped restart still feeds wire at that temperature.
+
+A cold start on this mesh holds the capillary step. The mapped dome does not: the interface Courant number sits on the 0.4 cap and Δt stays near 1.2×10⁻⁶ s. On this 33 k-cell mesh the step is 0.33 s on 1 rank, 0.20 s on 2, 0.16 s on 4 and 0.28 s on 8 (x decomposition only; a y split leaves the neck on one side). The smokes use 4 ranks each, 24 in total, `nice -n 10`.
+
+| tag | oxygen | feed | wire inlet | trailing window |
+| --- | --- | --- | --- | --- |
+| smokeA | 100 ppm, wire angles from the table | 24 mm/s | 1100 K | 12°/140° |
+| smokeB | 300 ppm, wire angles from the table | 24 mm/s | 1100 K | 8°/160° |
+| smokeC | 100 ppm, wire angles from the table | 18 mm/s | 1100 K | 12°/140° |
+| smokeD | 100 ppm, σ(T) only | 24 mm/s | 1100 K | 50°/120° |
+| smokeE | 100 ppm, σ(T) only | 24 mm/s | 1100 K | 70°/150° |
+| smokeF | 100 ppm, wire angles from the table | 24 mm/s | 1600 K | 12°/140° |
+
+The table windows are the wide pin (a film that is already there stays). smokeD and smokeE raise the receding angle so a wetted face can pull back. A width reported at 0.10 mm is the search cap, not a 0.05 mm slit. Zoomed centre-plane frames are `smoke*_slit_neck.png`, next to the radiograph crop.

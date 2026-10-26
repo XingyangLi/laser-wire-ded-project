@@ -7,6 +7,7 @@ write yet.
 
     /home/asb6102/lwded-viz/bin/python results/calibration/taosun03/render_slit_neck.py
 """
+import sys
 from pathlib import Path
 
 import matplotlib
@@ -48,21 +49,35 @@ def load_raw(path):
     return np.asarray(rows) if rows else None
 
 
+def side_roots(case):
+    roots = [case / "postProcessing" / "sidePlane"]
+    roots.extend(sorted(case.glob("processor*/postProcessing/sidePlane")))
+    return [r for r in roots if r.is_dir()]
+
+
 def latest_side(case):
-    root = case / "postProcessing" / "sidePlane"
-    if not root.is_dir():
+    """Latest centre-plane sample, stitched across processor writes."""
+    best_t = None
+    files = []
+    for root in side_roots(case):
+        for d in root.iterdir():
+            if not d.is_dir():
+                continue
+            try:
+                tv = float(d.name)
+            except ValueError:
+                continue
+            raw = d / "alpha.metal_xz.raw"
+            if not raw.is_file():
+                continue
+            if best_t is None or tv > best_t + 1e-9:
+                best_t = tv
+                files = [raw]
+            elif abs(tv - best_t) <= 1e-9:
+                files.append(raw)
+    if not files:
         return None
-    best = None
-    for d in root.iterdir():
-        if not d.is_dir():
-            continue
-        try:
-            tv = float(d.name)
-        except ValueError:
-            continue
-        if best is None or tv > best[0]:
-            best = (tv, d)
-    return best
+    return best_t, files
 
 
 def raster(x, z, val):
@@ -98,11 +113,16 @@ def render(tag):
     if side is None:
         print("no side plane", tag)
         return None
-    t, directory = side
-    alpha = load_raw(directory / "alpha.metal_xz.raw")
-    if alpha is None:
+    t, files = side
+    chunks = []
+    for raw in files:
+        alpha = load_raw(raw)
+        if alpha is not None and len(alpha):
+            chunks.append(alpha)
+    if not chunks:
         print("no alpha", tag)
         return None
+    alpha = np.vstack(chunks)
     img, extent = raster(alpha[:, 0], alpha[:, 2], alpha[:, 3])
     fig, ax = plt.subplots(1, 2, figsize=(8.2, 4.6))
     fig.patch.set_facecolor("#f7f1dc")
@@ -126,9 +146,11 @@ def render(tag):
 
 
 def main():
-    tags = []
-    for n in range(167, 194):
-        tags.append(f"cal{n}")
+    if len(sys.argv) > 1:
+        tags = sys.argv[1:]
+    else:
+        tags = [f"smoke{s}" for s in "ABCDEF"]
+        tags += [f"cal{n}" for n in range(167, 194)]
     wrote = []
     for tag in tags:
         dest = render(tag)

@@ -2170,11 +2170,15 @@ statistics
         p["top"] = ["type totalPressure;", "p0 uniform 0;", "value uniform 0;"]
         files["p_rgh"] = ff("volScalarField", "p_rgh", "[1 -1 -2 0 0 0 0]", "uniform 0", p)
         T0 = f(a.preheat)
+        # Fed wire stays at the wire preheat. The plate and the gas inlets stay
+        # at the plate preheat. setFields uses the same wire temperature, and
+        # a mapped restart must keep this inlet or the preheat is lost.
+        Tw = f(a.wire_preheat if a.wire_preheat is not None else a.preheat)
         t = {"inletSubstrate": ["type fixedValue;", f"value uniform {T0};"],
              "inletGas": ["type fixedValue;", f"value uniform {T0};"],
              "outlet": ["type zeroGradient;"], "bottom": ["type zeroGradient;"],
              "top": ["type inletOutlet;", f"inletValue uniform {T0};", f"value uniform {T0};"],
-             "wireInlet": ["type fixedValue;", f"value uniform {T0};"]}
+             "wireInlet": ["type fixedValue;", f"value uniform {Tw};"]}
         if not self.d2:
             t["side"] = ["type zeroGradient;"]
         files["T"] = ff("volScalarField", "T", "[0 0 0 1 0 0 0]", f"uniform {T0}", t)
