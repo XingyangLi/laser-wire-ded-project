@@ -221,7 +221,18 @@ The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-ang
 
 Sahoo–Belton `sigma(T, a_O)` is on, and Marangoni is on, so `dσ/dT` can change sign as oxygen adsorption overtakes the clean-metal slope. Recoil is on. The wire inlet stays at 300 K: the slit sits on solid unmelted wire, and preheating that face would melt it. Dissolved-gas transport is not solved: the slit is an open meniscus, and the oxygen entry is the uniform melt activity `a_O = ppm × 10⁻⁴` already used by the surface-tension model.
 
-`launch_slit_sweep.sh` runs the neck on the cal14 base, 4 ranks each, `nice -n 10`, end 0.20 s, write every 0.05 s. Wave 1 is feed 24 mm/s at 50, 100 and 300 ppm (cal26, cal29, cal32). Wave 2, when the rank budget is free, is feed 18 and 28 mm/s at the same three oxygen levels (cal25, cal27, cal28, cal30, cal31, cal33). That is the cal14 bead, not the cal113 / cal117 / cal140 bases. `launch_cal17.sh` remains the older 100 ppm bubble recipe and is not part of this sweep.
+`launch_slit_sweep.sh` is the full-track version of that neck: feed 24 mm/s at 50, 100 and 300 ppm (cal26, cal29, cal32), 4 ranks each, end 0.20 s. It was started and then stopped on 26 Oct 2026. After about an hour the three runs were still at t ≈ 0.014 s (about 4×10⁻⁶ simulated seconds per wall second), because they grow the bead from a cold wire on the 19 µm step. That is too slow to learn whether a slit can exist.
+
+`launch_slit_smoke.sh` is the screen that replaces it. The domain is a few millimetres around the neck (x −2.2 to 3.2 mm, y 0 to 1.6 mm, z −0.8 to 2.3 mm) with the same 19 µm nested neck and the same cal14 beams. A hot bead and a molten plate cap are painted in, and a gas gap 0.06 mm wide is cut on the trailing face from z = 0.75 mm up through the free surface. Feed starts at t = 0. The run is 51 ms, written every 10 ms, 3 ranks, `nice -n 10`. Plate window 10°/40°.
+
+| tag | ppm | feed | wire | what is being asked |
+| --- | --- | --- | --- | --- |
+| cal34 | 50 | 20 mm/s | 300 K | weak oxide, cal14 feed |
+| cal35 | 300 | 20 mm/s | 300 K | strong oxide |
+| cal36 | 300 | 28 mm/s | 300 K | strong oxide, faster feed |
+| cal37 | 100 | 24 mm/s | 900 K | mid oxide, wire preheat |
+
+The gap is prescribed. A smoke that still has an open gap near 0.05 mm wide and ~0.4 mm deep at 30–50 ms is a slit the model can hold. One that fills in has shown that those angles, that oxygen and that feed do not hold it. The other workstation's cal113 / cal117 / cal140 bases are not repeated. `launch_cal17.sh` remains the older bubble recipe and is not part of this screen.
 
 The score is the center-plane gap between the wire surface and the first metal outside it (`slit_metric.py`): depth along z, median width, and whether that run is open at the bead surface and still at least 0.10 mm deep. The target is about 0.4 mm deep and 0.05 mm wide. Zoomed neck views go next to the radiograph crop (`plot_slit_neck.py`).
 
