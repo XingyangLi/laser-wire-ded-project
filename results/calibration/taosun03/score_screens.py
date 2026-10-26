@@ -135,6 +135,29 @@ QUESTIONS = {
     "cal141": "cal114 with rear power x0.20 for 80 ms at 0.55 s",
     "cal142": "cal117 with rear power x0.30 for 80 ms at 0.84 s",
     "cal143": "cal131 with rear power x0.30 for 80 ms at 0.84 s",
+    "cal144": "cal131 with rear power x0.12 from 0.64 to 0.96 s",
+    "cal145": "cal117 with rear power x0.12 from 0.78 to 1.05 s",
+    "cal146": "cal125 with rear power x0.15 from 0.42 to 0.70 s",
+    "cal147": "cal117 with rear power x0.20 from 0.70 to 0.98 s",
+    "cal148": "cal131 at scan 5 mm/s",
+    "cal149": "cal131 at scan 4 mm/s",
+    "cal150": "cal117 with trail window 50/95 over 40 deg",
+    "cal151": "cal117 with trail window 40/80 over 35 deg",
+    "cal152": "cal138 trail window with 100 ppm",
+    "cal153": "cal131 with rear spot 550 W",
+    "cal154": "cal117 with rear spot 550 W",
+    "cal155": "cal131 with 60 W fronts",
+    "cal156": "cal117 with trail window 60/120 over 45 deg",
+    "cal157": "cal131 with wire gap 0.02 mm",
+    "cal158": "cal131 at scan 4 mm/s with a rear-power dip",
+    "cal159": "feed 28 mm/s, no oxygen, trail window 50/95",
+    "cal160": "cal131 at wire-refine 1 with z refined",
+    "cal161": "cal117 at wire-refine 1 with z refined",
+    "cal162": "cal117 with rear power x0.25 from 0.50 to 0.78 s",
+    "cal163": "cal131 with force factor 10",
+    "cal164": "cal117 with feed 24 mm/s and 100 ppm",
+    "cal165": "cal117 with trail window 70/120 over 30 deg",
+    "cal166": "cal131 with rear power x0.30 from 0.64 to 0.80 s",
 }
 
 # 316L solidus. A column counts as fused only when the plate surface exceeds this.
@@ -315,6 +338,89 @@ def bubble_report(pores):
     return n, locked, notes
 
 
+def liquid_bubble_note(pores):
+    """Longest small gas-entrapment region in the pool, including a liquid shell.
+
+    The score only counts a bubble that is still present at the last sample
+    and is locked or partly solid. A region that lives and then vanishes is
+    recorded here so the next screen can aim at that window. Tracks stay
+    under 6 cells and above z = 0.95 mm, so the open wake is not counted.
+    """
+    parsed = []
+    tmax = None
+    for e in pores:
+        if len(e) < 11:
+            continue
+        try:
+            t = float(e[0])
+            typ = int(float(e[2]))
+            d = float(e[5]) * 1e3
+            cz = float(e[8]) * 1e3
+            n = int(float(e[9]))
+        except ValueError:
+            continue
+        if tmax is None or t > tmax:
+            tmax = t
+        # Upper bead only. A pore that sits near the plate is the open wake
+        # or a lack-of-fusion film, not a closed bubble in the dome.
+        if typ != 1 or n > 6 or not (0.05 <= d <= 0.30) or not (0.95 <= cz <= 2.20):
+            continue
+        parsed.append({
+            "t": t,
+            "d": d,
+            "cx": float(e[6]) * 1e3,
+            "cy": float(e[7]) * 1e3,
+            "cz": cz,
+            "n": n,
+            "shell": float(e[10]),
+        })
+    if not parsed:
+        return ""
+    by_t = {}
+    for p in parsed:
+        by_t.setdefault(p["t"], []).append(p)
+    times = sorted(by_t)
+    tracks = []
+    active = []
+    for t in times:
+        for p in by_t[t]:
+            best = None
+            bestd = 1e9
+            for tr in active:
+                q = tr[-1]
+                if t - q["t"] > 0.04:
+                    continue
+                dist = ((p["cx"] - q["cx"]) ** 2 + (p["cy"] - q["cy"]) ** 2 + (p["cz"] - q["cz"]) ** 2) ** 0.5
+                if dist < 0.35 and dist < bestd:
+                    bestd = dist
+                    best = tr
+            if best is None:
+                tr = [p]
+                tracks.append(tr)
+                active.append(tr)
+            else:
+                best.append(p)
+        active = [tr for tr in active if t - tr[-1]["t"] <= 0.04]
+    lasting = []
+    for tr in tracks:
+        span = tr[-1]["t"] - tr[0]["t"]
+        zspan = max(p["cz"] for p in tr) - min(p["cz"] for p in tr)
+        if span >= 0.015 and max(p["n"] for p in tr) >= 2 and zspan <= 0.55:
+            lasting.append(tr)
+    if not lasting:
+        return ""
+    best = max(lasting, key=lambda tr: tr[-1]["t"] - tr[0]["t"])
+    span = best[-1]["t"] - best[0]["t"]
+    dmax = max(p["d"] for p in best)
+    shell = min(p["shell"] for p in best)
+    alive = tmax is not None and abs(best[-1]["t"] - tmax) < 0.02
+    where = "still present" if alive else "then gone"
+    return (
+        f"liquid gas region {dmax:.2f} mm lasted {span * 1e3:.0f} ms "
+        f"(shell {shell:.2f}, {where})"
+    )
+
+
 def finished(tag):
     case = CASES / f"wire_cavity_{tag}"
     cont = case / "log.laserWireDEDFoam.continue"
@@ -351,6 +457,7 @@ def collect(tag):
     n_close = sum(1 for e in events if len(e) > 1 and e[1] == "closure")
     n_pinch = sum(1 for e in events if len(e) > 1 and e[1] == "pinchoff")
     n_bubbles, bubble_locked, bubble_notes = bubble_report(pore_rows)
+    life_note = liquid_bubble_note(pore_rows)
     plane = center_plane(case, t_slice)
     status = { "0": "none", "1": "open", "2": "closed", "3": "mixed" }.get(
         cv[1] if len(cv) > 1 else "", cv[1] if len(cv) > 1 else ""
@@ -392,6 +499,7 @@ def collect(tag):
         "n_bubbles": n_bubbles,
         "bubble_locked": bubble_locked,
         "bubble_notes": bubble_notes,
+        "life_note": life_note,
         "has_figures": (OUT / f"{tag}_vs_radiograph.png").is_file(),
     }
     if rec["vol_mm3"] is None and fnum(cv, 4) is not None:
@@ -515,6 +623,8 @@ def score(r):
         notes.append("no closed bubble of 0.05-0.3 mm")
     if r["status"] == "open" and (r["vol_mm3"] or 0) > 0.5:
         notes.append("open wake is not scored")
+    if r.get("life_note"):
+        notes.append(r["life_note"])
     return pts, "; ".join(notes)
 
 

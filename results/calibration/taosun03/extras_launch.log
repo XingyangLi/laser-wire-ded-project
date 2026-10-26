@@ -143,3 +143,873 @@ wmake laserWireDEDFoam
 [generate] mesh 64 x 19 x (8+21) = 35264 block cells -> 35264 cells, dx=150 um; capillary dt ~ 3.35e-05 s; expected bead area 3.93 mm^2; E_L = 185 J/mm
 [generate] single-track extras: contact-line pinning ON (thetaR 110 / thetaA 150 deg), wire pin ON (thetaR 30 / thetaA 90 deg, frame head), porosity ON, wire cavity ON
 [generate] wrote /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal45
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_metrics.csv
+  n_bead_samples: 106
+  n_liquid_samples: 56
+  bead_z_max_mm: 1.6058823
+  bead_x_min_mm: -1.2249999999999999
+  bead_x_max_mm: 1.4749999999999999
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.6058823
+  liquid_T_max_K: 2958.6854
+  T_max_slice_K: 2958.6854
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 9.0
+  n_wire_pinned: 7.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 2.0
+  z_wire_max_mm: 1.75882352
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -0.774999965
+  contact_x_max_mm: 1.32500003
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.87552686
+  cavity_depth_mm: 1.68235293
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.658887342
+  cavity_cy_mm: 0.9866762709999999
+  cavity_cz_mm: 1.0015518499999998
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.2249999563209713 1.4750000555068254
+trail z max mm 1.4529411564581096 n 171
+lead z max mm 1.3000000035390258 n 100
+wake gas n 860 x 1.2948256083439256 y 0.910868243159331 z 0.8943502061599649
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal45
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.00288159e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.43460611e-01: 1
+  id 0  lackOfFusion  locked  V=6.388e-12 m3  d_eq=0.230 mm  centre=(6.500e-04, 6.600e-04, 2.294e-04) m  cells=2  shell_fl=0.000
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 17  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 17  nFrozenSolidification: 107
+  thetaMean_deg: 5.78005961e+01  thetaMin_deg: 1.76883362e+01  thetaMax_deg: 8.98621747e+01
+  lengthPinned_m: 1.70825966e-02  lengthMobile_m: 2.84709944e-03
+  nWire: 9  nWirePinned: 7  nWireAdvancing: 0  nWireReceding: 2
+  zWireMax_m: 1.75882352e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 4.69055072e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.75882352e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.87552686e-09  open_m3: 3.87552686e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.68235293e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.58887342e-04, 9.86676271e-04, 1.00155185e-03)  nOpenCells: 1185  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal45_vs_radiograph.png
+CAL45_DONE
+released 1 MPI slots; 28 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_metrics.csv
+  n_bead_samples: 81
+  n_liquid_samples: 42
+  bead_z_max_mm: 1.4529412
+  bead_x_min_mm: -1.2249999999999999
+  bead_x_max_mm: 1.325
+  trail_z_max_mm: 1.4529412
+  lead_z_max_mm: 1.1470588
+  liquid_z_max_mm: 1.4529412
+  liquid_T_max_K: 2862.3509
+  T_max_slice_K: 2862.3509
+  t_slice_s: 0.25
+  t_contact_s: 0.25
+  n_wire: 13.0
+  n_wire_pinned: 12.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 1.0
+  z_wire_max_mm: 1.60588235
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -1.07499996
+  contact_x_max_mm: 1.1750000299999999
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.25
+  cavity_status: open
+  cavity_volume_mm3: 3.69624225
+  cavity_depth_mm: 1.5294117600000001
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.6619904689999999
+  cavity_cy_mm: 0.9833226219999999
+  cavity_cz_mm: 0.914493333
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_projection.png
+bead z max mm 1.6058823675848544
+bead x min/max mm -1.2249999563209713 1.3250000192783773
+trail z max mm 1.4529411564581096 n 138
+lead z max mm 1.147058850619942 n 71
+wake gas n 892 x 1.2762332110310228 y 0.903841580498928 z 0.8831838576014533
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal47
+porosity (last sample):
+  time_s: 2.50000000e-01
+  nPores: 1
+  nLocked: 1
+  nEntrapment: 0
+  nLackOfFusion: 1
+  nKeyhole: 0
+  poreVolume_m3: 6.39118858e-12
+  lockedVolume_m3: 6.39118858e-12
+  metalVolume_m3: 7.97988876e-08
+  volumeFraction: 8.00847849e-05
+  eqDiameterMean_m: 2.30247189e-04
+  eqDiameterMax_m: 2.30247189e-04
+pores at t = 2.50000000e-01: 1
+  id 0  lackOfFusion  locked  V=6.391e-12 m3  d_eq=0.230 mm  centre=(6.500e-04, 6.600e-04, 2.294e-04) m  cells=2  shell_fl=0.000
+contact line (last sample):
+  time_s: 2.50000000e-01
+  nMolten: 37  nPinnedHysteresis: 2  nAdvancing: 0  nReceding: 35  nFrozenSolidification: 89
+  thetaMean_deg: 5.80026859e+01  thetaMin_deg: 1.75450367e+01  thetaMax_deg: 1.14480603e+02
+  lengthPinned_m: 1.54342759e-02  lengthMobile_m: 5.39450420e-03
+  nWire: 13  nWirePinned: 12  nWireAdvancing: 0  nWireReceding: 1
+  zWireMax_m: 1.60588235e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 4.42610152e+01
+wire cavity (last sample):
+  time_s: 2.50000000e-01  status: open
+  zContactMax_m: 1.60588235e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.69624225e-09  open_m3: 3.69624225e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.52941176e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.61990469e-04, 9.83322622e-04, 9.14493333e-04)  nOpenCells: 1134  nClosedCells: 0
+cavity events: pinchoff=2  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal47_vs_radiograph.png
+CAL47_DONE
+released 1 MPI slots; 27 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_metrics.csv
+  n_bead_samples: 60
+  n_liquid_samples: 28
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -0.92499996
+  bead_x_max_mm: 1.4749999999999999
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.1470588
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2584.4596
+  T_max_slice_K: 2807.4183
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 10.0
+  n_wire_pinned: 10.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 0.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -1.07499996
+  contact_x_max_mm: 1.1750000299999999
+  contact_y_max_mm: 1.1
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.07003197
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.6787242849999999
+  cavity_cy_mm: 1.00504501
+  cavity_cz_mm: 0.861550456
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.074999920092523 1.4750000555068254
+trail z max mm 1.3000000035390258 n 172
+lead z max mm 1.147058850619942 n 80
+wake gas n 855 x 1.2958772201022972 y 0.9075321897143384 z 0.9021740635837924
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal48
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.01087958e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.28941379e-01: 1
+  id 0  lackOfFusion  locked  V=1.277e-11 m3  d_eq=0.290 mm  centre=(8.752e-04, 7.333e-05, 1.147e-04) m  cells=4  shell_fl=0.066
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 23  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 23  nFrozenSolidification: 77
+  thetaMean_deg: 5.09129364e+01  thetaMin_deg: 2.73270616e+01  thetaMax_deg: 8.45550075e+01
+  lengthPinned_m: 1.30367185e-02  lengthMobile_m: 3.44648880e-03
+  nWire: 10  nWirePinned: 10  nWireAdvancing: 0  nWireReceding: 0
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 5.20445651e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.07003197e-09  open_m3: 3.07003197e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.78724285e-04, 1.00504501e-03, 8.61550456e-04)  nOpenCells: 947  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal48_vs_radiograph.png
+CAL48_DONE
+released 1 MPI slots; 26 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_metrics.csv
+  n_bead_samples: 79
+  n_liquid_samples: 33
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -1.075
+  bead_x_max_mm: 1.7750000000000001
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.1470588
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2811.2435
+  T_max_slice_K: 2828.3248
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 13.0
+  n_wire_pinned: 8.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 5.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -0.774999965
+  contact_x_max_mm: 1.32500003
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.16942968
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.627372653
+  cavity_cy_mm: 1.01822718
+  cavity_cz_mm: 0.876805198
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.2249999563209713 1.7750000115484
+trail z max mm 1.3000000035390258 n 183
+lead z max mm 1.147058850619942 n 76
+wake gas n 856 x 1.271553765699511 y 0.9161526743376603 z 0.9138949980781681
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal39
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 1
+  nLocked: 1
+  nEntrapment: 0
+  nLackOfFusion: 1
+  nKeyhole: 0
+  poreVolume_m3: 4.97065006e-11
+  lockedVolume_m3: 4.97065006e-11
+  metalVolume_m3: 7.99093909e-08
+  volumeFraction: 6.21649096e-04
+  eqDiameterMean_m: 4.56182046e-04
+  eqDiameterMax_m: 4.56182046e-04
+pores at t = 2.80000000e-01: 1
+  id 0  lackOfFusion  locked  V=4.971e-11 m3  d_eq=0.456 mm  centre=(6.013e-04, 5.133e-04, -4.983e-05) m  cells=15  shell_fl=0.000
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 14  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 14  nFrozenSolidification: 173
+  thetaMean_deg: 6.24886213e+01  thetaMin_deg: 2.53994485e+01  thetaMax_deg: 1.09525722e+02
+  lengthPinned_m: 2.71836789e-02  lengthMobile_m: 2.84709944e-03
+  nWire: 13  nWirePinned: 8  nWireAdvancing: 0  nWireReceding: 5
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 4.76420085e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.16942968e-09  open_m3: 3.16942968e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.27372653e-04, 1.01822718e-03, 8.76805198e-04)  nOpenCells: 974  nClosedCells: 0
+cavity events: pinchoff=4  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal39_vs_radiograph.png
+CAL39_DONE
+released 1 MPI slots; 25 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_metrics.csv
+  n_bead_samples: 74
+  n_liquid_samples: 38
+  bead_z_max_mm: 1.4529412
+  bead_x_min_mm: -0.92499996
+  bead_x_max_mm: 1.4749999999999999
+  trail_z_max_mm: 1.4529412
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.4529412
+  liquid_T_max_K: 2711.1117
+  T_max_slice_K: 2878.6789
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 11.0
+  n_wire_pinned: 9.0
+  n_wire_advancing: 2.0
+  n_wire_receding: 0.0
+  z_wire_max_mm: 1.60588235
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -0.924999964
+  contact_x_max_mm: 1.32500003
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.50084977
+  cavity_depth_mm: 1.5294117600000001
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.667977418
+  cavity_cy_mm: 0.994231585
+  cavity_cz_mm: 0.9396762280000001
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_projection.png
+bead z max mm 1.6058823675848544
+bead x min/max mm -0.9249999420717359 1.4750000555068254
+trail z max mm 1.4529411564581096 n 167
+lead z max mm 1.3000000035390258 n 88
+wake gas n 863 x 1.2905851950038543 y 0.9096562640576489 z 0.8964692260317293
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal40
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.00698354e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.29164749e-01: 1
+  id 0  lackOfFusion  locked  V=1.277e-11 m3  d_eq=0.290 mm  centre=(3.501e-04, 6.600e-04, 2.294e-04) m  cells=4  shell_fl=0.168
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 22  nPinnedHysteresis: 1  nAdvancing: 0  nReceding: 21  nFrozenSolidification: 103
+  thetaMean_deg: 5.43277538e+01  thetaMin_deg: 1.46399189e+01  thetaMax_deg: 1.10251221e+02
+  lengthPinned_m: 1.69327493e-02  lengthMobile_m: 3.44648880e-03
+  nWire: 11  nWirePinned: 9  nWireAdvancing: 2  nWireReceding: 0
+  zWireMax_m: 1.60588235e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 5.40018088e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.60588235e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.50084977e-09  open_m3: 3.50084977e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.52941176e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.67977418e-04, 9.94231585e-04, 9.39676228e-04)  nOpenCells: 1080  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal40_vs_radiograph.png
+CAL40_DONE
+released 1 MPI slots; 23 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_metrics.csv
+  n_bead_samples: 104
+  n_liquid_samples: 53
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -1.675
+  bead_x_max_mm: 1.625
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2783.032
+  T_max_slice_K: 2783.032
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 7.0
+  n_wire_pinned: 1.0
+  n_wire_advancing: 2.0
+  n_wire_receding: 4.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 1.2999999899999999
+  contact_x_min_mm: -0.774999965
+  contact_x_max_mm: 1.02500003
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.39837879
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.6749233099999999
+  cavity_cy_mm: 0.971997468
+  cavity_cz_mm: 0.844613473
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.6749999485909939 1.6250000335276127
+trail z max mm 1.3000000035390258 n 107
+lead z max mm 1.3000000035390258 n 166
+wake gas n 935 x 1.2608289039746066 y 0.8756862995482454 z 0.8817426874962222
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal41
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.01068570e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.17226975e-01: 1
+  id 0  lackOfFusion  locked  V=1.843e-11 m3  d_eq=0.328 mm  centre=(4.979e-05, 6.600e-04, 2.294e-04) m  cells=6  shell_fl=0.201
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 22  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 22  nFrozenSolidification: 107
+  thetaMean_deg: 7.03750733e+01  thetaMin_deg: 3.03791817e+01  thetaMax_deg: 1.09624866e+02
+  lengthPinned_m: 1.61835126e-02  lengthMobile_m: 4.19572549e-03
+  nWire: 7  nWirePinned: 1  nWireAdvancing: 2  nWireReceding: 4
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 1.29999999e-03  thetaMeanWire_deg: 4.98352803e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 1.29999999e-03
+  cavityVolume_m3: 3.39837879e-09  open_m3: 3.39837879e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.74923310e-04, 9.71997468e-04, 8.44613473e-04)  nOpenCells: 1043  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal41_vs_radiograph.png
+CAL41_DONE
+released 1 MPI slots; 22 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_metrics.csv
+  n_bead_samples: 78
+  n_liquid_samples: 33
+  bead_z_max_mm: 1.4529412
+  bead_x_min_mm: -0.92499996
+  bead_x_max_mm: 1.7750000000000001
+  trail_z_max_mm: 1.4529412
+  lead_z_max_mm: 1.1470588
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2798.2044
+  T_max_slice_K: 2834.3245
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 10.0
+  n_wire_pinned: 9.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 1.0
+  z_wire_max_mm: 1.60588235
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -0.924999964
+  contact_x_max_mm: 1.1750000299999999
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.42543543
+  cavity_depth_mm: 1.68588235
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.666123221
+  cavity_cy_mm: 0.989608482
+  cavity_cz_mm: 0.928069712
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -0.9249999420717359 1.7750000115484
+trail z max mm 1.4529411564581096 n 173
+lead z max mm 1.147058850619942 n 76
+wake gas n 853 x 1.2914126883640313 y 0.9144744302849269 z 0.9024963804905806
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal38
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.00183494e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.39727410e-01: 1
+  id 0  lackOfFusion  locked  V=4.636e-11 m3  d_eq=0.446 mm  centre=(4.649e-04, 4.503e-04, -4.766e-05) m  cells=14  shell_fl=0.009
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 21  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 21  nFrozenSolidification: 130
+  thetaMean_deg: 5.17806622e+01  thetaMin_deg: 2.97029081e+01  thetaMax_deg: 9.41458692e+01
+  lengthPinned_m: 2.08605708e-02  lengthMobile_m: 3.29664146e-03
+  nWire: 10  nWirePinned: 9  nWireAdvancing: 0  nWireReceding: 1
+  zWireMax_m: 1.60588235e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 4.33434688e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.60588235e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.42543543e-09  open_m3: 3.42543543e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.68588235e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.66123221e-04, 9.89608482e-04, 9.28069712e-04)  nOpenCells: 1062  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal38_vs_radiograph.png
+CAL38_DONE
+released 1 MPI slots; 23 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_metrics.csv
+  n_bead_samples: 91
+  n_liquid_samples: 39
+  bead_z_max_mm: 1.4529412
+  bead_x_min_mm: -1.5250000000000001
+  bead_x_max_mm: 1.7750000000000001
+  trail_z_max_mm: 1.4529412
+  lead_z_max_mm: 1.1470588
+  liquid_z_max_mm: 1.4529412
+  liquid_T_max_K: 2698.6922
+  T_max_slice_K: 2698.6922
+  t_slice_s: 0.28
+  t_contact_s: 0.28
+  n_wire: 16.0
+  n_wire_pinned: 13.0
+  n_wire_advancing: 3.0
+  n_wire_receding: 0.0
+  z_wire_max_mm: 1.60588235
+  z_wire_min_mm: 1.14705882
+  contact_x_min_mm: -0.924999964
+  contact_x_max_mm: 1.32500003
+  contact_y_max_mm: 0.806666669
+  t_cavity_s: 0.28
+  cavity_status: open
+  cavity_volume_mm3: 3.52519542
+  cavity_depth_mm: 1.5294117600000001
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.629719214
+  cavity_cy_mm: 1.00742742
+  cavity_cz_mm: 0.95414527
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.5249999705702066 1.7750000115484
+trail z max mm 1.4529411564581096 n 193
+lead z max mm 1.147058850619942 n 101
+wake gas n 853 x 1.2789273427516563 y 0.9218679435673587 z 0.9078753198816901
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal49
+porosity (last sample):
+  time_s: 2.80000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.00867840e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.62544297e-01: 1
+  id 0  lackOfFusion  locked  V=3.193e-12 m3  d_eq=0.183 mm  centre=(7.250e-04, 6.600e-04, 2.294e-04) m  cells=1  shell_fl=0.000
+contact line (last sample):
+  time_s: 2.80000000e-01
+  nMolten: 19  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 19  nFrozenSolidification: 132
+  thetaMean_deg: 6.44603400e+01  thetaMin_deg: 1.97976471e+01  thetaMax_deg: 1.09760995e+02
+  lengthPinned_m: 2.17278642e-02  lengthMobile_m: 3.29664146e-03
+  nWire: 16  nWirePinned: 13  nWireAdvancing: 3  nWireReceding: 0
+  zWireMax_m: 1.60588235e-03  zWireMin_m: 1.14705882e-03  thetaMeanWire_deg: 4.23787986e+01
+wire cavity (last sample):
+  time_s: 2.80000000e-01  status: open
+  zContactMax_m: 1.60588235e-03  zContactMin_m: 1.14705882e-03
+  cavityVolume_m3: 3.52519542e-09  open_m3: 3.52519542e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.52941176e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.29719214e-04, 1.00742742e-03, 9.54145270e-04)  nOpenCells: 1084  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal49_vs_radiograph.png
+CAL49_DONE
+released 1 MPI slots; 22 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_metrics.csv
+  n_bead_samples: 85
+  n_liquid_samples: 29
+  bead_z_max_mm: 1.4529412
+  bead_x_min_mm: -1.2249999999999999
+  bead_x_max_mm: 1.7750000000000001
+  trail_z_max_mm: 1.4529412
+  lead_z_max_mm: 0.9941176399999999
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2947.3922
+  T_max_slice_K: 2947.3922
+  t_slice_s: 0.3
+  t_contact_s: 0.3
+  n_wire: 9.0
+  n_wire_pinned: 9.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 0.0
+  z_wire_max_mm: 1.60588235
+  z_wire_min_mm: 0.6882352909999999
+  contact_x_min_mm: -1.07499996
+  contact_x_max_mm: 1.4750000300000001
+  contact_y_max_mm: 0.9533333359999999
+  t_cavity_s: 0.3
+  cavity_status: open
+  cavity_volume_mm3: 3.34035241
+  cavity_depth_mm: 1.5294117600000001
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.616016957
+  cavity_cy_mm: 1.01420309
+  cavity_cz_mm: 0.9887206260000001
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.2249999563209713 1.7750000115484
+trail z max mm 1.4529411564581096 n 236
+lead z max mm 0.9941176394931972 n 91
+wake gas n 808 x 1.2956683440819743 y 0.9348185086120865 z 0.926732673989217
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal46
+porosity (last sample):
+  time_s: 3.00000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.01558951e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 2.96754215e-01: 1
+  id 0  gasEntrapment  mobile  V=1.809e-12 m3  d_eq=0.151 mm  centre=(7.250e-04, 7.333e-05, 9.941e-04) m  cells=1  shell_fl=1.000
+contact line (last sample):
+  time_s: 3.00000000e-01
+  nMolten: 27  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 27  nFrozenSolidification: 171
+  thetaMean_deg: 5.17691956e+01  thetaMin_deg: 2.30265497e+01  thetaMax_deg: 9.13111434e+01
+  lengthPinned_m: 2.69725210e-02  lengthMobile_m: 4.04587815e-03
+  nWire: 9  nWirePinned: 9  nWireAdvancing: 0  nWireReceding: 0
+  zWireMax_m: 1.60588235e-03  zWireMin_m: 6.88235291e-04  thetaMeanWire_deg: 5.43992841e+01
+wire cavity (last sample):
+  time_s: 3.00000000e-01  status: open
+  zContactMax_m: 1.60588235e-03  zContactMin_m: 6.88235291e-04
+  cavityVolume_m3: 3.34035241e-09  open_m3: 3.34035241e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.52941176e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.16016957e-04, 1.01420309e-03, 9.88720626e-04)  nOpenCells: 1031  nClosedCells: 0
+cavity events: pinchoff=4  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal46_vs_radiograph.png
+CAL46_DONE
+released 1 MPI slots; 19 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_metrics.csv
+  n_bead_samples: 92
+  n_liquid_samples: 44
+  bead_z_max_mm: 1.6058823
+  bead_x_min_mm: -1.075
+  bead_x_max_mm: 1.625
+  trail_z_max_mm: 1.6058823
+  lead_z_max_mm: 0.9941176399999999
+  liquid_z_max_mm: 1.6058823
+  liquid_T_max_K: 2850.7583
+  T_max_slice_K: 2850.7583
+  t_slice_s: 0.32
+  t_contact_s: 0.32
+  n_wire: 11.0
+  n_wire_pinned: 9.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 2.0
+  z_wire_max_mm: 1.75882352
+  z_wire_min_mm: 0.841176467
+  contact_x_min_mm: -0.774999965
+  contact_x_max_mm: 1.4750000300000001
+  contact_y_max_mm: 1.1
+  t_cavity_s: 0.32
+  cavity_status: open
+  cavity_volume_mm3: 3.65933866
+  cavity_depth_mm: 1.68235293
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.64707795
+  cavity_cy_mm: 1.01442316
+  cavity_cz_mm: 1.04919793
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_projection.png
+bead z max mm 1.6058823675848544
+bead x min/max mm -1.074999920092523 1.6250000335276127
+trail z max mm 1.6058823675848544 n 233
+lead z max mm 0.9941176394931972 n 58
+wake gas n 796 x 1.312185957093007 y 0.9398827739766314 z 0.9157256880912862
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal43
+porosity (last sample):
+  time_s: 3.20000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.02423324e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 3.19386346e-01: 1
+  id 0  gasEntrapment  mobile  V=2.029e-12 m3  d_eq=0.157 mm  centre=(7.250e-04, 7.333e-05, 9.941e-04) m  cells=1  shell_fl=1.000
+contact line (last sample):
+  time_s: 3.20000000e-01
+  nMolten: 16  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 16  nFrozenSolidification: 115
+  thetaMean_deg: 6.15717499e+01  thetaMin_deg: 4.29041784e+01  thetaMax_deg: 8.46184859e+01
+  lengthPinned_m: 1.85810700e-02  lengthMobile_m: 2.69725210e-03
+  nWire: 11  nWirePinned: 9  nWireAdvancing: 0  nWireReceding: 2
+  zWireMax_m: 1.75882352e-03  zWireMin_m: 8.41176467e-04  thetaMeanWire_deg: 3.77354375e+01
+wire cavity (last sample):
+  time_s: 3.20000000e-01  status: open
+  zContactMax_m: 1.75882352e-03  zContactMin_m: 8.41176467e-04
+  cavityVolume_m3: 3.65933866e-09  open_m3: 3.65933866e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.68235293e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.47077950e-04, 1.01442316e-03, 1.04919793e-03)  nOpenCells: 1126  nClosedCells: 0
+cavity events: pinchoff=3  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal43_vs_radiograph.png
+CAL43_DONE
+released 1 MPI slots; 18 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_metrics.csv
+  n_bead_samples: 102
+  n_liquid_samples: 27
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -1.2249999999999999
+  bead_x_max_mm: 1.925
+  trail_z_max_mm: 1.3
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 2804.3825
+  T_max_slice_K: 2804.3825
+  t_slice_s: 0.32
+  t_contact_s: 0.32
+  n_wire: 10.0
+  n_wire_pinned: 10.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 0.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 0.841176467
+  contact_x_min_mm: -1.2249999599999999
+  contact_x_max_mm: 1.32500003
+  contact_y_max_mm: 1.1
+  t_cavity_s: 0.32
+  cavity_status: open
+  cavity_volume_mm3: 2.17920862
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.54744799
+  cavity_cy_mm: 1.06460087
+  cavity_cz_mm: 0.984541258
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.2249999563209713 1.925000047776848
+trail z max mm 1.3000000035390258 n 390
+lead z max mm 1.3000000035390258 n 182
+wake gas n 665 x 1.332894765160964 y 0.9745062931521299 z 0.9941176473271605
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal42
+porosity (last sample):
+  time_s: 3.20000000e-01
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 8.11976514e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = 3.16383038e-01: 1
+  id 0  lackOfFusion  mobile  V=1.908e-12 m3  d_eq=0.154 mm  centre=(1.325e-03, 7.333e-05, 6.882e-04) m  cells=1  shell_fl=0.800
+contact line (last sample):
+  time_s: 3.20000000e-01
+  nMolten: 23  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 23  nFrozenSolidification: 261
+  thetaMean_deg: 5.21047861e+01  thetaMin_deg: 2.36920307e+01  thetaMax_deg: 8.91159957e+01
+  lengthPinned_m: 4.06086289e-02  lengthMobile_m: 3.44648880e-03
+  nWire: 10  nWirePinned: 10  nWireAdvancing: 0  nWireReceding: 0
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 8.41176467e-04  thetaMeanWire_deg: 6.51460086e+01
+wire cavity (last sample):
+  time_s: 3.20000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 8.41176467e-04
+  cavityVolume_m3: 2.17920862e-09  open_m3: 2.17920862e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (5.47447990e-04, 1.06460087e-03, 9.84541258e-04)  nOpenCells: 684  nClosedCells: 0
+cavity events: pinchoff=2  closure=0  (postProcessing/wireCavity/events.dat)
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal42_vs_radiograph.png
+CAL42_DONE
+released 1 MPI slots; 19 still held
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_side_alpha_T.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_cavity_history.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_metrics.csv
+  n_bead_samples: 96
+  n_liquid_samples: 64
+  bead_z_max_mm: 1.3
+  bead_x_min_mm: -1.5250000000000001
+  bead_x_max_mm: 1.0250000000000001
+  trail_z_max_mm: 0.9941176399999999
+  lead_z_max_mm: 1.3
+  liquid_z_max_mm: 1.3
+  liquid_T_max_K: 3026.3692
+  T_max_slice_K: 3026.3692
+  t_slice_s: 0.36
+  t_contact_s: 0.36
+  n_wire: 12.0
+  n_wire_pinned: 11.0
+  n_wire_advancing: 0.0
+  n_wire_receding: 1.0
+  z_wire_max_mm: 1.4529411700000001
+  z_wire_min_mm: 1.2999999899999999
+  contact_x_min_mm: -1.07499996
+  contact_x_max_mm: 1.02500003
+  contact_y_max_mm: 1.1
+  t_cavity_s: 0.36
+  cavity_status: open
+  cavity_volume_mm3: 3.4894166799999997
+  cavity_depth_mm: 1.3764705799999999
+  cavity_length_mm: 1.77500003
+  cavity_cx_mm: 0.686834998
+  cavity_cy_mm: 0.957443963
+  cavity_cz_mm: 0.828441317
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_iso_alpha.png
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_projection.png
+bead z max mm 1.4529411564581096
+bead x min/max mm -1.5249999705702066 1.1749999830499291
+trail z max mm 1.147058850619942 n 83
+lead z max mm 1.3000000035390258 n 122
+wake gas n 949 x 1.2564015022363197 y 0.8680225047025264 z 0.875987108259288
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_cal44
+porosity (last sample):
+  time_s: 3.60000000e-01
+  nPores: 1
+  nLocked: 1
+  nEntrapment: 0
+  nLackOfFusion: 1
+  nKeyhole: 0
+  poreVolume_m3: 2.00627215e-11
+  lockedVolume_m3: 2.00627215e-11
+  metalVolume_m3: 7.98537472e-08
+  volumeFraction: 2.51180225e-04
+  eqDiameterMean_m: 3.37129747e-04
+  eqDiameterMax_m: 3.37129747e-04
+pores at t = 3.60000000e-01: 1
+  id 0  lackOfFusion  locked  V=2.006e-11 m3  d_eq=0.337 mm  centre=(2.000e-04, 3.667e-04, -8.000e-05) m  cells=6  shell_fl=0.000
+contact line (last sample):
+  time_s: 3.60000000e-01
+  nMolten: 17  nPinnedHysteresis: 0  nAdvancing: 0  nReceding: 17  nFrozenSolidification: 101
+  thetaMean_deg: 5.31235388e+01  thetaMin_deg: 3.58548073e+01  thetaMax_deg: 9.17792800e+01
+  lengthPinned_m: 1.68192341e-02  lengthMobile_m: 2.69725210e-03
+  nWire: 12  nWirePinned: 11  nWireAdvancing: 0  nWireReceding: 1
+  zWireMax_m: 1.45294117e-03  zWireMin_m: 1.29999999e-03  thetaMeanWire_deg: 3.86995197e+01
+wire cavity (last sample):
+  time_s: 3.60000000e-01  status: open
+  zContactMax_m: 1.45294117e-03  zContactMin_m: 1.29999999e-03
+  cavityVolume_m3: 3.48941668e-09  open_m3: 3.48941668e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 1.37647058e-03  lengthDownstream_m: 1.77500003e-03
+  centre_m: (6.86834998e-04, 9.57443963e-04, 8.28441317e-04)  nOpenCells: 1074  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wrote /home/asb6102/laser-wire-ded-project/results/calibration/taosun03/cal44_vs_radiograph.png
+CAL44_DONE
+released 1 MPI slots; 18 still held
+EXTRAS_DONE 2026-10-22T18:17:08-05:00

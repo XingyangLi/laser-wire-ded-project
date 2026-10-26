@@ -335,3 +335,53 @@ The rear-beam window is `--rear-power-dip tStart,tEnd,factor`. It writes `laser.
 cal117 and cal131 both reached 1.05 s. Neither held a closed 0.05–0.3 mm bubble. On cal117 the trail fell from 2.06 mm at 0.70 s to 1.15 mm, with the lead at 1.30 mm (score 3). A 5-cell gas region, 0.25 mm at z ≈ 1.1 mm, showed up near 0.93 s with a liquid shell near 0.95 and was gone within about 20 ms. On cal131 the trail is still 1.91 mm and the lead 1.15 mm, but a gas film sits under the bead, so the plate is unwetted (score 5). The 0.70 s domes are `cal117_0p70_side_alpha_T.png` and `cal131_0p70_side_alpha_T.png`. The 1.05 s cuts are `cal117_1p05_side_alpha_T.png` and `cal131_1p05_side_alpha_T.png`.
 
 cal142 and cal143 repeat those two heats with the rear beam at 0.30× for 80 ms starting at 0.84 s, so the dip lands on the window where those liquid-shelled pores appeared. Both run to 1.10 s.
+
+## Resumed 26 Oct
+
+The solvers were not running. The weekend batch had stopped in the middle of a step, with no `End` in the log. Nothing was wiped. The score below uses the last center-plane write and the contact line at the stop. `score_screens.py` still withholds bubble points unless a 0.05–0.3 mm gas region is present at the last sample and is locked or has a shell fraction under 0.5. A separate note records a liquid-shelled gas region of at most 8 cells, so the open wake is not counted as that region.
+
+No stopped run has a closed 0.05–0.3 mm bubble that scores. The longest liquid gas region on a finished run is still cal131: 0.28 mm, 6 cells, shell 1.0, 180 ms from 0.66 s to 0.84 s, then gone. cal117 held one for 51 ms near 0.82 s. On the partial batch, cal137 still had a 0.26 mm region (3–5 cells, shell 0.83) at the wire when it stopped, but the center-plane crest had already fallen to 0.84 mm.
+
+| tag | t | score | trail / lead | plate | melt | what the stop shows |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal140 | 0.75 s | 8 | 1.61 / 1.15 mm | 0 of 39 receding | 9/15 | Dip at 0.55–0.63 s is over. Notch 11/13 pinned, z 1.45–1.76 mm. No small gas region. Side view: `cal140_0p70_side_alpha_T.png`. Continued to 0.85 s. |
+| cal138 | 0.59 s | 7 | 1.76 / 0.99 mm | 0 of 40 receding | 7/10 | Dome held. Trail window 130°/165° leaves 7 of 11 wire cells receding. Side view: `cal138_0p50_side_alpha_T.png`. Continued to 0.70 s. |
+| cal141 | 0.66 s | 6 | 1.45 / 0.99 mm | 0 of 36 receding | 8/13 | Deep dip (0.20×) has just ended. Crest is on the 1.45 mm floor. Pool max is 2613 K. Side view: `cal141_0p60_side_alpha_T.png`. Continued to 0.85 s. |
+| cal137 | 0.61 s | 3 | 0.84 / 1.15 mm | 0 of 44 receding | 8/14 | 110°/150° arc. Crest collapsed. Not continued. `cal137_0p60_side_alpha_T.png`. |
+| cal139 | 0.65 s | 3 | 0.54 / 1.15 mm | 0 of 60 receding | 12/12 | 100°/140° arc. Crest collapsed. Not continued. `cal139_0p60_side_alpha_T.png`. |
+| cal142 | 0.29 s | — | not at the dip yet | wetted | — | Dip is at 0.84 s. Continued to 1.10 s. |
+| cal143 | 0.28 s | — | not at the dip yet | wetted | — | Dip is at 0.84 s. Continued to 1.10 s. |
+| cal129 | 0.19 s | 1 | slice at 0.10 s is early | 6 of 68 receding | — | Refined cal113, before the dome. Left stopped. `cal129_0p10_side_alpha_T.png`. |
+| cal134 | 0.057 s | — | — | wetted | — | Refined cal117. Continued to 0.75 s. |
+| cal135 | 0.056 s | — | — | wetted | — | Refined cal131. Continued to 0.75 s. |
+| cal136 | 0.051 s | — | — | 5 receding | — | Refined cal127. No gas region on the coarse twin. Left stopped. |
+
+The 110°–165° trailing arcs (cal137, cal139) sit far above the 20°–40° wire angle, so the line recedes and the crest falls. cal138 keeps the crest and still recedes. Those steep arcs are not repeated without 100 ppm.
+
+The next screens aim at the two liquid gas windows, and at a mesh that can hold a bubble in z. On the 150 µm mesh a 0.2 mm bubble is one cell thick, which is why those regions vanish. `--wire-refine 1 --wire-refine-z` halves x, y and z in the wire box (75 µm). Each new job is one rank at `nice -n 10`. With the seven continuations that is 30 ranks.
+
+| tag | idea | end |
+| --- | --- | --- |
+| cal144 | cal131, rear beam ×0.12 from 0.64 to 0.96 s | 1.10 s |
+| cal145 | cal117, rear beam ×0.12 from 0.78 to 1.05 s | 1.15 s |
+| cal146 | cal125, rear beam ×0.15 from 0.42 to 0.70 s | 0.85 s |
+| cal147 | cal117, rear beam ×0.20 from 0.70 to 0.98 s | 1.10 s |
+| cal148 | cal131 at scan 5 mm/s | 0.50 s |
+| cal149 | cal131 at scan 4 mm/s | 0.65 s |
+| cal150 | cal117, trail window 50°/95° over 40° | 0.75 s |
+| cal151 | cal117, trail window 40°/80° over 35° | 0.75 s |
+| cal152 | cal138's 130°/165° arc with 100 ppm | 0.70 s |
+| cal153 | cal131, rear spot 550 W | 0.80 s |
+| cal154 | cal117, rear spot 550 W | 0.80 s |
+| cal155 | cal131, fronts 60 W | 0.80 s |
+| cal156 | cal117, trail window 60°/120° over 45° | 0.75 s |
+| cal157 | cal131, wire gap 0.02 mm | 0.75 s |
+| cal158 | cal131 at scan 4 mm/s, rear beam ×0.20 from 0.48 to 0.72 s | 0.80 s |
+| cal159 | feed 28 mm/s, no oxygen, trail window 50°/95° | 0.75 s |
+| cal160 | cal131, `--wire-refine 1 --wire-refine-z` | 0.80 s |
+| cal161 | cal117, `--wire-refine 1 --wire-refine-z` | 0.80 s |
+| cal162 | cal117, rear beam ×0.25 from 0.50 to 0.78 s | 0.95 s |
+| cal163 | cal131, force factor 10 | 0.75 s |
+| cal164 | 100 ppm, feed 24 mm/s | 0.75 s |
+| cal165 | cal117, trail window 70°/120° over 30° | 0.75 s |
+| cal166 | cal131, rear beam ×0.30 from 0.64 to 0.80 s | 1.00 s |
