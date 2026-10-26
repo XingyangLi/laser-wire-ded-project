@@ -236,8 +236,4 @@ The gap is prescribed. A smoke that still has an open gap near 0.05 mm wide and 
 
 The score is the center-plane gap between the wire surface and the first metal outside it (`slit_metric.py`): depth along z, median width, and whether that run is open at the bead surface and still at least 0.10 mm deep. The target is about 0.4 mm deep and 0.05 mm wide. Zoomed neck views go next to the radiograph crop (`plot_slit_neck.py`).
 
-| tag | ppm | feed | depth | width | open |
-| --- | --- | --- | --- | --- | --- |
-| cal26 | 50 | 24 mm/s | — | — | — |
-| cal29 | 100 | 24 mm/s | — | — | — |
-| cal32 | 300 | 24 mm/s | — | — | — |
+The full-track trio was stopped before any side-plane write, so it has no slit depth. The smoke depths go in the table above once `postProcessing/sidePlane` exists. The mesh check on cal35 is 34980 cells, 19 µm neck, Mesh OK. The painted slit box selected 1448 cells before the wire cylinder restored its own interior.
