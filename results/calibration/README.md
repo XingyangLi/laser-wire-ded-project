@@ -334,3 +334,21 @@ The recipe that holds is cal56. No gas-pressure support and no solid shell were 
 | cal62 | 300 | 28 | 0.040 | 0.725 | steady |
 
 Low oxygen does not close the slit. At 50 ppm the film stays 0.040 mm wide and open; the crown shortens, so the depth change is 0.125 mm and the metric calls it drifting. From 100 ppm up it is steady, and at 200 and 300 ppm the depth does not move. Depth is the same 0.725 mm at 18, 20, 24 and 28 mm/s.
+
+## Growing skin and painted depth
+
+That flat depth is the painted film. The uniform membrane is at full strength from the first step, so it holds whatever gas was painted. `launch_slit_oxide_depth.sh` uses the same slab, 300 ppm, 20 mm/s and 140° window, with `growth true`. Coverage starts at 0. On the exposed trailing face it rises at `(ppm/300) * (feed/0.020) / 0.5 ms` and is carried down with the wire. `Kskin` and `muSkin` in a cell are the full cal56 values times `min(coverage, 1)`. At 300 ppm and 20 mm/s the coverage reaches 1 in 0.5 ms. The painted film is 0.05 mm thick and ends at z = 1.20 mm. Depth 0 leaves the dome metal on the wire: no film and no groove.
+
+Width and depth are the metric values at 2, 4 and 6 ms. A zero is no thin gap.
+
+| tag | painted mm | 2 ms, depth × width | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal63 | 0.10 | 0.025 × 0.100 | 0 | 0 | no steady film |
+| cal64 | 0 | 0 | 0 | 0 | no steady film |
+| cal65 | 0.30 | 0.350 × 0.070 | 0.100 × 0.080 | 0 | no steady film |
+| cal66 | 0.50 | 0.475 × 0.080 | 0.025 × 0.060 | 0 | no steady film |
+| cal67 | 0.75 | 0.475 × 0.080 | 0.075 × 0.080 | 0.025 × 0.020 | no steady film |
+
+No run holds a film. The 0.10 mm paint is a 0.025 mm wisp at 2 ms and is gone after that. The wetted neck never opens a thin gap: at 6 ms the metal fraction in x = 0.50–0.56 mm is 1.00 at z = 0.70 mm and 0.08 at z = 1.10 mm, so the lower neck stays wet and the crown is gas. The 0.30, 0.50 and 0.75 mm paints are still open at 2 ms. The two shorter ones still have about the painted depth (0.35 and 0.48 mm). The 0.75 mm paint has already shortened to 0.48 mm. By 6 ms the depths are 0, 0 and 0.025 mm. The solver mouth gap is about 0.001 mm once the coverage has saturated, so the membrane is locking a closed face. The time step sits on Courant 0.4 while that face is moving.
+
+There is no steady depth for a new oxygen and feed table. The table above is the uniform skin, which preserves the paint. The growing skin does not select a slit, and it does not keep the painted depth either.
