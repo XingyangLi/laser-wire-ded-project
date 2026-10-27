@@ -78,20 +78,41 @@
                 consider(n, C[celli] - C[n]);
             }
 
-            // Wire line: molten metal, gas, and unmelted wire, within a cell
-            // or so of the wire surface. Plate/deposit lines use the old test.
+            // Wire line: molten metal and gas. The historical band is 1.75*h
+            // (~33 um) and requires an unmelted-wire neighbour. wireBand, on
+            // the trailing face only, reaches the neck meniscus, which does
+            // not touch the wire cell by cell.
             bool useWire = false;
             vector nSub = Zero;
-            if (contactPinWire && gasNbr && liquidNbr && wireNbr)
+            bool trailFace = false;
+            scalar rWire = -1;
+            if (contactPinWire && gasNbr && liquidNbr)
             {
                 const vector dAx = C[celli] - wireOrigin;
                 const scalar sAx = dAx & wireUp;
-                const vector rad = dAx - sAx*wireUp;
-                const scalar r = mag(rad);
-                if (r > SMALL && r < wireRadius + 1.75*h)
+                vector rad = dAx - sAx*wireUp;
+                rWire = mag(rad);
+                vector trail(1, 0, 0);
+                trail -= (trail & wireUp)*wireUp;
+                const scalar mtTrail = mag(trail);
+                if (mtTrail > SMALL) trail /= mtTrail;
+                trailFace = rWire > SMALL && (rad & trail) > 0;
+                scalar band = 1.75*h;
+                if (trailFace && contactWireBand > 0)
+                {
+                    band = max(band, contactWireBand);
+                }
+                const bool nearWire =
+                    wireNbr && rWire > SMALL && rWire < wireRadius + 1.75*h;
+                const bool trailMeniscus =
+                    trailFace
+                 && contactWireBand > 0
+                 && rWire > wireRadius - 0.5*h
+                 && rWire < wireRadius + contactWireBand;
+                if ((nearWire || trailMeniscus) && rWire > SMALL)
                 {
                     useWire = true;
-                    nSub = rad/r;
+                    nSub = rad/rWire;
                 }
             }
 
@@ -172,10 +193,10 @@
                 zWireMax = max(zWireMax, C[celli].z());
                 zWireMin = min(zWireMin, C[celli].z());
                 contactSupport[celli] = 2;
-                // Molten kink: hold the line in the head frame (or on the
-                // feed, if wireVelocity wire). A freezing meniscus is handed
+                // Molten kink. head: held at rest in the lab while the wire
+                // slides through. wire: no-slip on the feed, so the line is
+                // carried at the feed speed. A freezing meniscus is handed
                 // to the plate velocity so the bead can leave with the part.
-                // Fully solid cells are still owned by the Carman-Kozeny sink.
                 if (sPin >= 0.5)
                 {
                     Ucontact[celli] = solidVelocity;
@@ -207,6 +228,14 @@
             {
                 contactSupport[celli] = 1;
                 Ucontact[celli] = Usolid[celli];
+            }
+
+            // In wire mode the molten line is no-slip on the feed whether
+            // or not it sits inside the angle window. The Young force below
+            // still acts when the angle is outside that window.
+            if (useWire && sPin < 0.5 && !contactWireHeadFrame)
+            {
+                Kcontact[celli] = contactKpin;
             }
 
             if (pinned)

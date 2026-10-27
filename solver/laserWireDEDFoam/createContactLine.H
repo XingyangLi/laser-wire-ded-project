@@ -167,8 +167,12 @@ if (oxygenDependent && contactOxygenAngles.size())
 }
 const word contactWireVelocity(contactDict.getOrDefault<word>("wireVelocity", "head"));
 // head: pinned wire line is stationary in the lab/head frame (default).
-// wire: pinned wire line moves at the instantaneous feed velocity.
+// wire: the wire line is no-slip on the feed, so a pinned kink is carried
+// downward at the feed speed.
 const bool contactWireHeadFrame = (contactWireVelocity != "wire");
+// Extra radial reach of the wire contact force on the trailing face.
+// <= 0 keeps the historical 1.75*h band (~33 um on the 19 um neck).
+const scalar contactWireBand = contactDict.getOrDefault<scalar>("wireBand", -1);
 // Highest / lowest wire-line cell this step (-GREAT / GREAT if there is none).
 // The cavity report reads these after the contact-line pass.
 scalar contactWireZMax = -GREAT;
@@ -266,6 +270,11 @@ if (contactEnabled)
         Info<< nl << "    wire line: thetaR " << contactThetaRwire/contactDeg
             << " deg  thetaA " << contactThetaAwire/contactDeg
             << " deg  velocity " << (contactWireHeadFrame ? "head" : "wire");
+        if (contactWireBand > 0)
+        {
+            Info<< nl << "    trailing force band " << contactWireBand
+                << " m (neck meniscus; leading face stays at 1.75 h)";
+        }
         if (contactWireSector)
         {
             Info<< nl << "    trailing sector (+x): thetaR "
