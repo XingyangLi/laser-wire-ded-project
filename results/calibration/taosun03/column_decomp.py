@@ -55,7 +55,7 @@ def write_labels(path, labels):
             "    version     2.0;\n"
             "    format      ascii;\n"
             "    class       labelList;\n"
-            "    location    \"constant/polyMesh\";\n"
+            "    location    \"constant\";\n"
             "    object      cellDist;\n"
             "}\n"
             f"{len(labels)}\n(\n"
@@ -74,7 +74,12 @@ def main():
     mesh = case / "constant" / "polyMesh"
     cc = rv.cell_centres(mesh)
     labels, counts = assign(cc, nproc)
-    write_labels(mesh / "cellDist", labels)
+    # manualDecomp reads constant/cellDist (facesInstance on the time db).
+    dest = case / "constant" / "cellDist"
+    write_labels(dest, labels)
+    stale = mesh / "cellDist"
+    if stale.is_file():
+        stale.unlink()
     print(
         f"cells {len(cc)}  ranks {nproc}  "
         f"per rank {counts.min()}..{counts.max()}  "
