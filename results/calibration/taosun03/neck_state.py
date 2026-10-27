@@ -251,12 +251,17 @@ def report(case, tname):
 def main():
     args = sys.argv[1:]
     calm = None
+    smear_max = 0.25
     if "--calm-max" in args:
         i = args.index("--calm-max")
         calm = float(args[i + 1])
         del args[i:i + 2]
+    if "--smear-max" in args:
+        i = args.index("--smear-max")
+        smear_max = float(args[i + 1])
+        del args[i:i + 2]
     if len(args) < 1:
-        print("usage: neck_state.py CASE [TIME] [--calm-max U]", file=sys.stderr)
+        print("usage: neck_state.py CASE [TIME] [--calm-max U] [--smear-max F]", file=sys.stderr)
         return 2
     case = Path(args[0])
     if len(args) > 1 and args[1] != "--latest":
@@ -268,7 +273,7 @@ def main():
             return 2
         tname = names[-1]
     s = report(case, tname)
-    if calm is not None and (s["umax"] > calm or s["smear"] > 0.25):
+    if calm is not None and (s["umax"] > calm or s["smear"] > smear_max):
         print(f"VIOLENT umax={s['umax']:.2f} smear={s['smear']:.3f}")
         return 3
     if calm is not None:

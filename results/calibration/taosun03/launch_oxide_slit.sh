@@ -187,7 +187,8 @@ print(names[-1] if names else "")
 PY
 )"
                 if [[ -n "$latest" && "$latest" != "0.7" ]]; then
-                    "$PY" "$DIR/neck_state.py" "$dest" "$latest" --calm-max 15 || rc=$?
+                    # A bare neck smears. Stop only for a real velocity blow-up.
+                    "$PY" "$DIR/neck_state.py" "$dest" "$latest" --calm-max 15 --smear-max 0.9 || rc=$?
                     if (( rc == 3 )); then
                         echo "KILL $tag violent at t=$latest"
                         pkill -TERM -P "${pids[$i]}" || true

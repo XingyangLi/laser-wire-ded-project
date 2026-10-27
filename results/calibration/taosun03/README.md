@@ -440,3 +440,24 @@ The centre plane through that settled neck is metal from z = 0.50 mm to 1.42 mm.
 Beams, feed and Marangoni come back on at 0.706 s from that field. With recoil on, the neck temperature sits on the 3490 K clip, the step falls to about 0.4 µs, and by 0.708 s the centre plane is an open gas column about 0.2–0.5 mm wide from z = 0.58 mm to 1.34 mm. The only closed gaps are one or two cells at the top of the wire. That is the same unsteady opening as the first clip, and it fails the 0.03–0.08 mm by 0.25 mm test.
 
 With recoil off and Marangoni left on, the same ramp holds the capillary step (about 1.8 µs) through 0.712 s. Neck speed stays under 2 m/s, the smeared fraction stays near 0.03, and the centre plane stays metal at 0.7067, 0.7077, 0.7087, 0.7097, 0.7107 and 0.7117 s. No thin film appears. The 32-rank run stays parked. A passing recipe needs a gap 0.03–0.08 mm wide and at least 0.25 mm deep on that centre plane for several milliseconds (`neck_state.py`).
+
+## Oxide angles on a painted groove
+
+The other workstation found that a wetting window fills a painted 0.06 mm groove in a few milliseconds, and that the beams then leave the neck bare. `paint_neck_groove.py` cuts that groove into this settled cal117 neck. The fused dome stays. Metal outside the wire, from a point at z = 0.75 mm to a mouth at z = 1.20 mm and on up through the free surface, becomes cool gas. One copy uses a 0.15 mm mouth. Before any time step the 0.06 mm cut is a closed centre-plane film 0.056–0.075 mm wide from z = 0.94 mm to 1.42 mm.
+
+The trailing window is the change. The plate stays at 10°/40° and the front of the wire stays at 25°/70°. The oxygen table is 90°/120° at 50 ppm, 105°/135° at 100 ppm and 120°/150° at 300 ppm. oxwet is the 30°/90° control at 100 ppm. oxwet and ox100a keep the beams, the feed, Marangoni and recoil off for 10 ms. The other four settle for 2 ms and then ramp those terms on. `cAlpha` is 0.5. Four ranks each, 24 in total.
+
+| tag | ppm | trail | groove | beams | centre plane |
+| --- | --- | --- | --- | --- | --- |
+| oxwet | 100 | 30°/90° | 0.06 mm | off | metal from 1 ms through 10 ms, neck under 2 m/s |
+| ox100a | 100 | 105°/135° | 0.06 mm | off | metal through 10 ms, neck under 2 m/s |
+| ox100b | 100 | 105°/135° | 0.06 mm | on at 0.702 s | open column about 0.3–0.4 mm wide at 0.704 s |
+| ox100w | 100 | 105°/135° | 0.15 mm | on at 0.702 s | 0.15 mm groove gone by 1 ms; open column about 0.3–0.45 mm at 0.704 s |
+| ox50 | 50 | 90°/120° | 0.06 mm | on at 0.702 s | open column about 0.35–0.48 mm at 0.705 s |
+| ox300 | 300 | 120°/150° | 0.06 mm | on at 0.702 s | 0.08 mm closed stub at the foot, then the same open column |
+
+No tag holds a film 0.03–0.08 mm wide and at least 0.25 mm deep for 4 ms. The 0.15 mm groove loses its gas below the crown in the same millisecond as the 0.06 mm groove, with the neck under 1.3 m/s. The fill is the same on an eight-cell gap as on a three-cell gap.
+
+The trailing angle is live and still does not enter that fill. The wire line is recorded only within 1.75 cell heights of the wire surface, about 33 µm. The outer wall of either groove sits outside that band, so the Young force along the cut is zero. At 1 ms the centre plane is metal. The wire line that remains is a ring at the crown, z ≈ 1.25–1.62 mm: 13 pinned cells on the 30°/90° control, and 6 pinned plus 6 receding on 120°/150°. That receding ring does not open a film during the 10 ms with the beams off.
+
+With the beams, Marangoni and recoil on, every angle leaves the neck bare within 2 ms of the ramp. The gas starts at x ≈ 0.33 mm, inside the wire radius, and the column is open from the foot to the crown. Those four were stopped when the smeared fraction crossed 0.25. The column was already a few tenths of a millimetre wide. The 32-rank run stays parked.
