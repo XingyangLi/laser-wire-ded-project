@@ -74,7 +74,7 @@ volScalarField muOxide
         IOobject::NO_WRITE
     ),
     mesh,
-    dimensionedScalar(dimViscosity, Zero)
+    dimensionedScalar(dimDynamicViscosity, Zero)
 );
 
 volScalarField Koxide
