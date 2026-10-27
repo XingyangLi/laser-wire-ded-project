@@ -491,3 +491,22 @@ At 20 µs the film is still the painted one, closed, 0.038–0.066 mm wide and 0
 ## Which shape is the radiograph
 
 The radiograph slit is a thin film about 0.05 mm wide and 0.4 mm deep, tapering, on the trailing face. The painted groove is that shape: closed, 0.04–0.07 mm, about 0.5 mm deep, narrower toward the tip, gas starting just outside the wire. The recoil column is not a rescaling of it. It is six to ten times too wide, about twice as deep, open rather than a film, bulged rather than tapered, and it begins inside the wire. The film is the closer shape. Surface tension removes it on the 19 µm neck in under a millisecond, and on the 9 µm neck the tip has already pinched to one cell by 40 µs. The 32-rank full-domain run stays parked.
+
+## Oxide skin
+
+The membrane from `cursor/nonwetting-trailing-slit-b11b` (cal56) is on this branch. It is an interfacial viscosity of 20 Pa·s where `|grad alpha| h > 0.25`, plus a radial damper `Kskin = 1e14` kg/m³/s inside 0.10 mm of the trailing wire face, z 0.30–1.55 mm. Strength is `min(ppm/300, 1)`. At 300 ppm that is full strength. Sahoo–Belton `sigma(T, a_O)` is on. The oxygen angle table is off. Plate 10°/40°, trailing face 140°/140°, sector blend 0. Beams, Marangoni and recoil start off.
+
+The slab is the 3 mm neck box (24 182 cells, 19 µm in the neck). Four ranks: on this mesh 8 ranks were slower than 4, and 32 ranks spend the step in GAMG. The painted film, before any step, is open, 0.060 mm wide and 0.875 mm deep, z 0.45–1.33 mm.
+
+| time | width | depth | z | state |
+| --- | --- | --- | --- | --- |
+| 0 | 0.060 mm | 0.875 mm | 0.45–1.33 mm | open |
+| 2 ms | 0.060 mm | 0.825 mm | 0.45–1.28 mm | open |
+| 4 ms | 0.060 mm | 0.825 mm | 0.45–1.28 mm | open |
+| 6 ms | 0.060 mm | 0.800 mm | 0.45–1.25 mm | open |
+
+`stability:` steady. Depth moves 0.025 mm (limit 0.08 mm) and the width does not move. The solver mouth stays 0.066 mm for the whole 6 ms. Neck median speed is 0.02 m/s. Capillary step is about 1.0 µs, about 0.15 s of clock per step. cal56 on the other machine was 0.040 × 0.725 mm, z 0.55–1.28 mm. This mesh measures the same film about 0.02 mm wider and 0.1 mm deeper.
+
+The minimum gap anywhere in the shell falls to 0.0013 mm by 4 ms and stays there. That pinch is off the centre plane. The centre-plane film is the one in the table.
+
+Recoil is the next stage, then Marangoni, then the beams, 6 ms each. The pool is only about 2100 K with the beams off, so the recoil pressure is not the column-opening case until the beams are on. The full-domain run stays parked until one of those stages keeps the slit.
