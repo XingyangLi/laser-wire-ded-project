@@ -299,7 +299,7 @@ def neck_title(row):
     )
 
 
-def render_frame(case, tname, frame_path, iso_path, radio, banner, row, x, y, z, a):
+def render_frame(case, tname, frame_path, iso_path, radio, banner, row, x, y, z, a, t0=0.0):
     px, pz, pa = plane_samples(x, y, z, a)
     Xf, Zf, Af = regular_grid(px, pz, pa, FULL, FULL_DX)
     Xz, Zz, Az = regular_grid(px, pz, pa, ZOOM, ZOOM_DX)
@@ -328,10 +328,13 @@ def render_frame(case, tname, frame_path, iso_path, radio, banner, row, x, y, z,
         ax_3.set_title("Metal surface", color=INK, fontsize=15)
     else:
         ax_3.set_title("Metal surface (unavailable)", color=INK, fontsize=15)
-    t_ms = float(tname) * 1e3
+    t_ms = (float(tname) - t0) * 1e3
+    clock = f"t = {t_ms:.1f} ms"
+    if t0 > 0:
+        clock += " from the settled neck"
     fig.suptitle(
-        f"t = {t_ms:.1f} ms\n{banner}",
-        color=INK, fontsize=18, y=0.97,
+        f"{clock}\n{banner}",
+        color=INK, fontsize=16, y=0.98,
     )
     fig.savefig(frame_path, dpi=100, facecolor=fig.get_facecolor())
     plt.close(fig)
@@ -375,11 +378,13 @@ def main():
     ap.add_argument("--fps", type=int, default=20)
     ap.add_argument("--preview", default="", help="Render only this time name")
     ap.add_argument("--out", default="")
+    ap.add_argument("--t0", type=float, default=0.0, help="Subtract from the clock, seconds")
+    ap.add_argument("--banner", default="", help="Replace the physics line")
     args = ap.parse_args()
     case = Path(args.case)
     if not case.is_dir():
         case = ROOT / args.case
-    banner = physics_line(case)
+    banner = args.banner or physics_line(case)
     print("PHYSICS", banner)
     radio = radio_crop()
     frame_dir = OUT / "frames" / args.tag
@@ -403,7 +408,9 @@ def main():
         print(f"t={name}: {sm.fmt(row)}")
         frame = frame_dir / f"frame_{i:04d}.png"
         iso = frame_dir / f"iso_{i:04d}.png"
-        render_frame(case, name, frame, iso, radio, banner, row, x, y, z, a)
+        render_frame(
+            case, name, frame, iso, radio, banner, row, x, y, z, a, t0=args.t0,
+        )
         frames.append(frame)
         print("wrote", frame)
     if args.preview:

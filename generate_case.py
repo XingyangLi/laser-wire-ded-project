@@ -377,6 +377,10 @@ def build_parser():
            "(default 0.10 mm)")
     a("--oxide-skin-ppm-ref", type=float, default=300.0,
       help="oxygen ppm that gives full oxide-skin strength (default 300)")
+    a("--oxide-skin-dynamic", action="store_true",
+      help="with --oxide-skin: carry a coverage scalar on the free surface. "
+           "It starts at 0 and grows where the surface is exposed, up to "
+           "min(ppm/ppmRef, 1). The geometric trailing shell is not used")
     a("--c-alpha-neck", type=float, default=1.0,
       help="extra MULES compression inside the neck box. 1 leaves the "
            "global cAlpha unchanged. cal56 uses 4 so a 0.05 mm film on a "
@@ -1384,6 +1388,7 @@ divSchemes
     div(rhoCpPhi,T) Gauss limitedLinear 1;
     div(alphaPhi,fl) Gauss upwind;
     div(phi,meltHistory) Gauss upwind;
+    div(phi,oxideCoverage) Gauss upwind;
     div(alphaPhi,cWire) Gauss upwind;
     div(alphaPhi,cComp) Gauss vanLeer;   // multi-component tracers (bounded TVD: keeps strand fragments sharp)
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
@@ -1860,12 +1865,27 @@ statistics
         a = self.a
         if not getattr(a, "oxide_skin", False):
             return ""
+        dynamic = bool(getattr(a, "oxide_skin_dynamic", False))
+        mode = (
+            "    dynamic         true;\n"
+            "    genTime         0.001;\n"
+            "    leaveTime       0.0002;\n"
+            if dynamic else
+            ""
+        )
+        note = (
+            "// Coverage starts at 0 and is generated on the exposed surface.\n"
+            if dynamic else
+            "// Geometric shell on the trailing wire face.\n"
+        )
         return (
-            "\n// Oxide membrane on the trailing wire face. Strength is\n"
-            "// min(chamberOxygenPpm/ppmRef, 1) when oxygenDependent is true.\n"
+            "\n// Oxide membrane. Strength is min(chamberOxygenPpm/ppmRef, 1)\n"
+            "// when oxygenDependent is true.\n"
+            f"{note}"
             "oxideSkin\n"
             "{\n"
             "    enabled         true;\n"
+            f"{mode}"
             f"    muSkin          {f(a.oxide_skin_mu)};\n"
             f"    Kskin           {f(a.oxide_skin_k)};\n"
             f"    gapThreshold    {f(a.oxide_skin_gap)};\n"

@@ -47,6 +47,13 @@ const scalar oxideSkinPpmRef = max
     SMALL
 );
 const scalar oxideSkinAlphaGas = oxideSkinDict.getOrDefault<scalar>("alphaGas", 0.98);
+// dynamic: coverage is a scalar carried on the free surface. It starts at 0
+// (nothing painted) and grows where the surface is exposed. The geometric
+// shell below is not used. genTime is the rise toward the ppm strength;
+// leaveTime is how fast coverage fades once the surface has moved on.
+const bool oxideSkinDynamic = oxideSkinDict.getOrDefault<bool>("dynamic", false);
+const scalar oxideSkinGenTime = oxideSkinDict.getOrDefault<scalar>("genTime", 1e-3);
+const scalar oxideSkinLeaveTime = oxideSkinDict.getOrDefault<scalar>("leaveTime", 2e-4);
 const label oxideSkinInterval = oxideSkinDict.getOrDefault<label>
 (
     "interval",
@@ -106,16 +113,45 @@ volVectorField Ukeep
     U
 );
 
+// Coverage in [0, 1]. Missing file -> 0, so a restarted neck is unpainted.
+volScalarField oxideCoverage
+(
+    IOobject
+    (
+        "oxideCoverage",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        (oxideSkinEnabled && oxideSkinDynamic)
+      ? IOobject::AUTO_WRITE
+      : IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero),
+    "zeroGradient"
+);
+
 if (oxideSkinEnabled)
 {
     Info<< "OxideSkin: "
         << (oxideSkinStrength > SMALL ? "on" : "off (zero strength)")
         << " strength " << oxideSkinStrength
         << " mu " << oxideSkinStrength*oxideSkinMu0 << " Pa.s"
-        << " K " << oxideSkinStrength*oxideSkinK0
-        << " gap " << oxideSkinGap << " m"
-        << " z " << oxideSkinZ0 << " " << oxideSkinZ1
-        << " ppmRef " << oxideSkinPpmRef
-        << " alphaGas " << oxideSkinAlphaGas
-        << nl << endl;
+        << " K " << oxideSkinStrength*oxideSkinK0;
+    if (oxideSkinDynamic)
+    {
+        Info<< " dynamic"
+            << " genTime " << oxideSkinGenTime
+            << " leaveTime " << oxideSkinLeaveTime
+            << " coverage0 " << gMax(oxideCoverage.primitiveField())
+            << " (generated on the exposed surface, nothing painted)";
+    }
+    else
+    {
+        Info<< " gap " << oxideSkinGap << " m"
+            << " z " << oxideSkinZ0 << " " << oxideSkinZ1
+            << " ppmRef " << oxideSkinPpmRef
+            << " alphaGas " << oxideSkinAlphaGas;
+    }
+    Info<< nl << endl;
 }
