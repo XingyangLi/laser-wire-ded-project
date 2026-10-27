@@ -11,8 +11,10 @@
 # the same neck on the slab.
 #
 # The 0.10 mm shell held the film at 4 ms. By 7.3 ms a gas cell 0.17 mm off
-# the wire was at several km/s and the film depth was 0.10 mm. The shell is
-# 0.20 mm so that cell is inside it.
+# the wire was at several km/s and the film depth was 0.10 mm. Widening the
+# shell to 0.20 mm and restarting from 4 ms removed that jet, and at 8 ms the
+# film was still gone (0.140 mm wide, 0.175 mm deep). Do not resume this case.
+# The beams-off, recoil-off full-domain run is launch_oxide_cold.sh.
 #
 #   bash launch_oxide_full.sh
 #   bash launch_oxide_full.sh resume
