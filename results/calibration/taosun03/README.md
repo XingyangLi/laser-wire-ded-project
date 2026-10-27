@@ -545,4 +545,11 @@ With the beams, Marangoni and recoil all on from the start, and the temperature 
 
 The film does not last under that physics. On the 0.10 mm shell a gas cell 0.17 mm off the wire reached about 7700 m/s by 7.3 ms and the depth was 0.10 mm. Restarting from the 4 ms field with the shell widened to 0.20 mm removed the jet (peak speed about 10 m/s) and the film still opened: at 8 ms it is 0.140 mm wide and 0.175 mm deep, z 1.10–1.28 mm. `stability:` over 4–8 ms is no steady film. Hot recoil with the beams on is the part the full track cannot carry past 4–8 ms.
 
-The full-domain run that keeps the slit has the laser off and recoil off. Marangoni, Sahoo–Belton sigma and the oxide skin stay on, on the same mesh and the same painted film, started from that paint rather than from the hot 4 ms field. Four ranks, fields every 4 ms through 12 ms. That case is `cases/wire_cavity_skincold`. Laser power stays 0 W and the pool stays near 2300–2400 K. At 4 ms the centre-plane film is still the paint: open, 0.060 mm wide (median) and 0.875 mm deep, z 0.45–1.33 mm. The solver mouth is 0.066 mm. The off-plane minimum gap is 0.00088 mm, the same pinch the hot run carried while the centre plane still held. 8 ms and 12 ms are the steady-window check.
+The full-domain run that keeps the slit has the laser off and recoil off. Marangoni, Sahoo–Belton sigma and the oxide skin stay on, on the same mesh and the same painted film, started from that paint rather than from the hot 4 ms field. Four ranks. That case is `cases/wire_cavity_skincold`. Laser incident power stays 0 W and the pool stays near 2300–2400 K.
+
+| time | width | depth | z | state |
+| --- | --- | --- | --- | --- |
+| 4 ms | 0.060 mm | 0.875 mm | 0.45–1.33 mm | open |
+| 8 ms | 0.060 mm | 0.900 mm | 0.45–1.35 mm | open |
+
+`stability:` steady over those 4 ms. Width does not move. Depth moves 0.025 mm. The solver mouth stays 0.066 mm. The off-plane minimum gap is 0.00088 mm. The clip is `results/calibration/taosun03/skincold_slit_demo.mp4`: radiograph, centre plane with the trailing side on the left, zoomed neck, and the metal surface, at 0, 4 and 8 ms. The neck crop in the clip measures 0.72 mm by 0.060 mm. The wire feed is on, 0.16 mm of wire in 8 ms. The bead is the painted pool. The laser that would grow it, and recoil, are off.

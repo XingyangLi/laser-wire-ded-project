@@ -1,0 +1,7 @@
+file '/home/asb6102/laser-wire-ded-project/results/calibration/taosun03/frames/skincold/frame_0000.png'
+duration 0.35
+file '/home/asb6102/laser-wire-ded-project/results/calibration/taosun03/frames/skincold/frame_0001.png'
+duration 0.35
+file '/home/asb6102/laser-wire-ded-project/results/calibration/taosun03/frames/skincold/frame_0002.png'
+duration 0.35
+file '/home/asb6102/laser-wire-ded-project/results/calibration/taosun03/frames/skincold/frame_0002.png'
