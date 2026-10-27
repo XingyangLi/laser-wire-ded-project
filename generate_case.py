@@ -367,6 +367,10 @@ def build_parser():
            "(default 0.10 mm)")
     a("--oxide-skin-ppm-ref", type=float, default=300.0,
       help="oxygen ppm that gives full oxide-skin strength (default 300)")
+    a("--c-alpha-neck", type=float, default=1.0,
+      help="extra MULES compression inside the neck box. 1 leaves the "
+           "global cAlpha unchanged. cal56 uses 4 so a 0.05 mm film on a "
+           "19 um mesh is not the smeared interface")
     a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
       help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
            "then restore it. A brief notch perturbation. Example: 0.48,0.56,0.25")
@@ -1408,13 +1412,24 @@ snGradSchemes
         # Same refinement face: one non-orthogonal pass was not enough.
         # Two passes keep max Courant ~0.002 at the capillary deltaT.
         n_ortho = 2 if self.a.neck_refine else 0
+        c_alpha = "        cAlpha          1;\n"
+        neck_factor = float(getattr(self.a, "c_alpha_neck", 1) or 1)
+        if neck_factor > 1:
+            x0, x1, y0, y1 = self.neck_xy_box()
+            if not self.full:
+                y0 = 0.0
+            c_alpha += (
+                f"        cAlphaNeck      {f(neck_factor)};\n"
+                f"        cAlphaNeckMin   ({f(x0)} {f(y0)} {f(0.30e-3)});\n"
+                f"        cAlphaNeckMax   ({f(x1)} {f(y1)} {f(1.55e-3)});\n"
+            )
         txt = header("dictionary", "fvSolution", "system") + """solvers
 {
     "alpha.metal.*"
     {
         nAlphaCorr      2;
         nAlphaSubCycles 1;
-        cAlpha          1;
+CALPHA
         MULESCorr       yes;
         nLimiterIter    5;
         solver          smoothSolver;
@@ -1475,7 +1490,7 @@ relaxationFactors
     }
 }
 """
-        return txt.replace("NORTHO", str(n_ortho)) + FOOT
+        return txt.replace("NORTHO", str(n_ortho)).replace("CALPHA", c_alpha.rstrip("\n")) + FOOT
 
     def decompose(self):
         np_ = self.a.np
