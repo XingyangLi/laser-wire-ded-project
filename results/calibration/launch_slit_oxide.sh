@@ -8,16 +8,16 @@
 # 12 ranks, nice 10, written every 2 ms.
 #
 #   OXIDE_TAG   case tag          (default cal54)
-#   OXIDE_MU    muSkin [Pa.s]     (default 200)
-#   OXIDE_K     Kskin [kg/m^3/s]  (default 1e12)
+#   OXIDE_MU    muSkin [Pa.s]     (default 20)
+#   OXIDE_K     Kskin [kg/m^3/s]  (default 1e14)
 #
 # Usage: launch_slit_oxide.sh
 exec > >(tee -a /home/xingyang/laser-wire-ded-project/results/calibration/slit_oxide_launch.log) 2>&1
 set -euo pipefail
 ROOT=/home/xingyang/laser-wire-ded-project
 TAG=${OXIDE_TAG:-cal54}
-MU=${OXIDE_MU:-200}
-KSKIN=${OXIDE_K:-1e12}
+MU=${OXIDE_MU:-20}
+KSKIN=${OXIDE_K:-1e14}
 set --
 if ps -u xingyang -o cmd | grep -q '[l]aserWireDEDFoam'; then
     echo "a solver is already running" >&2

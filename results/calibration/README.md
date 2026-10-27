@@ -305,4 +305,18 @@ The wall angle does change the neck, and it does not hold a slit. `stability:` i
 
 cal53 does not hold the groove either. The painted mouth is 0.048 mm at the first step and 0.0005 mm from 0.25 ms onward. At 2 ms the center plane is metal on the wire from z = 0.60 mm to 1.20 mm, with a capped 0.020 × 0.050 mm wisp at z 1.25–1.30 mm. That sample already fails the film test, so later times could not accumulate 4 ms of a good film. The run was stopped at 2.3 ms. The step had stayed between 0.05 µs and 0.3 µs with a maximum Courant number near 0.4. Finer cells close the same groove faster than the 19 µm mesh. `stability:` is "no steady film".
 
-The wall boundary condition does enforce the angle: 40° wets and stays wet, and 140° drives the pool off the wall onto a bare face. The 9.4 µm neck still fills the groove. No case holds a thin slit, and no full-domain demo was started.
+The wall boundary condition does enforce the angle: 40° wets and stays wet, and 140° drives the pool off the wall onto a bare face. The 9.4 µm neck still fills the groove.
+
+## Oxide skin
+
+`launch_slit_oxide.sh`. Same slab and the same painted 0.05 mm trailing film as cal50 (static 140°/140°, plate 10°/40°, 300 ppm Sahoo–Belton sigma, angle table off, laser, Marangoni and recoil off, 19 µm neck, 12 ranks, `nice -n 10`, out to 6 ms). The skin is on from the first step. Strength is `min(ppm/300, 1)`, so 300 ppm is full strength. `muSkin` is an implicit viscosity on cells with `|grad alpha| h > 0.25`. `Kskin` damps every cell in the trailing shell (z 0.30–1.55 mm, within 0.10 mm of the wire). The radial velocity is removed. A scalar coefficient also holds the tangential velocity, so the shell stays put. The wire feed still wins inside the unmelted wire.
+
+| tag | muSkin | Kskin | center plane |
+| --- | --- | --- | --- |
+| cal54 | 200 Pa·s | 1×10¹² | at 2 ms a 0.040 × 0.750 mm open film, z 0.55–1.30 mm; at 4 ms the crown from z = 1.05 mm up is bare and the metric depth is 0.050 mm |
+| cal55 | 20 Pa·s | 1×10¹³ | open film at 2, 4 and 6 ms, width 0.040 mm, depth 0.750 → 0.650 mm. `stability:` drifting (depth change 0.10 mm, limit 0.08 mm) |
+| cal56 | 20 Pa·s | 1×10¹⁴ | open film at 2, 4 and 6 ms, width 0.040 mm, depth 0.725 mm, z 0.55–1.28 mm, unchanged. `stability:` steady |
+
+cal54 also ran at a time step near 0.1 µs because the Courant number sat on 0.4. cal55 and cal56 stay on the capillary step, about 1.2 µs. The mouth gap in the solver log stays 0.058 mm for the whole of cal56. Figure: `oxide_skin_slit.png`.
+
+The recipe that holds is cal56. No gas-pressure support and no solid shell were run. No full-domain demo was started.
