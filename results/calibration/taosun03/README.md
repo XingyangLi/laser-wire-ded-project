@@ -421,4 +421,16 @@ A cold start on this mesh holds the capillary step. The mapped dome does not: th
 | smokeE | 100 ppm, σ(T) only | 24 mm/s | 1100 K | 70°/150° |
 | smokeF | 100 ppm, wire angles from the table | 24 mm/s | 1600 K | 12°/140° |
 
-The table windows are the wide pin (a film that is already there stays). smokeD and smokeE raise the receding angle so a wetted face can pull back. A width reported at 0.10 mm is the search cap, not a 0.05 mm slit. `render_slit_video.py` builds `slit_demo.mp4`: radiograph, centre plane, zoomed neck, and the metal surface, trailing side on the left. It is rebuilt as new times are written.
+The table windows are the wide pin (a film that is already there stays). smokeD and smokeE raise the receding angle so a wetted face can pull back. `render_slit_video.py` builds `slit_demo.mp4`: radiograph, centre plane, zoomed neck, and the metal surface, trailing side on the left.
+
+## Why the first clip moved
+
+smokeA and smokeD were stopped. The full-domain run stays parked until a film 0.03–0.08 mm wide and at least 0.25 mm deep holds a steady depth for several milliseconds.
+
+On smokeA the motion is the mapped interface collapsing. `mapFields -mapMethod interpolate` painted the 150 µm dome onto the 19 µm neck. At 0.70 s, before a time step, 85% of the neck cells have alpha between 0.05 and 0.95, and the centre plane below z = 1.25 mm has no alpha below 0.5. The gas in the clip was not already in the mapped field. Neck velocity there is modest: median 0.26 m/s, maximum 1.4 m/s.
+
+One millisecond later the compression has pulled that mush toward 0 and 1, the neck velocity peaks at 99 m/s (17 m/s at the written 0.701 s frame), and the centre plane shows an open gas span about 0.45 mm wide from z = 0.78 mm to 1.22 mm. Temperature in the neck climbs from 3026 K to 3490 K, so recoil sits on its 2×10⁵ Pa cap as well. The gas opens at the same x at every height, which is the smeared interface snapping. A local keyhole would be a spot, and this is a column.
+
+The wire contact line is quiet over that millisecond: 6 or 7 cells, all pinned, receding count 0. It is not flipping between advancing and receding. The plate line is advancing (theta about 42° against a 40° window) with `forceFactor` 6, which is a kick at the plate foot.
+
+`settle_slit.sh` rebuilds that mesh as smokeS. The dome is mapped with `mapNearest`, alpha is averaged over 80 µm and set back to 0/1, and the internal velocity is set to 0. For 5 ms the beams, the feed, Marangoni and recoil are off, `cAlpha` is 2, `maxCo` is 0.2, the capillary factor is 1, and `forceFactor` is 1. If the neck stays under 8 m/s, the beams and the feed ramp on at 0.706 s with Marangoni and recoil restored, and the film is judged from the centre-plane gap (`neck_state.py`), which is not capped at 0.10 mm.
