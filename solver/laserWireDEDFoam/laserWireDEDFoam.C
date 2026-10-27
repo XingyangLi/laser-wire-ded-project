@@ -229,10 +229,6 @@ int main(int argc, char *argv[])
 
             trailDragDoLog = true;
             #include "trailDrag.H"
-            if (trailDragEnabled)
-            {
-                phi = fvc::flux(U);
-            }
         }
 
         #include "meltHistory.H"

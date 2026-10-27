@@ -32,7 +32,10 @@ if (trailDragEnabled)
             if (r < wireRadius - 0.5*h) continue;
             if (r > wireRadius + trailDragRadial*h) continue;
             if (r > SMALL && (rad & trail) < cosCut*r) continue;
+            // Liquid metal only. The solid wire continues above the pool,
+            // and taking its tip puts the shell in the gas.
             if (alpha1[celli] < 0.5) continue;
+            if (liquidFraction[celli] < 0.5) continue;
             if (Ctd[celli].z() < 0.05e-3) continue;
             zMax = max(zMax, Ctd[celli].z());
         }
