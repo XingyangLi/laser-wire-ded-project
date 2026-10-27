@@ -1964,7 +1964,7 @@ statistics
             f"    gapMax          {f(a.gas_gap)};\n"
             f"    ppmRef          {f(a.gas_ppm_ref)};\n"
             f"    feedRef         {f(0.020)};\n"
-            "    band            0.0002;\n"
+            "    band            0.0008;\n"
             "    zMin            0.0002;\n"
             "    zMax            0.0018;\n"
             "}\n"

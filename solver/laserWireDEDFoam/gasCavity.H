@@ -41,8 +41,12 @@
             {
                 const auto [onTrail, s, r, h, rad] = onWire(celli, Cc, Vp);
                 if (!onTrail) continue;
-                if (r < wireRadius - 0.5*h || r > wireRadius + 2.0*h) continue;
-                if (mag(g0[celli])*h > 0.25 && a0[celli] > 0.05 && a0[celli] < 0.98)
+                // Only a cavity: gas toward the wire. The bare wire above the
+                // bead has gas on the outside and must not set the feed height.
+                if (r < wireRadius || r > wireRadius + 2.0*h) continue;
+                const vector nRad = rad/(r + VSMALL);
+                if ((nRad & g0[celli]) <= 0) continue;
+                if (mag(g0[celli])*h > 0.25 && a0[celli] > 0.02 && a0[celli] < 0.98)
                 {
                     zContact = max(zContact, s);
                 }

@@ -32,7 +32,7 @@ const scalar gasCavityFeedRef = max
     gasCavityDict.getOrDefault<scalar>("feedRef", 0.020),
     SMALL
 );
-const scalar gasCavityBand = gasCavityDict.getOrDefault<scalar>("band", 0.20e-3);
+const scalar gasCavityBand = gasCavityDict.getOrDefault<scalar>("band", 0.80e-3);
 const label gasCavityInterval = gasCavityDict.getOrDefault<label>
 (
     "interval",
