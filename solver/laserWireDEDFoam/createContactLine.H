@@ -298,3 +298,5 @@ if (contactEnabled)
     }
 }
 Info<< nl << endl;
+
+#include "createTrailDrag.H"

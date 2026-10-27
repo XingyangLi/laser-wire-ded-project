@@ -196,6 +196,10 @@ int main(int argc, char *argv[])
 
             mixture.correct();
 
+            bool trailDragDoLog = false;
+            #include "trailDrag.H"
+            mixture.correct();
+
             #include "cWireEqn.H"
 
             // --- Energy equation with melting / solidification
@@ -221,6 +225,13 @@ int main(int argc, char *argv[])
             if (pimple.turbCorr())
             {
                 turbulence->correct();
+            }
+
+            trailDragDoLog = true;
+            #include "trailDrag.H"
+            if (trailDragEnabled)
+            {
+                phi = fvc::flux(U);
             }
         }
 
