@@ -554,7 +554,11 @@ The full-domain run that keeps the slit has the laser off and recoil off. Marang
 
 `stability:` steady over those 4 ms. Width does not move. Depth moves 0.025 mm. The solver mouth stays 0.066 mm. The off-plane minimum gap is 0.00088 mm. The wire feed is on. The bead is the painted pool, because the laser is off.
 
-Both full-track cases are being rewritten from that painted field with a volume write every 0.1 ms through 20 ms, so the replacement clips are one frame per write at 20 fps. `skincold` keeps the laser and recoil off. `skinfull` keeps both on.
+Both clips are 201 frames, one volume write every 0.1 ms from 0 to 20 ms, played at 20 fps. Each is 10.05 s, 1920×1080. The centre plane and the neck are an interpolated alpha = 0.5 contour, trailing side on the left. The neck title is the centre-plane depth and width in millimetres. The fourth panel is the metal surface with axes and a wire outline.
+
+`results/calibration/taosun03/skincold_slit_demo.mp4` has the laser off and recoil off. At 20 ms the film is still open, 0.060 mm wide and 0.825 mm deep, z 0.45–1.28 mm.
+
+`results/calibration/taosun03/skinfull_slit_demo.mp4` has the laser on and recoil on (cap 2×10⁵ Pa), with the 0.20 mm shell present from t = 0. The width stays 0.060 mm. The depth goes from 0.875 mm at the paint to 0.825 mm at 8 ms and 0.625 mm at 20 ms (z 0.45–1.08 mm). It does not snap shut in this 20 ms. The run that did lose the film was the earlier 0.10 mm shell, and the restart that widened that shell at 4 ms: at 8 ms that field was 0.140 mm wide and 0.175 mm deep.
 
 On the slab, with the beams on from t = 0 and the pool on the 3490 K clip, the 2×10⁵ Pa recoil cap is what removes the film. The same slab with the cap lowered, or with recoil switched off only inside the oxide shell, keeps it. Centre plane, 19 µm neck, skin on, Marangoni on:
 
