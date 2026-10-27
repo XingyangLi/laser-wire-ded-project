@@ -281,7 +281,7 @@ def write_line_pin(case):
         "\nlinePin\n"
         "{\n"
         "    enabled         true;\n"
-        "    nCells          1;\n"
+        "    nCells          2;\n"
         "    ppmRef          300;\n"
         "    Kpin            1e12;\n"
         "    tau             0.0005;\n"
@@ -293,7 +293,7 @@ def write_line_pin(case):
     else:
         text = text[:banner] + block + "\n" + text[banner:]
     path.write_text(text)
-    print("linePin enabled, 1 cell, ppmRef 300")
+    print("linePin enabled, 2 cells, ppmRef 300")
 
 
 def field_files(case):
@@ -400,8 +400,8 @@ def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
             pin_body = props[pin_span[0]:pin_span[1]]
             if not re.search(r"enabled\s+true;", pin_body):
                 raise SystemExit("linePin is not enabled")
-            if not re.search(r"nCells\s+1\s*;", pin_body):
-                raise SystemExit("linePin nCells is not 1")
+            if not re.search(r"nCells\s+2\s*;", pin_body):
+                raise SystemExit("linePin nCells is not 2")
             drag_span = find_block(props, "wireDrag")
             if drag_span is not None and re.search(
                 r"enabled\s+true;", props[drag_span[0]:drag_span[1]]

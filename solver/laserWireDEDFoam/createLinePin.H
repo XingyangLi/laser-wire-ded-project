@@ -5,8 +5,9 @@
 // thick on the trailing face, alpha is restored toward gas above that
 // height and metal below it, and the velocity is restored toward the feed.
 // Liquid moved out of a shell cell is given to the next cell outward, so
-// the coating is displaced rather than deleted. Cells outside that
-// exchange are left alone, so the pool surface is free.
+// the coating is displaced rather than deleted. That neighbouring cell is
+// then restored toward metal beside the gas shell. Cells beyond it are
+// left alone, so the pool surface past the gap is free.
 // The shell is the imposed pin. The gap outside it is the free surface.
 //
 // ppm sets the hold. s = min(ppm/ppmRef, 1) is the fraction of the error
