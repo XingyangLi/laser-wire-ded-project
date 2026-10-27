@@ -456,14 +456,18 @@ OXYGEN_ANGLE_TABLE = (
 
 # Oxide film on the solid wire, not a sessile-drop fit. Columns [deg]:
 # ppm, wire receding, wire advancing, trailing receding, trailing advancing.
-# The plate window is not in this table. Higher ppm stands in for a thicker
-# oxide: the trailing face wets less, so a gas slit can stay open.
+# The plate window is not in this table. The front of the wire stays a
+# wetting-to-intermediate window. The trailing face is the oxide: wetting
+# at low ppm (receding well below 90 deg, so melt is pulled onto the wire)
+# and non-wetting from 100 ppm up (receding 90–120, advancing 120–150).
+# A receding floor below 90 deg accepts a wetted groove; one above 90 deg
+# drives that meniscus back off the wire.
 WIRE_OXIDE_TABLE = (
-    (0, 25, 70, 30, 80),
-    (50, 32, 80, 45, 100),
-    (100, 42, 100, 60, 120),
-    (300, 58, 125, 85, 150),
-    (1000, 70, 140, 110, 165),
+    (0, 25, 70, 25, 70),
+    (50, 32, 80, 40, 85),
+    (100, 42, 100, 90, 125),
+    (300, 58, 125, 110, 145),
+    (1000, 70, 140, 120, 150),
 )
 
 

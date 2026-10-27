@@ -217,7 +217,7 @@ The radiograph feature to reproduce is a thin gas slit on the trailing face of t
 
 The mesh is the 150 µm track with three nested refinement passes in x, y and z on the trailing face only (`--neck-refine 3`, box x 0.32–0.90 mm, y 0–0.22 mm, z 0.55–1.45 mm). Each pass is two cells larger than the next, so every interface is a 2:1 jump. OpenFOAM v2406 names that third axis `normal` in `refineMeshDict`. The neck spacing is 19 µm. A mesh-only check of the 100 ppm case has 61402 cells, shortest edge 19 µm, maximum non-orthogonality 26° and maximum aspect ratio 4.7 (`checkMesh`: Mesh OK). The capillary step uses that spacing (`maxDeltaT` about 2.4×10⁻⁶ s). There is no full-height `--wire-refine`: stacking it on the neck passes would take the gap cells well below 19 µm and the time step with them. `dx_min` is the product of the wire-box levels and the neck levels when both are set.
 
-The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-angles` writes a 7-column table and `oxygenWireAnglesOnly`, so the solver applies the wire and trailing columns and leaves the plate at 10°/40°. The table is a stand-in for an oxide film, not a sessile-drop fit: higher ppm, higher angles, poorer wetting, a slit that can stay open. Knots (ppm, wire receding/advancing, trailing receding/advancing): 0 → 25/70 and 30/80; 50 → 32/80 and 45/100; 100 → 42/100 and 60/120; 300 → 58/125 and 85/150; 1000 → 70/140 and 110/165. The trailing sector is 40° about +x with a 15° blend, so the oxide window is the center-back of the wire and not the side groove at y ≈ 1 mm.
+The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-angles` writes a 7-column table and `oxygenWireAnglesOnly`, so the solver applies the wire and trailing columns and leaves the plate at 10°/40°. The table is a stand-in for an oxide film, not a sessile-drop fit. The front of the wire stays wetting-to-intermediate. The trailing face is wetting at low ppm and non-wetting from 100 ppm up, so a wetted groove (apparent angle near 50°) sits inside the low-ppm window and below the high-ppm receding floor. Knots (ppm, wire receding/advancing, trailing receding/advancing): 0 → 25/70 and 25/70; 50 → 32/80 and 40/85; 100 → 42/100 and 90/125; 300 → 58/125 and 110/145; 1000 → 70/140 and 120/150. The trailing sector is 40° about +x with a 15° blend, so the oxide window is the center-back of the wire and not the side groove at y ≈ 1 mm.
 
 Sahoo–Belton `sigma(T, a_O)` is on, and Marangoni is on, so `dσ/dT` can change sign as oxygen adsorption overtakes the clean-metal slope. Recoil is on. The wire inlet stays at 300 K: the slit sits on solid unmelted wire, and preheating that face would melt it. Dissolved-gas transport is not solved: the slit is an open meniscus, and the oxygen entry is the uniform melt activity `a_O = ppm × 10⁻⁴` already used by the surface-tension model.
 
@@ -255,6 +255,17 @@ The split is between the beam and the capillary collapse, not between a noisy sw
 
 Turning the laser, Marangoni and recoil on clears that wetted face. cal41 stays wetted for the whole settle and is gas beside the wire by 10 ms, 2 ms after the ramp finishes. cal39, cal40 and cal42, with those terms on from the first step, are bare by 4–6 ms. Tmax on cal42 is about 3080 K with 131 W absorbed, so recoil is on at the hot spot. The contact-line report in that window is mostly a pinned or advancing plate line; it is not a wire line oscillating between pin and advance.
 
-So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. The thin open film is not an equilibrium of this contact window once the rear beam, Marangoni and recoil are on, and it is not an equilibrium of surface tension while they are off either. No full-domain demo was started.
+So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. On cal41 the wire line starts near 50° with the receding branch already on (the 85° floor of the old 300 ppm knot) and the angle never climbs to that floor: the groove is full by 2 ms. The Young force on those cells is already at its cap, so raising the floor does not push a 50° cell any harder. It does put a force on the cells that were pinned between 85° and the new floor.
+
+`launch_slit_nonwetting.sh` is that test. The plate stays 10°/40°. The trailing face uses the table above. All four keep the 8° blend and neck compression ×4, the curved groove, wire at 300 K, feed 20 mm/s, 3 ranks each, `nice -n 10`, out to 16 ms.
+
+| tag | ppm | trailing window | groove mouth | laser, Marangoni, recoil |
+| --- | --- | --- | --- | --- |
+| cal44 | 300 | 110°/145° | 0.06 mm | off |
+| cal45 | 300 | 110°/145° | 0.06 mm | on |
+| cal46 | 300 | 110°/145° | 0.12 mm | off |
+| cal47 | 50 | 40°/85° | 0.06 mm | off |
+
+cal46 is the wider paint (0.12 mm, two to three times the radiograph slit) so a gap that only exists when it is several cells across can be told from one that the angle can hold. A 12–15 µm neck is a later smoke if the 19 µm narrow groove fills while the wide one stays open. The steady-film rule is unchanged: 0.03–0.08 mm wide, at least 0.25 mm deep, for at least 4 ms.
 
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.

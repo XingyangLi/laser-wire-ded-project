@@ -4,8 +4,9 @@
 The square slot used for cal34–cal37 left no metal wall on the center plane
 after 4 ms. This initial field is two ellipsoids (a pool on the plate, a
 taller dome on the trailing side) with a groove cut along the wire. The
-groove is 0.06 mm at z = 1.20 mm and tapers to a point at z = 0.75 mm, and
-it is only 0.28 mm wide in y so the center plane cuts through it.
+groove mouth is `--gap-mm` (default 0.06 mm) at z = 1.20 mm and tapers to a
+point at z = 0.75 mm. It is only 0.28 mm wide in y so the center plane cuts
+through it. A 0.12 mm mouth is the wider groove.
 
 Runs on the serial mesh, after 0/ has been copied from 0.orig and before
 decomposePar. Wire cells stay unmelted and at rest.
@@ -189,7 +190,12 @@ def scan_velocity(path):
     return (u, v, w)
 
 
-def paint(case, wire_t, dry_run):
+def paint(case, wire_t, dry_run, gap_mm):
+    global W_MOUTH
+    if gap_mm <= 0 or gap_mm > 0.40:
+        raise SystemExit("--gap-mm must be in (0, 0.40]")
+    W_MOUTH = gap_mm * 1e-3
+    print(f"groove mouth {gap_mm:.3f} mm at z = {Z_MOUTH * 1e3:.2f} mm")
     cc = cell_centres(case)
     n = len(cc)
     alpha = np.zeros(n)
@@ -232,7 +238,7 @@ def paint(case, wire_t, dry_run):
     for z0 in np.arange(0.70e-3, 1.45e-3, 0.05e-3):
         m = (y < 0.04e-3) & (np.abs(z - z0) < 0.025e-3) & (x > WIRE_R + 0.005e-3)
         metal = m & (alpha > 0.5)
-        gas = m & (alpha < 0.5) & (x < WIRE_R + 0.15e-3)
+        gas = m & (alpha < 0.5) & (x < WIRE_R + W_MOUTH + 0.04e-3)
         if not np.any(metal):
             wall = "none"
             width = "bare" if np.any(gas) else "no samples"
@@ -262,9 +268,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--case", required=True)
     ap.add_argument("--wire-t", type=float, default=300.0)
+    ap.add_argument("--gap-mm", type=float, default=0.06,
+                    help="groove width at z = 1.20 mm (0.06 narrow, 0.12 wide)")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    paint(args.case, args.wire_t, args.dry_run)
+    paint(args.case, args.wire_t, args.dry_run, args.gap_mm)
 
 
 if __name__ == "__main__":
