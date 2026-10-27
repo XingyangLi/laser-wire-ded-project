@@ -277,6 +277,16 @@ def build_parser():
            "refined over the full column; z is refined only in the neck band "
            "(about 0.45-1.55 mm) so a 0.05 mm gas slit is two cells wide at "
            "3 levels on the 150 um mesh (~19 um) without refining the whole wire box")
+    a("--neck-x0", type=float, default=None,
+      help="override the neck-refine box x min [m] (default just inside the trailing face)")
+    a("--neck-x1", type=float, default=None,
+      help="override the neck-refine box x max [m]")
+    a("--neck-y-out", type=float, default=None,
+      help="override how far the neck-refine box extends off the centre plane [m]")
+    a("--neck-z0", type=float, default=None,
+      help="override the neck-refine z min [m]")
+    a("--neck-z1", type=float, default=None,
+      help="override the neck-refine z max [m]")
     a("--refine-halfwidth", type=float, default=None,
       help="half width of the refined box around the wire axis [m] (default wire radius + 0.3 mm)")
     a("--domain-y", default="auto", choices=["auto", "half", "full"],
@@ -1033,12 +1043,17 @@ writeMesh       no;
         the slit on y = 0 is inside the fine cells and the side wake is not.
         """
         xw = self.origin[0]
-        x0 = xw + self.R - 0.18e-3
-        x1 = xw + self.R + 0.32e-3
-        y_out = 0.35e-3
+        x0 = self.a.neck_x0 if self.a.neck_x0 is not None else xw + self.R - 0.18e-3
+        x1 = self.a.neck_x1 if self.a.neck_x1 is not None else xw + self.R + 0.32e-3
+        y_out = self.a.neck_y_out if self.a.neck_y_out is not None else 0.35e-3
         y0 = -y_out if self.full else -1.0
         y1 = y_out
         return x0, x1, y0, y1
+
+    def neck_z_band(self):
+        z0 = self.a.neck_z0 if self.a.neck_z0 is not None else 0.45e-3
+        z1 = self.a.neck_z1 if self.a.neck_z1 is not None else 1.55e-3
+        return z0, z1
 
     def topo_set_neck(self, set_name, z0, z1):
         x0, x1, y0, y1 = self.neck_xy_box()
@@ -1416,12 +1431,13 @@ snGradSchemes
         neck_factor = float(getattr(self.a, "c_alpha_neck", 1) or 1)
         if neck_factor > 1:
             x0, x1, y0, y1 = self.neck_xy_box()
+            z0, z1 = self.neck_z_band()
             if not self.full:
                 y0 = 0.0
             c_alpha += (
                 f"        cAlphaNeck      {f(neck_factor)};\n"
-                f"        cAlphaNeckMin   ({f(x0)} {f(y0)} {f(0.30e-3)});\n"
-                f"        cAlphaNeckMax   ({f(x1)} {f(y1)} {f(1.55e-3)});\n"
+                f"        cAlphaNeckMin   ({f(x0)} {f(y0)} {f(z0)});\n"
+                f"        cAlphaNeckMax   ({f(x1)} {f(y1)} {f(z1)});\n"
             )
         txt = header("dictionary", "fvSolution", "system") + """solvers
 {
@@ -2336,14 +2352,15 @@ fi
             write(s / "topoSetDict.refine", self.topo_set_refine())
             write(s / "refineMeshDict", self.refine_mesh_dict())
         if self.a.neck_refine > 0:
-            write(s / "topoSetDict.neckXy", self.topo_set_neck("neckXy", 0.45e-3, 1.55e-3))
+            z0, z1 = self.neck_z_band()
+            write(s / "topoSetDict.neckXy", self.topo_set_neck("neckXy", z0, z1))
             write(s / "refineMeshDict.neckXy", self.refine_mesh_dict_named(
                 "neckXy", "(tan1 tan2)",
-                "x and y only, neck band 0.45-1.55 mm, trailing wire face"))
-            write(s / "topoSetDict.neckZ", self.topo_set_neck("neckZ", 0.45e-3, 1.55e-3))
+                "x and y only, neck band, trailing wire face and near pool"))
+            write(s / "topoSetDict.neckZ", self.topo_set_neck("neckZ", z0, z1))
             write(s / "refineMeshDict.neckZ", self.refine_mesh_dict_named(
                 "neckZ", "(normal)",
-                "z only, neck band 0.45-1.55 mm, where the gas slit sits"))
+                "z only, neck band, where the gas slit sits"))
         write(s / "controlDict", self.control_dict())
         write(s / "fvSchemes", self.fv_schemes())
         write(s / "fvSolution", self.fv_solution())
@@ -2504,9 +2521,10 @@ def main(argv=None):
               f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
     if a.neck_refine:
         x0, x1, y0, y1 = c.neck_xy_box()
+        z0, z1 = c.neck_z_band()
         print(f"[generate] neck refine {a.neck_refine}x on the trailing face "
               f"x {x0*1e3:.2f}..{x1*1e3:.2f} mm, |y| <= {y1*1e3:.2f} mm, "
-              f"z 0.45..1.55 mm; dx_min = {c.dx_min*1e6:.0f} um")
+              f"z {z0*1e3:.2f}..{z1*1e3:.2f} mm; dx_min = {c.dx_min*1e6:.0f} um")
     if getattr(a, "oxygen_ppm", None) is not None:
         if a.oxygen_sigma_only:
             angles = "scalar contact angles kept"

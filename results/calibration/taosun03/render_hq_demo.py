@@ -63,6 +63,8 @@ def physics_line(case):
         laser_on = False
     recoil = re.search(r"recoil\s+(true|false)", text)
     recoil_on = bool(recoil and recoil.group(1) == "true")
+    in_shell = re.search(r"recoilInShell\s+(true|false)", text)
+    cap = re.search(r"recoilMax\s+([0-9.eE+-]+)", text)
     mara = re.search(r"marangoni\s+(true|false)", text)
     mara_on = bool(mara and mara.group(1) == "true")
     skin_at = text.find("oxideSkin")
@@ -75,9 +77,17 @@ def physics_line(case):
         feed_on = max(comps) > 0
     def bit(name, on):
         return f"{name} {'on' if on else 'off'}"
+    if not recoil_on:
+        recoil_bit = "recoil off"
+    elif in_shell and in_shell.group(1) == "false":
+        recoil_bit = "recoil off in the shell"
+    elif cap:
+        recoil_bit = f"recoil cap {cap.group(1)} Pa"
+    else:
+        recoil_bit = "recoil on"
     return ", ".join([
         bit("laser", laser_on),
-        bit("recoil", recoil_on),
+        recoil_bit,
         bit("Marangoni", mara_on),
         bit("skin", skin_on),
         bit("feed", feed_on),
@@ -221,9 +231,22 @@ def metal_surface(x, y, z, a, dest):
     surf = vol.contour([0.5], scalars="alpha")
     if surf.n_points < 10:
         return None
-    pl = pv.Plotter(off_screen=True, window_size=(1100, 720))
+    # Light smoothing keeps the slit edges and removes the faceted delaunay look.
+    surf = surf.smooth(
+        n_iter=30,
+        relaxation_factor=0.06,
+        feature_smoothing=True,
+        feature_angle=75,
+        boundary_smoothing=False,
+        convergence=0,
+    )
+    surf.compute_normals(inplace=True, auto_orient_normals=True)
+    pl = pv.Plotter(off_screen=True, window_size=(1800, 860))
     pl.set_background(PAPER)
-    pl.add_mesh(surf, color=METAL, smooth_shading=True, specular=0.15)
+    pl.add_mesh(
+        surf, color=METAL, smooth_shading=True,
+        specular=0.45, specular_power=18, diffuse=0.75, ambient=0.18,
+    )
     wire = pv.Cylinder(
         center=(0.0, 0.0, 0.85), direction=(0, 0, 1),
         radius=0.50, height=1.7, resolution=64,
@@ -258,7 +281,7 @@ def metal_surface(x, y, z, a, dest):
         (0.0, 0.0, 1.0),
     ]
     pl.camera.roll = 180
-    pl.camera.zoom(1.35)
+    pl.camera.zoom(1.15)
     pl.screenshot(str(dest))
     pl.close()
     return dest
@@ -281,14 +304,16 @@ def render_frame(case, tname, frame_path, iso_path, radio, banner, row, x, y, z,
     Xf, Zf, Af = regular_grid(px, pz, pa, FULL, FULL_DX)
     Xz, Zz, Az = regular_grid(px, pz, pa, ZOOM, ZOOM_DX)
     fig = plt.figure(figsize=(19.2, 10.8), dpi=100, facecolor=PAPER)
+    # The 3D view is the wide lower band. The three reference panels sit above it.
     gs = fig.add_gridspec(
-        2, 2, left=0.045, right=0.985, top=0.86, bottom=0.07,
-        hspace=0.28, wspace=0.16,
+        2, 3, height_ratios=[1.0, 1.55],
+        left=0.04, right=0.985, top=0.86, bottom=0.04,
+        hspace=0.28, wspace=0.18,
     )
     ax_r = fig.add_subplot(gs[0, 0])
     ax_f = fig.add_subplot(gs[0, 1])
-    ax_z = fig.add_subplot(gs[1, 0])
-    ax_3 = fig.add_subplot(gs[1, 1])
+    ax_z = fig.add_subplot(gs[0, 2])
+    ax_3 = fig.add_subplot(gs[1, :])
     ax_r.imshow(radio)
     ax_r.set_title("Radiograph", color=INK, fontsize=15)
     ax_r.axis("off")
