@@ -49,7 +49,7 @@
                 const scalar h = Foam::cbrt(max(VpOx[celli], SMALL));
                 const bool exposed =
                     (rad & trailOx) > 0
-                 && s >= oxideSkinZ0 && s <= oxideSkinZ1
+                 && s >= oxideSkinZLo && s <= oxideSkinZHi
                  && r > wireRadius - 0.5*h
                  && r < wireRadius + oxideSkinGap
                  && (mag(gOx[celli])*h > 0.25 || aOx[celli] < 0.5);
@@ -85,7 +85,7 @@
             const vector rad = d - s*wireUp;
             const scalar r = mag(rad);
             const scalar h = Foam::cbrt(max(Vp[celli], SMALL));
-            const bool onTrail = (rad & trail) > 0 && s >= oxideSkinZ0 && s <= oxideSkinZ1;
+            const bool onTrail = (rad & trail) > 0 && s >= oxideSkinZLo && s <= oxideSkinZHi;
 
             if
             (

@@ -67,6 +67,17 @@ const scalar oxideFeedRef = max
     oxideSkinDict.getOrDefault<scalar>("feedRef", 0.020),
     SMALL
 );
+// lengthTau > 0: the membrane is on from t = 0, but only over a length
+// feed*lengthTau below zMouth. That length is the oxidised patch. Absent
+// or zero keeps the dictionary zMin/zMax.
+const scalar oxideLengthTau = oxideSkinDict.getOrDefault<scalar>("lengthTau", 0.0);
+const scalar oxideZMouth = oxideSkinDict.getOrDefault<scalar>("zMouth", 1.20e-3);
+const scalar oxideSkinZHi =
+    (oxideLengthTau > SMALL) ? oxideZMouth : oxideSkinZ1;
+const scalar oxideSkinZLo =
+    (oxideLengthTau > SMALL)
+  ? oxideSkinZHi - mag(wireFeedVelocity)*oxideLengthTau
+  : oxideSkinZ0;
 const label oxideSkinInterval = oxideSkinDict.getOrDefault<label>
 (
     "interval",
@@ -151,7 +162,8 @@ if (oxideSkinEnabled)
         << " mu " << oxideSkinStrength*oxideSkinMu0 << " Pa.s"
         << " K " << oxideSkinStrength*oxideSkinK0
         << " gap " << oxideSkinGap << " m"
-        << " z " << oxideSkinZ0 << " " << oxideSkinZ1
+        << " z " << oxideSkinZLo << " " << oxideSkinZHi
+        << " lengthTau " << oxideLengthTau
         << " ppmRef " << oxideSkinPpmRef
         << " alphaGas " << oxideSkinAlphaGas;
     if (oxideGrowth)

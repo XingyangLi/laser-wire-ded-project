@@ -202,6 +202,7 @@ int main(int argc, char *argv[])
             #include "TEqn.H"
             #include "updateSurfaceTension.H"
             #include "recoilPressure.H"
+            #include "gasCavity.H"
             #include "contactLine.H"
             #include "porosity.H"
 
