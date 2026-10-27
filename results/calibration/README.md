@@ -376,3 +376,17 @@ The other mechanism is the cal56 membrane, on from the first step, but only over
 | cal73 | 0.56 | 0.75 | 28 | 0.025 × 0.020 | 0.050 × 0.020 | 0.025 × 0.020 | no steady film |
 
 The shell does not hold the film when it stops short of the lower lip. The lip is free, and the film closes through the damped region. The depth does not become the oxidised length, and it does not change from 18 to 28 mm/s. No oxygen and feed table follows, because none of these runs left a steady slit.
+
+## Bare neck
+
+These three start with no painted film and no groove. The initial field is a pool and a dome sitting on the wire, the wire feeding at 20 mm/s, travel speed 4 mm/s. Wire advancing/receding angles are 140°/40° on the wire and on the trailing sector. The plate stays 10°/40°. 300 ppm, 8 ms, 12 ranks. The metric is unchanged. A zero is no thin gap. "Bare face" means the crown is open gas, which is the wetted neck, not a slit.
+
+cal74 carries oxide coverage on the free surface. It starts at 0, moves with the mixture flux, and grows at `(ppm/300)/1 ms` on interface cells. The damper acts only where gas faces the trailing wire, so it cannot freeze the wet neck. Laser, Marangoni and recoil are off. cal75 is the same skin with those three on. cal76 has no skin: only the moving contact line and the 4 mm/s travel.
+
+| tag | mechanism | 2 ms | 4 ms | 6 ms | 8 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal74 | surface skin, 140/40 | bare face | 0.025 × 0.020 | 0.050 × 0.020 | 0.025 × 0.020 | no steady film |
+| cal75 | same skin, Marangoni and recoil on | bare face | bare face | bare face | bare face | no steady film |
+| cal76 | travel speed, no skin | 0 | bare face | 0.025 × 0.020 | 0.025 × 0.020 | no steady film |
+
+None of them generates a thin open slit. On cal74 the coverage does reach the cap (oxMax = 2) and about 170 trailing cells are damped, but the mouth gap stays at about 0.001 mm, so the skin is sitting on a closed face. The only thin signal is a one-cell wisp near z = 1.4 mm. Marangoni and recoil do not push a film open in 8 ms; the neck stays a bare face. At 4 mm/s the substrate moves 0.032 mm in 8 ms, and the wire feeds 0.16 mm. That does not entrain a gas film on the trailing face. The capillary number of the travel speed is about 2×10⁻⁵.
