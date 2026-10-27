@@ -75,6 +75,30 @@ def read_internal(path, kind):
     return np.frombuffer(rest[:n * 24], dtype="<f8").reshape(n, 3).copy()
 
 
+def read_uniform(path, kind, n):
+    """A uniform internalField, expanded to one value per cell.
+
+    decomposePar writes an all-zero velocity as ``uniform (0 0 0)``.
+    """
+    data = Path(path).read_bytes()
+    key = b"internalField   uniform"
+    i = data.find(key)
+    if i < 0 or n < 1:
+        return None
+    rest = data[i + len(key):].lstrip()
+    if kind == "vector":
+        if not rest.startswith(b"("):
+            return None
+        end = rest.find(b")")
+        parts = rest[1:end].split()
+        if len(parts) != 3:
+            return None
+        v = np.array([float(x) for x in parts], dtype=float)
+        return np.tile(v, (n, 1))
+    token = rest.split()[0].rstrip(b";")
+    return np.full(n, float(token))
+
+
 MESHES = {}
 
 
@@ -129,6 +153,8 @@ def load(case, tname):
             cc = cell_centres(proc / "constant" / "polyMesh")
             alpha = read_internal(proc / tname / "alpha.metal", "scalar")
             vel = read_internal(proc / tname / "U", "vector")
+            if vel is None and alpha is not None:
+                vel = read_uniform(proc / tname / "U", "vector", len(alpha))
             if alpha is None or vel is None or len(alpha) != len(cc):
                 raise RuntimeError(f"{proc.name}/{tname}: field size does not match the mesh")
             parts.append((cc, alpha, vel))
@@ -140,6 +166,8 @@ def load(case, tname):
     cc = cell_centres(case / "constant" / "polyMesh")
     alpha = read_internal(case / tname / "alpha.metal", "scalar")
     vel = read_internal(case / tname / "U", "vector")
+    if vel is None and alpha is not None:
+        vel = read_uniform(case / tname / "U", "vector", len(alpha))
     if alpha is None or vel is None or len(alpha) != len(cc):
         raise RuntimeError(f"{tname}: field size does not match the mesh")
     return cc, alpha, vel

@@ -461,3 +461,33 @@ No tag holds a film 0.03–0.08 mm wide and at least 0.25 mm deep for 4 ms. The 
 The trailing angle is live and still does not enter that fill. The wire line is recorded only within 1.75 cell heights of the wire surface, about 33 µm. The outer wall of either groove sits outside that band, so the Young force along the cut is zero. At 1 ms the centre plane is metal. The wire line that remains is a ring at the crown, z ≈ 1.25–1.62 mm: 13 pinned cells on the 30°/90° control, and 6 pinned plus 6 receding on 120°/150°. That receding ring does not open a film during the 10 ms with the beams off.
 
 With the beams, Marangoni and recoil on, every angle leaves the neck bare within 2 ms of the ramp. The gas starts at x ≈ 0.33 mm, inside the wire radius, and the column is open from the foot to the crown. Those four were stopped when the smeared fraction crossed 0.25. The column was already a few tenths of a millimetre wide. The 32-rank run stays parked.
+
+## What opens the column
+
+The open column is not the painted groove surviving. On ox100b the centre plane was metal at 0.702 s and at 0.703 s. The split restarts that metal neck at 0.702 s with the feed held off and only one of the three terms active. All three keep the 105°/135° window and the beam ramp.
+
+| tag | terms | through | centre plane |
+| --- | --- | --- | --- |
+| colBeam | beams | 4 ms | metal, neck under 1.6 m/s |
+| colMara | beams + Marangoni | 4 ms | metal, neck under 1.8 m/s |
+| colRecoil | beams + recoil | 3 ms | open column |
+
+Beams alone deposit on the crown. At 0.706 s the neck liquid reaches the 3490 K clip and `Qheat` peaks at 8.4×10¹⁴ W/m³, on liquid with r > 0.67 mm and z > 0.93 mm. No cell inside the wire radius changes from metal to gas. Marangoni does the same: `dSigmadT` on the little crown gas is about −3.6×10⁻⁴ N/m/K, and the centre plane stays metal. The few hundred cells that do become gas sit at the crown, outside the wire, above z = 1.1 mm.
+
+Recoil is the term that opens the column. At 0.704 s, 2 ms after the ramp, 1011 cells inside the wire that were metal are gas: x = 0.19–0.47 mm, z = 0.43–1.09 mm. That gas moves into the wire and down the wire, |U| median 3.4 m/s, maximum 5.8 m/s, every one of those cells with Ux < −0.2 m/s and 99% with Uz < −0.2 m/s. `Qheat` on the new gas is zero. The liquid against it is hot, and by 0.705 s that liquid carries `pRecoil` at the 2×10⁵ Pa cap and `Qheat` up to 2.9×10¹⁴ W/m³. The beam heats the metal. Recoil, which pushes along `snGrad(alpha)` into the liquid, is what turns that metal into the column. Once the column is open the gas slows: at 0.705 s the same interior gas has |U| median 0.5 m/s.
+
+The column at 0.705 s is 0.88 mm deep (z = 0.54–1.42 mm) and 0.28–0.50 mm wide. It is open, with no bead wall on the outside. The inner edge stays near x = 0.32–0.41 mm, inside the 0.50 mm wire radius, for the whole height. The width peaks near z = 0.8–0.9 mm and does not taper to a point.
+
+## Nine-micrometre neck
+
+The painted 0.06 mm groove was cut again on a neck refined to 9.4 µm (`--neck-refine 4`). The slab is x ∈ [−1, 2] mm, y ∈ [0, 1.2] mm, z ∈ [−0.6, 2] mm: 174 710 cells, minimum volume (9.375 µm)³. Before any step the groove is a closed film 0.037–0.066 mm wide from z = 0.94 mm to 1.42 mm, 0.48 mm deep, gas starting at x = 0.505 mm.
+
+Sixteen ranks do not integrate that mesh. Scotch is balanced and the linear solvers take a few iterations, but each GAMG call costs 1–2 s and a step costs about 17 s. A sample of one rank is 95% OpenMPI shared-memory spin. At Δt ≈ 0.25 µs that is days for a few milliseconds. The 16-rank job was stopped at 8 µs without a written frame.
+
+One rank takes about 4 s/step. A flank current on the wire surface (y ≈ 0.23 mm, z ≈ 0.8–0.9 mm, mostly −y and +z) pins the step: about 6 m/s at 20 µs and 11 m/s at 40 µs, so Δt falls from 0.25 µs to 0.14 µs. That current is not the gap. The centre-plane interface sits near 0.4 m/s.
+
+At 20 µs the film is still the painted one, closed, 0.038–0.066 mm wide and 0.48 mm deep. At 40 µs the tip has pinched: the z = 0.94 mm bin goes from 0.037 mm to 0.009 mm, and the gas edge there moves from x = 0.505 mm to 0.533 mm. From z = 0.98 mm to 1.42 mm the width is unchanged, 0.056–0.066 mm, and the thin depth is 0.44 mm. The close starts at the point. It is not frozen by the smaller cells. Four milliseconds at 4 s/step and Δt ≈ 0.14 µs is about a day and a half, so that window was not run. The one-rank job continues to 0.2 ms and stops if the thin bins disappear.
+
+## Which shape is the radiograph
+
+The radiograph slit is a thin film about 0.05 mm wide and 0.4 mm deep, tapering, on the trailing face. The painted groove is that shape: closed, 0.04–0.07 mm, about 0.5 mm deep, narrower toward the tip, gas starting just outside the wire. The recoil column is not a rescaling of it. It is six to ten times too wide, about twice as deep, open rather than a film, bulged rather than tapered, and it begins inside the wire. The film is the closer shape. Surface tension removes it on the 19 µm neck in under a millisecond, and on the 9 µm neck the tip has already pinched to one cell by 40 µs. The 32-rank full-domain run stays parked.

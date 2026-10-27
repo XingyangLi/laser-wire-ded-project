@@ -2,11 +2,13 @@
 # 9 um neck on a 3 mm slab, settled cal117 field, 0.06 mm groove, trail 105/135.
 #
 # One more halving of the smoke neck (150 um / 16). The domain is a slab
-# around the wire so 16 ranks can carry it. Beams, feed, Marangoni and
-# recoil stay off for 5 ms, then come on for 5 ms.
+# around the wire. Sixteen ranks on this mesh spend each step in the GAMG
+# halo exchange (about 17 s/step, 0.2 us), so the timed run is one rank.
+# Beams, feed, Marangoni and recoil stay off for the first window, then on.
 #
 #   ./launch_neck9.sh prepare
 #   ./launch_neck9.sh run
+#   ./launch_neck9.sh serial
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
@@ -248,12 +250,78 @@ cmd_run() {
     echo "NECK9_DONE"
 }
 
+# Sixteen-rank GAMG on the 175k-cell neck is an MPI wait, not a matrix cost.
+# One rank writes the first 0.2 ms at 20 us so a closing film is visible.
+cmd_serial() {
+    if [[ ! -d "$CASE/constant/polyMesh" || ! -d "$CASE/0.7" ]]; then
+        echo "neck9 is not prepared" >&2
+        exit 1
+    fi
+    tao_source_foam
+    (
+        cd "$CASE"
+        foamDictionary -entry endTime -set 0.7002 system/controlDict >/dev/null
+        foamDictionary -entry writeInterval -set 2e-5 system/controlDict >/dev/null
+        foamDictionary -entry startFrom -set latestTime system/controlDict >/dev/null
+    )
+    echo "SERIAL beams off 0.700 -> 0.7002  write 20 us"
+    tao_acquire 1
+    set +e
+    (
+        cd "$CASE"
+        nice -n 10 laserWireDEDFoam > log.serialOff 2>&1
+    ) &
+    local pid=$!
+    while kill -0 "$pid" 2>/dev/null; do
+        sleep 20
+        local latest=""
+        latest="$("$PY" - "$CASE" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, "/home/asb6102/laser-wire-ded-project/results/calibration/taosun03")
+import neck_state as ns
+names = ns.time_dirs(sys.argv[1])
+print(names[-1] if names else "")
+PY
+)"
+        if [[ -z "$latest" || "$latest" == "0.7" ]]; then
+            if [[ -f "$CASE/log.serialOff" ]] && grep -q "FOAM FATAL" "$CASE/log.serialOff"; then
+                echo "KILL neck9 serial foam fatal"
+                kill -TERM "$pid" 2>/dev/null || true
+                break
+            fi
+            continue
+        fi
+        echo "SCORE t=$latest"
+        "$PY" "$DIR/neck_state.py" "$CASE" "$latest" --calm-max 20 --smear-max 0.9 || true
+        local nthin
+        nthin="$("$PY" - "$CASE" "$latest" <<'PY'
+import sys
+sys.path.insert(0, "/home/asb6102/laser-wire-ded-project/results/calibration/taosun03")
+import neck_state as ns
+print(ns.summarise(sys.argv[1], sys.argv[2])["n_thin"])
+PY
+)"
+        # The painted film is the thin closed bins. Zero means it has shut.
+        if [[ "$nthin" == "0" ]]; then
+            echo "FILM_SHUT t=$latest"
+            kill -TERM "$pid" 2>/dev/null || true
+            break
+        fi
+    done
+    wait "$pid" || true
+    tao_release 1
+    "$PY" "$DIR/neck_state.py" "$CASE" --latest --smear-max 0.9 || true
+    echo "NECK9_SERIAL_DONE"
+}
+
 main() {
     local cmd="${1:-run}"
     case "$cmd" in
         prepare) prepare_case ;;
         run) cmd_run ;;
-        *) echo "usage: $0 prepare|run" >&2; exit 1 ;;
+        serial) cmd_serial ;;
+        *) echo "usage: $0 prepare|run|serial" >&2; exit 1 ;;
     esac
 }
 main "$@"
