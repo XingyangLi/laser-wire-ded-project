@@ -257,15 +257,17 @@ Turning the laser, Marangoni and recoil on clears that wetted face. cal41 stays 
 
 So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. On cal41 the wire line starts near 50° with the receding branch already on (the 85° floor of the old 300 ppm knot) and the angle never climbs to that floor: the groove is full by 2 ms. The Young force on those cells is already at its cap, so raising the floor does not push a 50° cell any harder. It does put a force on the cells that were pinned between 85° and the new floor.
 
-`launch_slit_nonwetting.sh` is that test. The plate stays 10°/40°. The trailing face uses the table above. All four keep the 8° blend and neck compression ×4, the curved groove, wire at 300 K, feed 20 mm/s, 3 ranks each, `nice -n 10`, out to 16 ms.
+`launch_slit_nonwetting.sh` is that test. The plate stays 10°/40°. The trailing face uses the table above. All four keep the 8° blend and neck compression ×4, the curved groove, wire at 300 K, feed 20 mm/s, 3 ranks each, `nice -n 10`. The painted center-plane mouth is 0.057 mm on the narrow cases and 0.114 mm on cal46. They were stopped once the 4–6 ms side planes were in: nothing in the neck was still a film, so the remaining run to 16 ms would not have changed the score.
 
-| tag | ppm | trailing window | groove mouth | laser, Marangoni, recoil |
-| --- | --- | --- | --- | --- |
-| cal44 | 300 | 110°/145° | 0.06 mm | off |
-| cal45 | 300 | 110°/145° | 0.06 mm | on |
-| cal46 | 300 | 110°/145° | 0.12 mm | off |
-| cal47 | 50 | 40°/85° | 0.06 mm | off |
+| tag | ppm | trailing window | groove mouth | laser, Marangoni, recoil | what the neck does |
+| --- | --- | --- | --- | --- | --- |
+| cal44 | 300 | 110°/145° | 0.06 mm | off | metal on the wire by 2 ms; only a 0.02 mm crown wisp at 6 ms (z 1.38–1.48 mm) |
+| cal45 | 300 | 110°/145° | 0.06 mm | on | bare trailing face at 2, 4 and 6 ms |
+| cal46 | 300 | 110°/145° | 0.12 mm | off | same as cal44: the resolved gap is metal on the wire by 2 ms |
+| cal47 | 50 | 40°/85° | 0.06 mm | off | a capped 0.07 × 0.10 mm patch at 2 ms (z 1.08–1.18 mm); crown wisp only at 4 ms |
 
-cal46 is the wider paint (0.12 mm, two to three times the radiograph slit) so a gap that only exists when it is several cells across can be told from one that the angle can hold. A 12–15 µm neck is a later smoke if the 19 µm narrow groove fills while the wide one stays open. The steady-film rule is unchanged: 0.03–0.08 mm wide, at least 0.25 mm deep, for at least 4 ms.
+`stability:` is "no steady film" on all four. No depth reaches 0.25 mm, and no sample is both 0.03–0.08 mm wide and that deep. At 2 ms the 300 ppm wire line is still near 55–60°, with about half of the remaining wire cells on the receding branch, and the wire count has fallen from about 100 cells to about 15. The apparent angle never climbs to the 110° floor. The 50 ppm line sits near 40°, inside its window, and that groove is gone by 4 ms as well.
+
+The 0.114 mm mouth is six cells on the 19 µm neck, so this closure is not the two-cell interface thickness. A 12–15 µm neck was not run: the wide groove already separates that from the angle, and it closed the same way. No full-domain demo was started.
 
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.
