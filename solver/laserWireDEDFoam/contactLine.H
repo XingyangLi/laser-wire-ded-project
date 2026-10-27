@@ -235,12 +235,17 @@
             // still acts when the angle is outside that window.
             if (useWire && sPin < 0.5 && !contactWireHeadFrame)
             {
-                Kcontact[celli] = contactKpin;
+                Kcontact[celli] =
+                    contactWireDragK > 0 ? contactWireDragK : contactKpin;
             }
 
             if (pinned)
             {
-                Kcontact[celli] = contactKpin;
+                // Keep the wire-mode drag; plate and frozen lines use Kpin.
+                if (!(useWire && sPin < 0.5 && !contactWireHeadFrame))
+                {
+                    Kcontact[celli] = contactKpin;
+                }
                 if (sPin >= 0.5)
                 {
                     contactState[celli] = useWire ? 6 : 2;

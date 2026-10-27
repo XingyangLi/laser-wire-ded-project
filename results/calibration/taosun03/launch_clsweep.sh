@@ -27,7 +27,7 @@ prepare_one() {
     local feed_mm="$1" ppm="$2"
     local case
     case="$(case_of "$feed_mm" "$ppm")"
-    if [[ -f "$case/constant/meltProperties" ]] && grep -q "wireBand        0.0003;" "$case/constant/meltProperties"; then
+    if [[ -f "$case/constant/meltProperties" ]] && grep -q "wireDragK       1e9;" "$case/constant/meltProperties"; then
         echo "CASE f${feed_mm} p${ppm} exists"
         return 0
     fi
@@ -59,7 +59,7 @@ t = t.replace("    feedVelocity    (-0 -0 -0.024);", f"    feedVelocity    (-0 -
 t = t.replace("    tFeedStart      0.706;", f"    tFeedStart      {t0};", 1)
 t = t.replace("    tFeedRamp       0.002;", "    tFeedRamp       0;", 1)
 old = "    wireVelocity    head;   // head: kink fixed in the lab frame; wire: stuck to the feed"
-new = "    wireVelocity    wire;\n    wireBand        0.0003;"
+new = "    wireVelocity    wire;\n    wireBand        0.0003;\n    wireDragK       1e9;"
 if old not in t:
     raise SystemExit("wireVelocity line missing")
 t = t.replace(old, new, 1)

@@ -173,6 +173,8 @@ const bool contactWireHeadFrame = (contactWireVelocity != "wire");
 // Extra radial reach of the wire contact force on the trailing face.
 // <= 0 keeps the historical 1.75*h band (~33 um on the 19 um neck).
 const scalar contactWireBand = contactDict.getOrDefault<scalar>("wireBand", -1);
+// Stronger Darcy drag for wire-mode no-slip. <= 0 uses Kpin.
+const scalar contactWireDragK = contactDict.getOrDefault<scalar>("wireDragK", -1);
 // Highest / lowest wire-line cell this step (-GREAT / GREAT if there is none).
 // The cavity report reads these after the contact-line pass.
 scalar contactWireZMax = -GREAT;
@@ -270,6 +272,11 @@ if (contactEnabled)
         Info<< nl << "    wire line: thetaR " << contactThetaRwire/contactDeg
             << " deg  thetaA " << contactThetaAwire/contactDeg
             << " deg  velocity " << (contactWireHeadFrame ? "head" : "wire");
+        if (!contactWireHeadFrame && contactWireDragK > 0)
+        {
+            Info<< nl << "    wire drag K " << contactWireDragK
+                << " kg/m3/s (molten wire line, pinned cells included)";
+        }
         if (contactWireBand > 0)
         {
             Info<< nl << "    trailing force band " << contactWireBand
