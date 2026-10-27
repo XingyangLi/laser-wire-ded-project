@@ -10,6 +10,10 @@
 # the other ranks only add GAMG waits. Four ranks is the count that integrated
 # the same neck on the slab.
 #
+# The 0.10 mm shell held the film at 4 ms. By 7.3 ms a gas cell 0.17 mm off
+# the wire was at several km/s and the film depth was 0.10 mm. The shell is
+# 0.20 mm so that cell is inside it.
+#
 #   bash launch_oxide_full.sh
 #   bash launch_oxide_full.sh resume
 set -euo pipefail
@@ -60,7 +64,7 @@ prepare_case() {
         --c-alpha-neck 4 \
         --oxygen-ppm 300 --oxygen-sigma-only \
         --oxide-skin --oxide-skin-mu 20 --oxide-skin-k 1e14 \
-        --oxide-skin-gap 0.10e-3 --oxide-skin-ppm-ref 300 \
+        --oxide-skin-gap 0.20e-3 --oxide-skin-ppm-ref 300 \
         --contact-pinning --pin-wire --porosity --wire-cavity \
         --theta-receding 10 --theta-advancing 40 \
         --theta-receding-wire 25 --theta-advancing-wire 70 \
