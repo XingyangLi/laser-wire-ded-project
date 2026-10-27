@@ -4,7 +4,11 @@
 # The slab smoke held an open 0.060 mm film through beams, Marangoni and
 # recoil (0.575-0.625 mm deep over the last 4 ms). This is that recipe on
 # the cal08 track: wire feeding, bead forming, 19 um neck, 32 ranks, nice 10.
-# Columns stay intact (nz = 1). Fields every 4 ms, through 40 ms.
+# Columns stay intact (nz = 1). Fields every 4 ms, through 20 ms.
+#
+# 32 ranks was measured at about 10 s/step: the 19 um neck is one x-slice, so
+# the other ranks only add GAMG waits. Four ranks is the count that integrated
+# the same neck on the slab.
 #
 #   bash launch_oxide_full.sh
 #   bash launch_oxide_full.sh resume
@@ -15,7 +19,7 @@ source "$DIR/lib.sh"
 
 CASE="$TAO_ROOT/cases/wire_cavity_skinfull"
 PY="$TAO_PY"
-NP=32
+NP=4
 LOG="$CASE/log.laserWireDEDFoam"
 HELD=0
 
@@ -50,7 +54,7 @@ prepare_case() {
         --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
         --beam-aim-radii 0.60e-3,0.60e-3,0.24e-3 \
         --beam-aim-heights 0.08e-3,0.08e-3,0.55e-3 \
-        --end-time 0.040 --write-interval 0.004 --np "$NP" --laser-ramp 1e-4 \
+        --end-time 0.020 --write-interval 0.004 --np "$NP" --laser-ramp 1e-4 \
         --max-co 0.4 --capillary-dt-factor 1 \
         --neck-refine 3 \
         --c-alpha-neck 4 \
@@ -97,12 +101,13 @@ decompose_case() {
     tao_source_foam
     (
         cd "$CASE"
+        foamDictionary -entry endTime -set 0.020 system/controlDict >/dev/null
         foamDictionary -entry numberOfSubdomains -set "$NP" system/decomposeParDict >/dev/null
         foamDictionary -entry method -set simple system/decomposeParDict >/dev/null
         # Split only in x. A y split of this graded mesh left two ranks with
         # no cells, and an empty rank aborts in MPI_Allreduce. nz stays 1 so
         # a laser column is not cut in z.
-        foamDictionary -entry coeffs.n -set "(32 1 1)" system/decomposeParDict >/dev/null
+        foamDictionary -entry coeffs.n -set "(4 1 1)" system/decomposeParDict >/dev/null
         decomposePar -force > log.decomposePar 2>&1
         if grep -q "Number of cells = 0" log.decomposePar; then
             echo "decompose left an empty rank" >&2
