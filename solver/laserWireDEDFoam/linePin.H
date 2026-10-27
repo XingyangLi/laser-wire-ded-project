@@ -148,37 +148,27 @@
         }
 
         // The cell just outside the gas shell keeps the liquid that was
-        // displaced off the wire. Cells beyond it are free, so the taper
-        // past this one cell is the pool surface. ppm uses the same hold.
-        boolList holdWall(mesh.nCells(), false);
-        for (const label celli : shellCells)
+        // displaced off the wire. Selected by radius, not by cellCells,
+        // because the neck is split across processors. Cells beyond this
+        // one cell are free. ppm uses the same hold.
+        if (fac > 0)
         {
-            if (C[celli].z() <= zLine) continue;
-            const vector d = C[celli] - wireOrigin;
-            const vector rad = d - (d & wireUp)*wireUp;
-            label cur = celli;
-            scalar rCur = mag(rad);
-            const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
-            for (label step = 0; step < 4; ++step)
+            forAll(alpha, celli)
             {
-                const label nei = outerCell(cur, rCur, C[celli].z(), h);
-                if (nei < 0) break;
-                const vector dn = C[nei] - wireOrigin;
-                const vector rn = dn - (dn & wireUp)*wireUp;
-                cur = nei;
-                rCur = mag(rn);
-                if (!inShell[nei])
-                {
-                    holdWall[nei] = true;
-                    break;
-                }
+                if (inShell[celli]) continue;
+                const vector d = C[celli] - wireOrigin;
+                const scalar sAx = d & wireUp;
+                const vector rad = d - sAx*wireUp;
+                if (rad.x() <= 0) continue;
+                const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
+                const scalar r = mag(rad);
+                const scalar rShell = wireRadius + linePinNCells*h;
+                if (r <= rShell || r > rShell + h) continue;
+                const scalar z = C[celli].z();
+                if (z <= zLine || z > linePinZ0 + 0.5*h) continue;
+                alpha[celli] += fac*(scalar(1) - alpha[celli]);
+                alpha[celli] = min(max(alpha[celli], scalar(0)), scalar(1));
             }
-        }
-        forAll(holdWall, celli)
-        {
-            if (!holdWall[celli] || fac <= 0) continue;
-            alpha[celli] += fac*(scalar(1) - alpha[celli]);
-            alpha[celli] = min(max(alpha[celli], scalar(0)), scalar(1));
         }
 
         alpha2 = 1.0 - alpha1;
