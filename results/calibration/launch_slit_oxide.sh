@@ -12,6 +12,8 @@
 #   OXIDE_K     Kskin [kg/m^3/s]  (default 1e14)
 #   OXIDE_PPM   chamber oxygen    (default 300; strength is min(ppm/300, 1))
 #   OXIDE_FEED  wire feed [m/s]   (default 0.020)
+#   OXIDE_DEPTH painted film depth [mm], top at z = 1.20 mm.
+#               unset keeps the full film (z 0.30-1.50). 0 is a wetted neck.
 #   OXIDE_PARALLEL    skip the single-solver lock (a sweep runs two at once)
 #   OXIDE_SKIP_BUILD  skip Allwmake (the sweep builds once)
 #
@@ -24,6 +26,12 @@ MU=${OXIDE_MU:-20}
 KSKIN=${OXIDE_K:-1e14}
 PPM=${OXIDE_PPM:-300}
 FEED=${OXIDE_FEED:-0.020}
+PAINT_DEPTH=()
+DEPTH_LABEL="full film z 0.30-1.50 mm"
+if [ -n "${OXIDE_DEPTH+x}" ]; then
+    PAINT_DEPTH=(--film-depth-mm "$OXIDE_DEPTH")
+    DEPTH_LABEL="painted depth ${OXIDE_DEPTH} mm"
+fi
 set --
 if [ "${OXIDE_PARALLEL:-0}" != 1 ] && ps -u xingyang -o cmd | grep -q '[l]aserWireDEDFoam'; then
     echo "a solver is already running" >&2
@@ -57,7 +65,7 @@ ANGLE=140
 case="$ROOT/cases/wire_cavity_${TAG}"
 log="$ROOT/results/calibration/${TAG}_launch.log"
 {
-    echo "=== oxide ${TAG}: mu ${MU} Pa.s, K ${KSKIN}, ppm ${PPM}, feed ${FEED} m/s, film 0.05 mm, ${ANGLE} deg ==="
+    echo "=== oxide ${TAG}: mu ${MU} Pa.s, K ${KSKIN}, ppm ${PPM}, feed ${FEED} m/s, film 0.05 mm, ${DEPTH_LABEL}, ${ANGLE} deg ==="
     python3 "$ROOT/generate_case.py" --case "$case" --laser-config triple \
         --wire-type solid --material 316L --resolution coarse --domain-y half \
         --upstream "$UP" --downstream "$DOWN" --half-width "$HALF" \
@@ -109,6 +117,7 @@ PY
         exit 1
     fi
     grep -q "oxideSkin" "$case/constant/meltProperties"
+    grep -q "growth          true;" "$case/constant/meltProperties"
     grep -q "Kskin" "$case/constant/meltProperties"
     grep -q "muSkin          ${MU};" "$case/constant/meltProperties" \
         || grep -q "muSkin          ${MU}.0;" "$case/constant/meltProperties" \
@@ -127,7 +136,7 @@ PY
     rm -rf 0 && mkdir 0 && cp 0.orig/* 0/
     for f in 0/*.orig; do mv "$f" "${f%.orig}"; done
     python3 "$ROOT/results/calibration/paint_slit_meniscus.py" \
-        --case "$case" --wire-t 300 --film-mm 0.05
+        --case "$case" --wire-t 300 --film-mm 0.05 "${PAINT_DEPTH[@]}"
     foamDictionary -entry numberOfSubdomains -set "$NP" system/decomposeParDict > /dev/null
     foamDictionary -entry coeffs.n -set "(6 2 1)" system/decomposeParDict > /dev/null
     decomposePar -force > log.decomposePar 2>&1

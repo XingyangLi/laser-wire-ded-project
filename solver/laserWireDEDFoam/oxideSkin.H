@@ -6,6 +6,54 @@
 
     if (oxideSkinEnabled && oxideSkinStrength > SMALL)
     {
+        // Coverage starts bare. One explicit step per time step: carry the
+        // film down with the wire, then add oxide on the exposed trailing
+        // face. The rate already contains the ppm factor, so the damper
+        // below is not multiplied by it again.
+        if (oxideGrowth && pimple.firstIter())
+        {
+            const scalar Vfeed = mag(wireFeedVelocity);
+            const vector Ufeed = -wireUp*Vfeed;
+            oxideFilm -= runTime.deltaT()*fvc::div
+            (
+                mesh.Sf() & Ufeed,
+                oxideFilm,
+                "div(phiOxide,oxideFilm)"
+            );
+
+            const volVectorField gradOx(fvc::grad(alpha1));
+            scalarField& ox = oxideFilm.primitiveFieldRef();
+            const vectorField& CcOx = mesh.C().primitiveField();
+            const scalarField& VpOx = mesh.V();
+            const scalarField& aOx = alpha1.primitiveField();
+            const vectorField& gOx = gradOx.primitiveField();
+            const vector trailOx(1, 0, 0);
+            const scalar dt = runTime.deltaTValue();
+            const scalar sRate =
+                oxideSkinStrength*(Vfeed/oxideFeedRef)/oxideTau;
+
+            forAll(ox, celli)
+            {
+                const vector d = CcOx[celli] - wireOrigin;
+                const scalar s = d & wireUp;
+                const vector rad = d - s*wireUp;
+                const scalar r = mag(rad);
+                const scalar h = Foam::cbrt(max(VpOx[celli], SMALL));
+                const bool exposed =
+                    (rad & trailOx) > 0
+                 && s >= oxideSkinZ0 && s <= oxideSkinZ1
+                 && r > wireRadius - 0.5*h
+                 && r < wireRadius + oxideSkinGap
+                 && (mag(gOx[celli])*h > 0.25 || aOx[celli] < 0.5);
+                if (exposed)
+                {
+                    ox[celli] += dt*sRate;
+                }
+                ox[celli] = min(max(ox[celli], scalar(0)), scalar(2));
+            }
+            oxideFilm.correctBoundaryConditions();
+        }
+
         const volVectorField gradAlpha(fvc::grad(alpha1));
         scalarField& muI = muOxide.primitiveFieldRef();
         scalarField& KI = Koxide.primitiveFieldRef();
@@ -15,9 +63,8 @@
         const scalarField& Vp = mesh.V();
         const scalarField& a = alpha1.primitiveField();
         const vectorField& gA = gradAlpha.primitiveField();
+        const scalarField& oxNow = oxideFilm.primitiveField();
         const vector trail(1, 0, 0);
-        const scalar muUse = oxideSkinStrength*oxideSkinMu0;
-        const scalar Kuse = oxideSkinStrength*oxideSkinK0;
 
         // gapMin / wMouth watch the nearest metal outside the wire, whether
         // or not that cell is inside the damped shell.
@@ -49,6 +96,18 @@
 
             if (!onTrail) continue;
             if (r < wireRadius - 0.5*h || r > wireRadius + oxideSkinGap) continue;
+
+            // Uniform skin: one strength on the whole shell. Growing skin:
+            // that strength is already in the coverage, so a cell scales
+            // with min(coverage, 1) and a barely covered cell is left free.
+            scalar fac = oxideSkinStrength;
+            if (oxideGrowth)
+            {
+                fac = min(max(oxNow[celli], scalar(0)), scalar(1));
+                if (fac < scalar(0.02)) continue;
+            }
+            const scalar muUse = fac*oxideSkinMu0;
+            const scalar Kuse = fac*oxideSkinK0;
 
             // Every cell in the shell: both metal faces and the gas between
             // them. A scalar Sp cannot damp only the radial component without
@@ -88,8 +147,17 @@
               : (wMouth < 0.020e-3 ? word("closed") : word("open"));
             Info<< "OxideSkin: cells " << nSkin
                 << " muCells " << nMu
-                << " strength " << oxideSkinStrength
-                << " gapMin "
+                << " strength " << oxideSkinStrength;
+            if (oxideGrowth)
+            {
+                const scalar oxMax = returnReduce
+                (
+                    max(oxideFilm.primitiveField()),
+                    maxOp<scalar>()
+                );
+                Info<< " oxMax " << oxMax;
+            }
+            Info<< " gapMin "
                 << (gapMin > 0.5 ? scalar(-1) : gapMin*1e3) << " mm"
                 << " wMouth "
                 << (wMouth > 0.5 ? scalar(-1) : wMouth*1e3) << " mm " << mouth

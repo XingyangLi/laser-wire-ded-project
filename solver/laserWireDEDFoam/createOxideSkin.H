@@ -24,8 +24,16 @@
 //
 // Strength is min(chamberOxygenPpm/ppmRef, 1) when Sahoo-Belton oxygen is
 // on, so the ppm sets the skin, and 0 ppm leaves it off. Enabled with the
-// oxygen model off, the skin is at full strength. Settle does not scale it:
-// the membrane is already there at t = 0.
+// oxygen model off, the skin is at full strength. Settle does not scale it.
+//
+// growth false (the default, and any dictionary that omits the key) puts
+// that strength on from t = 0, which holds whatever gas was painted.
+// growth true starts the coverage at 0. On the exposed trailing face
+// (gas, or a cell with |grad alpha| h > 0.25) it then rises at
+// (ppm/ppmRef) * (feed/feedRef) / tau and is carried downward with the
+// wire. K and mu in a cell are the full values times min(coverage, 1),
+// not times the ppm factor again. At the defaults (tau 0.5 ms, feedRef
+// 20 mm/s) a 300 ppm, 20 mm/s wire reaches full strength in 0.5 ms.
 //
 // Defaults (muSkin 20 Pa·s, Kskin 1e14 kg/m^3/s, gapThreshold 0.10 mm) are
 // the pair that held a painted 0.05 mm film on the 19 um neck. Kskin 1e12
@@ -47,6 +55,18 @@ const scalar oxideSkinPpmRef = max
     SMALL
 );
 const scalar oxideSkinAlphaGas = oxideSkinDict.getOrDefault<scalar>("alphaGas", 0.98);
+// Absent key: the uniform membrane, so an older case stays reproducible.
+const bool oxideGrowth = oxideSkinDict.getOrDefault<bool>("growth", false);
+const scalar oxideTau = max
+(
+    oxideSkinDict.getOrDefault<scalar>("tau", 5.0e-4),
+    SMALL
+);
+const scalar oxideFeedRef = max
+(
+    oxideSkinDict.getOrDefault<scalar>("feedRef", 0.020),
+    SMALL
+);
 const label oxideSkinInterval = oxideSkinDict.getOrDefault<label>
 (
     "interval",
@@ -106,6 +126,23 @@ volVectorField Ukeep
     U
 );
 
+// Local oxide coverage. Starts at 0. Only read when growth is true.
+// zeroGradient on the walls; processor patches stay coupled.
+volScalarField oxideFilm
+(
+    IOobject
+    (
+        "oxideFilm",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero),
+    "zeroGradient"
+);
+
 if (oxideSkinEnabled)
 {
     Info<< "OxideSkin: "
@@ -116,6 +153,13 @@ if (oxideSkinEnabled)
         << " gap " << oxideSkinGap << " m"
         << " z " << oxideSkinZ0 << " " << oxideSkinZ1
         << " ppmRef " << oxideSkinPpmRef
-        << " alphaGas " << oxideSkinAlphaGas
-        << nl << endl;
+        << " alphaGas " << oxideSkinAlphaGas;
+    if (oxideGrowth)
+    {
+        Info<< " growth on"
+            << " tau " << oxideTau << " s"
+            << " feedRef " << oxideFeedRef << " m/s"
+            << " coverage 0";
+    }
+    Info<< nl << endl;
 }

@@ -364,7 +364,9 @@ def build_parser():
            "on the alpha gradient, plus a damper of the radial velocity in "
            "the gas and the interface within --oxide-skin-gap of the wire. "
            "Strength is min(oxygen ppm / --oxide-skin-ppm-ref, 1) when "
-           "--oxygen-ppm is set, and full strength otherwise. Off by default")
+           "--oxygen-ppm is set, and full strength otherwise. The written "
+           "dictionary grows that coverage from zero with feed and oxygen. "
+           "Off by default")
     a("--oxide-skin-mu", type=float, default=20.0,
       help="oxide-skin interfacial viscosity [Pa.s] (default 20)")
     a("--oxide-skin-k", type=float, default=1.0e14,
@@ -1401,6 +1403,7 @@ divSchemes
     div(alphaPhi,fl) Gauss upwind;
     div(phi,meltHistory) Gauss upwind;
     div(alphaPhi,cWire) Gauss upwind;
+    div(phiOxide,oxideFilm) Gauss upwind;
     div(alphaPhi,cComp) Gauss vanLeer;   // multi-component tracers (bounded TVD: keeps strand fragments sharp)
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
 }
@@ -1889,6 +1892,8 @@ statistics
         return (
             "\n// Oxide membrane on the trailing wire face. Strength is\n"
             "// min(chamberOxygenPpm/ppmRef, 1) when oxygenDependent is true.\n"
+            "// growth: coverage starts at 0 and rises on the exposed trailing\n"
+            "// face at (ppm/ppmRef)*(feed/feedRef)/tau, then moves with the wire.\n"
             "oxideSkin\n"
             "{\n"
             "    enabled         true;\n"
@@ -1899,6 +1904,9 @@ statistics
             "    zMax            0.00155;\n"
             f"    ppmRef          {f(a.oxide_skin_ppm_ref)};\n"
             "    alphaGas        0.98;\n"
+            "    growth          true;\n"
+            f"    tau             {f(5.0e-4)};\n"
+            f"    feedRef         {f(0.020)};\n"
             "}\n"
         )
 
