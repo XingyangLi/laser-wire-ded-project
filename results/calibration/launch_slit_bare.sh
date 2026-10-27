@@ -106,10 +106,10 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
         echo "oxygen angle table must stay off" >&2
         exit 1
     fi
-    grep -q "thetaAdvancingWire 140" "$case/constant/meltProperties"
-    grep -q "thetaRecedingWire 40" "$case/constant/meltProperties"
-    grep -q "thetaAdvancingWireTrail 140" "$case/constant/meltProperties"
-    grep -q "thetaRecedingWireTrail 40" "$case/constant/meltProperties"
+    grep -E -q 'thetaAdvancingWire[[:space:]]+140;' "$case/constant/meltProperties"
+    grep -E -q 'thetaRecedingWire[[:space:]]+40;' "$case/constant/meltProperties"
+    grep -E -q 'thetaAdvancingWireTrail[[:space:]]+140;' "$case/constant/meltProperties"
+    grep -E -q 'thetaRecedingWireTrail[[:space:]]+40;' "$case/constant/meltProperties"
     if [ "$MODE" = "travel" ]; then
         if grep -q "oxideSkin" "$case/constant/meltProperties"; then
             echo "travel mode must not write an oxide skin" >&2
