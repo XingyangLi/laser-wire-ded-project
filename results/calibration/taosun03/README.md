@@ -539,4 +539,4 @@ Beams on at 18 ms, with recoil and Marangoni already on. The half-domain beam is
 
 `stability:` steady over those 4 ms. Depth moves 0.050 mm. Neck median speed stays 0.02 m/s. This is the full physics that opened a 0.36–0.50 mm column when the skin was off. With the skin, the slit holds.
 
-The full-domain run uses this recipe: 32 ranks, the cal08 track, 19 µm neck, wire feeding, beams on from the start.
+The full-track demo is that recipe on the cal08 domain (56 726 cells, 19 µm neck, wire feeding, beams on from the start). 32 ranks took about 10 s/step: the neck is a short x-slice, and the idle ranks spend the step in GAMG. An x-only split into 4 ranks is balanced (14 182 cells each) and takes about 0.3 s/step, with the mouth still 0.066 mm and open. Fields every 4 ms, through 20 ms.
