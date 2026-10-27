@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.patches import Rectangle
 from matplotlib.tri import Triangulation
 
 from slit_metric import fmt, load_alpha, measure
@@ -34,15 +35,21 @@ def draw_neck(ax, x, z, alpha, title):
     levels = np.linspace(0.0, 1.0, 17)
     levels[0] = -1e-3
     levels[-1] = 1.0 + 1e-3
-    ax.tricontourf(tri, pa, levels=levels, cmap="gray_r", vmin=0, vmax=1)
-    ax.tricontour(tri, pa, levels=[0.5], colors=["#d94801"], linewidths=0.9)
-    ax.plot([-WIRE_R, -WIRE_R], [0.40, 1.80], color="#2ca02c", lw=0.8, ls="--")
-    ax.plot([0.0, 0.0], [0.40, 1.80], color="#2ca02c", lw=0.6, ls=":")
+    # The cut-out wire has no cells. Fill that disk so it reads as metal
+    # next to the radiograph; the VOF contour covers it when the cells exist.
+    ax.add_patch(Rectangle((-WIRE_R, 0.40), WIRE_R - 0.05, 1.40,
+                           facecolor="#1a1a1a", edgecolor="none", zorder=1))
+    filled = ax.tricontourf(tri, pa, levels=levels, cmap="gray_r", vmin=0, vmax=1)
+    filled.set_zorder(2)
+    lines = ax.tricontour(tri, pa, levels=[0.5], colors=["#d94801"], linewidths=0.9)
+    lines.set_zorder(3)
+    ax.plot([-WIRE_R, -WIRE_R], [0.40, 1.80], color="#2ca02c", lw=0.8, ls="--", zorder=4)
+    ax.plot([0.0, 0.0], [0.40, 1.80], color="#2ca02c", lw=0.6, ls=":", zorder=4)
     # Target slit: 0.05 mm wide, z = 0.75..1.20, on the trailing face.
     ax.plot(
         [-WIRE_R - 0.05, -WIRE_R - 0.05],
         [0.75, 1.20],
-        color="#1f77b4", lw=1.0, ls=":",
+        color="#1f77b4", lw=1.0, ls=":", zorder=4,
     )
     ax.set_aspect("equal")
     ax.set_xlim(-1.40, -0.05)
