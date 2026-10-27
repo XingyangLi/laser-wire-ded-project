@@ -352,6 +352,21 @@ def build_parser():
            "trailing-wire hysteresis windows follow oxygen ppm. The plate "
            "window stays at --theta-receding / --theta-advancing, so a fused "
            "bead is not replaced by the placeholder plate angles")
+    a("--oxide-skin", action="store_true",
+      help="oxide membrane on the trailing wire face: interfacial viscosity "
+           "on the alpha gradient, plus a damper of the radial velocity in "
+           "the gas and the interface within --oxide-skin-gap of the wire. "
+           "Strength is min(oxygen ppm / --oxide-skin-ppm-ref, 1) when "
+           "--oxygen-ppm is set, and full strength otherwise. Off by default")
+    a("--oxide-skin-mu", type=float, default=200.0,
+      help="oxide-skin interfacial viscosity [Pa.s] (default 200)")
+    a("--oxide-skin-k", type=float, default=1.0e12,
+      help="oxide-skin radial damper [kg/m^3/s] (default 1e12)")
+    a("--oxide-skin-gap", type=float, default=0.10e-3,
+      help="oxide skin acts within this distance of the wire face [m] "
+           "(default 0.10 mm)")
+    a("--oxide-skin-ppm-ref", type=float, default=300.0,
+      help="oxygen ppm that gives full oxide-skin strength (default 300)")
     a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
       help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
            "then restore it. A brief notch perturbation. Example: 0.48,0.56,0.25")
@@ -616,6 +631,13 @@ class Case:
                 "--neck-refine is the trailing-face box; do not combine it "
                 "with --wire-refine"
             )
+        if a.oxide_skin_mu < 0 or a.oxide_skin_k < 0 or a.oxide_skin_gap <= 0:
+            raise SystemExit(
+                "--oxide-skin-mu and --oxide-skin-k must be >= 0 "
+                "and --oxide-skin-gap must be > 0"
+            )
+        if a.oxide_skin_ppm_ref <= 0:
+            raise SystemExit("--oxide-skin-ppm-ref must be > 0")
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
         # weave: the laser focus and the wire axis travel a triangular zigzag in y.
@@ -1782,7 +1804,7 @@ statistics
     beadProbeOffset {f(max(3e-4, 3*self.dx))};
     beadHeightThreshold {f(0.2*self.dx)};
 }}
-{self.contact_line_block()}{self.porosity_block()}""" + FOOT
+{self.oxide_skin_block()}{self.contact_line_block()}{self.porosity_block()}""" + FOOT
 
     def oxygen_surface_block(self):
         """Sahoo-Belton coefficients. Empty when --oxygen-ppm is omitted."""
@@ -1800,6 +1822,27 @@ statistics
             "    oxygenK1         0.0138;       // 1/wt%\n"
             "    oxygenDeltaH0    -146300;      // J/mol\n"
             "    oxygenR          8.314462618;  // J/mol/K\n"
+        )
+
+    def oxide_skin_block(self):
+        """Trailing-face oxide membrane. Empty unless --oxide-skin."""
+        a = self.a
+        if not getattr(a, "oxide_skin", False):
+            return ""
+        return (
+            "\n// Oxide membrane on the trailing wire face. Strength is\n"
+            "// min(chamberOxygenPpm/ppmRef, 1) when oxygenDependent is true.\n"
+            "oxideSkin\n"
+            "{\n"
+            "    enabled         true;\n"
+            f"    muSkin          {f(a.oxide_skin_mu)};\n"
+            f"    Kskin           {f(a.oxide_skin_k)};\n"
+            f"    gapThreshold    {f(a.oxide_skin_gap)};\n"
+            "    zMin            0.0003;\n"
+            "    zMax            0.00155;\n"
+            f"    ppmRef          {f(a.oxide_skin_ppm_ref)};\n"
+            "    alphaGas        0.98;\n"
+            "}\n"
         )
 
     def contact_line_block(self):

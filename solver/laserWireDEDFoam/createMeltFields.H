@@ -377,5 +377,6 @@ boolList inWireZone(mesh.nCells(), false);
 #include "createSurfaceTension.H"
 #include "createContactLine.H"
 #include "createPorosity.H"
+#include "createOxideSkin.H"
 
 mesh.setFluxRequired(T.name());

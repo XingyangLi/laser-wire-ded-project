@@ -687,6 +687,12 @@ with `T` in the adsorption term also evaluated at `max(T, T_m)`. `sigma_m`, `A` 
 
 `--oxygen-wire-angles` keeps the plate window at the scalar angles (so a fused bead is not replaced by that placeholder) and drives the wire window, and the trailing-wire window, from a 7-column table. Higher ppm widens the trailing window: the oxide film on the +x face is what the sector stands in for. `--wire-preheat` sets the unmelted wire's initial temperature and the temperature of the wire inlet, without heating the plate. `--neck-refine N` halves the trailing face N times, in x, y and z, only from 0.45 mm to 1.55 mm. Refining x and y up the whole column left flat cells on the wire and collapsed the gas Courant number. On the 150 µm mesh, N = 3 is about 19 µm, which puts two cells across a 0.05 mm slit. `WireSlit:` / `postProcessing/wireSlit/wireSlit.dat` is that film: gas within 0.10 mm of the wire radius, |y| < 0.15 mm, on the trailing side. Depth is centre-to-centre; the target is about 0.4 mm deep and 0.05 mm wide, open at the bead surface.
 
+### Oxide skin (`--oxide-skin`)
+
+Off unless `oxideSkin { enabled true; }`. This is a membrane on the trailing face of the wire (+x, between `zMin` and `zMax`, within `gapThreshold` of the wire radius), separate from the contact-angle table. Oxygen sets the strength: `min(chamberOxygenPpm / ppmRef, 1)` when `oxygenDependent` is true, and full strength when the skin is enabled without that model. At 0 ppm the skin is off. The settle window does not scale it.
+
+Two terms enter the momentum equation. Cells with `|grad alpha| h > 0.25` carry an implicit interfacial viscosity `muSkin` (default 200 Pa·s). Every cell in the shell carries a damper `Kskin` (default 1×10¹² kg/m³/s). The target velocity is the tangential projection `U − (U·n)n`, so the radial part is removed. A scalar implicit coefficient cannot damp one direction alone, and at this `Kskin` the tangential part does not drift either: the shell stays put. Unmelted wire still follows the feed, because the mushy sink there is larger. A gap that opens past `gapThreshold` (default 0.10 mm) is no longer inside the shell. The log line is `OxideSkin:`.
+
 A pinch-off of the wake is an increase of the entrapment count (`PinchOff:`). The wire cavity itself becoming closed is `CavityClosure:`. Neither is resolved on the 150 µm mesh; `--wire-refine 3 --wire-refine-z` is the optional ~19 µm box, and it is a much longer run (README).
 
 ## Local GUI (Windows)
