@@ -509,4 +509,14 @@ The slab is the 3 mm neck box (24 182 cells, 19 µm in the neck). Four ranks: on
 
 The minimum gap anywhere in the shell falls to 0.0013 mm by 4 ms and stays there. That pinch is off the centre plane. The centre-plane film is the one in the table.
 
-Recoil is the next stage, then Marangoni, then the beams, 6 ms each. The pool is only about 2100 K with the beams off, so the recoil pressure is not the column-opening case until the beams are on. The full-domain run stays parked until one of those stages keeps the slit.
+Recoil on, beams still off, pool about 2100 K (not the boiling cap that opened the column):
+
+| time | width | depth | z | state |
+| --- | --- | --- | --- | --- |
+| 8 ms | 0.060 mm | 0.800 mm | 0.45–1.25 mm | open |
+| 10 ms | 0.060 mm | 0.775 mm | 0.45–1.23 mm | open |
+| 12 ms | 0.060 mm | 0.725 mm | 0.45–1.18 mm | open |
+
+`stability:` steady. Width fixed. Depth falls 0.075 mm, just inside the 0.08 mm limit. The mouth in the solver log stays 0.066 mm. Recoil at this temperature does not open the column.
+
+Marangoni is the next stage (recoil left on, beams still off), then the beams. The full-domain run stays parked until a stage keeps the slit with the beams on.
