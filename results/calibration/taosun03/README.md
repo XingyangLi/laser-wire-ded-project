@@ -552,4 +552,17 @@ The full-domain run that keeps the slit has the laser off and recoil off. Marang
 | 4 ms | 0.060 mm | 0.875 mm | 0.45–1.33 mm | open |
 | 8 ms | 0.060 mm | 0.900 mm | 0.45–1.35 mm | open |
 
-`stability:` steady over those 4 ms. Width does not move. Depth moves 0.025 mm. The solver mouth stays 0.066 mm. The off-plane minimum gap is 0.00088 mm. The clip is `results/calibration/taosun03/skincold_slit_demo.mp4`: radiograph, centre plane with the trailing side on the left, zoomed neck, and the metal surface, at 0, 4 and 8 ms. The neck crop in the clip measures 0.72 mm by 0.060 mm. The wire feed is on, 0.16 mm of wire in 8 ms. The bead is the painted pool. The laser that would grow it, and recoil, are off.
+`stability:` steady over those 4 ms. Width does not move. Depth moves 0.025 mm. The solver mouth stays 0.066 mm. The off-plane minimum gap is 0.00088 mm. The wire feed is on. The bead is the painted pool, because the laser is off.
+
+Both full-track cases are being rewritten from that painted field with a volume write every 0.1 ms through 20 ms, so the replacement clips are one frame per write at 20 fps. `skincold` keeps the laser and recoil off. `skinfull` keeps both on.
+
+On the slab, with the beams on from t = 0 and the pool on the 3490 K clip, the 2×10⁵ Pa recoil cap is what removes the film. The same slab with the cap lowered, or with recoil switched off only inside the oxide shell, keeps it. Centre plane, 19 µm neck, skin on, Marangoni on:
+
+| case | recoil | 2 ms | 4 ms | 6 ms | 2–6 ms |
+| --- | --- | --- | --- | --- | --- |
+| skinR2e5 | cap 2×10⁵ Pa, everywhere | 0.060 × 0.825 mm | 0.060 × 0.150 mm | 0.060 × 0.175 mm | no steady film |
+| skinR5e4 | cap 5×10⁴ Pa | 0.060 × 0.825 mm | 0.060 × 0.825 mm | 0.060 × 0.825 mm | steady |
+| skinR1e4 | cap 1×10⁴ Pa | 0.060 × 0.825 mm | 0.060 × 0.825 mm | 0.060 × 0.800 mm | steady |
+| skinRshell | cap 2×10⁵ Pa, off inside the shell | 0.060 × 0.825 mm | 0.060 × 0.825 mm | 0.060 × 0.825 mm | steady |
+
+All four stay open. The 2×10⁵ Pa run's depth falls below 0.25 mm by 4 ms (z 1.13–1.28 mm). The 5×10⁴ Pa cap and the shell switch leave the depth at 0.825 mm. The 1×10⁴ Pa cap shortens it by 0.025 mm and is still inside the steady limit.
