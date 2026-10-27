@@ -117,21 +117,8 @@ print(names[-1] if names else "")
 PY
 }
 
-main() {
-    prepare_case
-    grep -q "trailDrag" "$CASE/constant/meltProperties"
-    grep -q "enabled         false;" "$CASE/constant/meltProperties"
-    tao_source_foam
-    tao_build
-    "$PY" "$DIR/score_film.py" "$CASE" "$T0" || true
-    hold_slots "$NP"
-    (
-        cd "$CASE"
-        exec nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" \
-            laserWireDEDFoam -parallel > "$CASE/log.laserWireDEDFoam" 2>&1
-    ) &
-    local pid=$!
-    echo "PID drag $pid"
+guard() {
+    local pid="$1"
     local scored="" gated=0
     while kill -0 "$pid" 2>/dev/null; do
         sleep 20
@@ -179,11 +166,13 @@ PY
             break
         }
         if (( gated == 0 )); then
-            python3 - "$latest" "$TGATE" <<'PY'
+            # A time still short of the gate exits 1. That must not trip set -e.
+            local gate_rc=0
+            python3 - "$latest" "$TGATE" <<'PY' || gate_rc=$?
 import sys
 raise SystemExit(0 if float(sys.argv[1]) + 1e-9 >= float(sys.argv[2]) else 1)
 PY
-            if (( $? == 0 )); then
+            if (( gate_rc == 0 )); then
                 gated=1
                 echo "GATE 2 ms passed t=$latest dt=$dt"
             fi
@@ -204,8 +193,35 @@ PY
         grep -E 'TrailDrag:' "$CASE/log.laserWireDEDFoam" | tail -1 || true
     done
     wait "$pid" || true
+}
+
+main() {
+    prepare_case
+    grep -q "trailDrag" "$CASE/constant/meltProperties"
+    grep -q "enabled         false;" "$CASE/constant/meltProperties"
+    tao_source_foam
+    tao_build
+    "$PY" "$DIR/score_film.py" "$CASE" "$T0" || true
+    hold_slots "$NP"
+    (
+        cd "$CASE"
+        exec nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" \
+            laserWireDEDFoam -parallel > "$CASE/log.laserWireDEDFoam" 2>&1
+    ) &
+    local pid=$!
+    echo "PID drag $pid"
+    guard "$pid"
     drop_slots
     echo "DRAG_DONE"
 }
 
-main "$@"
+# --watch PID reattaches the abort checks to a solver the launcher already
+# started, and holds its slots until that process exits.
+if [[ "${1:-}" == "--watch" ]]; then
+    hold_slots "$NP"
+    guard "$2"
+    drop_slots
+    echo "DRAG_DONE"
+else
+    main "$@"
+fi
