@@ -27,17 +27,17 @@
 // oxygen model off, the skin is at full strength. Settle does not scale it:
 // the membrane is already there at t = 0.
 //
-// Defaults (muSkin 200 Pa·s, Kskin 1e12 kg/m^3/s, gapThreshold 0.10 mm) are
-// sized for a 0.05 mm film on a ~20 um mesh. The capillary force density
-// 2*sigma/w/dx is about 2e9 N/m^3, and a closing speed of 0.01 mm in 4 ms
-// needs K of order 1e12. The viscosity is implicit, so it does not set the
-// time step; the capillary limit is unchanged.
+// Defaults (muSkin 20 Pa·s, Kskin 1e14 kg/m^3/s, gapThreshold 0.10 mm) are
+// the pair that held a painted 0.05 mm film on the 19 um neck. Kskin 1e12
+// lets the crown open by 4 ms, and 1e13 still lets the lip recede. The
+// viscosity is implicit. At 200 Pa·s the step collapsed under spurious
+// Courant; 20 Pa·s leaves the capillary limit in charge.
 // ---------------------------------------------------------------------------
 
 const dictionary oxideSkinDict(meltProperties.subOrEmptyDict("oxideSkin"));
 const bool oxideSkinEnabled = oxideSkinDict.getOrDefault<bool>("enabled", false);
-const scalar oxideSkinMu0 = oxideSkinDict.getOrDefault<scalar>("muSkin", 200.0);
-const scalar oxideSkinK0 = oxideSkinDict.getOrDefault<scalar>("Kskin", 1.0e12);
+const scalar oxideSkinMu0 = oxideSkinDict.getOrDefault<scalar>("muSkin", 20.0);
+const scalar oxideSkinK0 = oxideSkinDict.getOrDefault<scalar>("Kskin", 1.0e14);
 const scalar oxideSkinGap = oxideSkinDict.getOrDefault<scalar>("gapThreshold", 0.10e-3);
 const scalar oxideSkinZ0 = oxideSkinDict.getOrDefault<scalar>("zMin", 0.30e-3);
 const scalar oxideSkinZ1 = oxideSkinDict.getOrDefault<scalar>("zMax", 1.55e-3);

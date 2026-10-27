@@ -358,10 +358,10 @@ def build_parser():
            "the gas and the interface within --oxide-skin-gap of the wire. "
            "Strength is min(oxygen ppm / --oxide-skin-ppm-ref, 1) when "
            "--oxygen-ppm is set, and full strength otherwise. Off by default")
-    a("--oxide-skin-mu", type=float, default=200.0,
-      help="oxide-skin interfacial viscosity [Pa.s] (default 200)")
-    a("--oxide-skin-k", type=float, default=1.0e12,
-      help="oxide-skin radial damper [kg/m^3/s] (default 1e12)")
+    a("--oxide-skin-mu", type=float, default=20.0,
+      help="oxide-skin interfacial viscosity [Pa.s] (default 20)")
+    a("--oxide-skin-k", type=float, default=1.0e14,
+      help="oxide-skin radial damper [kg/m^3/s] (default 1e14)")
     a("--oxide-skin-gap", type=float, default=0.10e-3,
       help="oxide skin acts within this distance of the wire face [m] "
            "(default 0.10 mm)")
