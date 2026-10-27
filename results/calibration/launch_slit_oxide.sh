@@ -111,7 +111,7 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
     foamDictionary -entry coeffs.n -set "(6 2 1)" system/decomposeParDict > /dev/null
     decomposePar -force > log.decomposePar 2>&1
     touch case.foam
-    nice -n 10 mpirun --use-hwthread-cpus -np "$NP" laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
+    nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
     python3 "$ROOT/results/calibration/slit_metric.py" --case "$case" --tag "$TAG" || true
     echo "OXIDE_DONE ${TAG}"
 } > "$log" 2>&1
