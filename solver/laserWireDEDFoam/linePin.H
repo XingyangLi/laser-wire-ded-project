@@ -1,5 +1,9 @@
 // Imposed trailing contact. See createLinePin.H. Runs after contactLine.H
 // has zeroed Kcontact. Off leaves alpha and the momentum equation unchanged.
+//
+// Liquid taken out of the shell is passed to the next cell outward, and
+// liquid put into the shell is taken from that cell. The pin moves the
+// interface. It does not delete the coating.
 {
     if (linePinEnabled)
     {
@@ -43,7 +47,33 @@
         );
         const scalar Khold = sHold*linePinK;
         scalar nGas = 0, nMet = 0;
+        const labelListList& cellCells = mesh.cellCells();
 
+        // Radial neighbour, further from the wire, on the trailing side.
+        auto outerCell = [&](const label celli, const scalar r0, const scalar z0c, const scalar hCell) -> label
+        {
+            label best = -1;
+            scalar bestR = GREAT;
+            for (const label nei : cellCells[celli])
+            {
+                const vector dn = C[nei] - wireOrigin;
+                const scalar sN = dn & wireUp;
+                const vector rn = dn - sN*wireUp;
+                if (rn.x() <= 0) continue;
+                const scalar r = mag(rn);
+                if (r <= r0 + 1e-8) continue;
+                if (mag(C[nei].z() - z0c) > 2.5*hCell) continue;
+                if (r < bestR)
+                {
+                    bestR = r;
+                    best = nei;
+                }
+            }
+            return best;
+        };
+
+        boolList inShell(mesh.nCells(), false);
+        DynamicList<label> shellCells(64);
         forAll(alpha, celli)
         {
             const vector d = C[celli] - wireOrigin;
@@ -53,20 +83,59 @@
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
             if (r <= wireRadius || r > wireRadius + linePinNCells*h) continue;
-
             const scalar z = C[celli].z();
-            // Shell from just below the moving line up to the original top.
+            if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;
+            if (z < 0.15e-3) continue;
+            inShell[celli] = true;
+            shellCells.append(celli);
+        }
+
+        for (const label celli : shellCells)
+        {
+            const vector d = C[celli] - wireOrigin;
+            const scalar sAx = d & wireUp;
+            const vector rad = d - sAx*wireUp;
+            const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
+            const scalar r = mag(rad);
+            const scalar z = C[celli].z();
             // Above the line the target is gas. Below it the target is metal,
             // so the attachment stays on the wire. Outside this z window the
             // pool is untouched.
-            if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;
-            if (z < 0.15e-3) continue;
-
             const scalar target = (z > zLine) ? scalar(0) : scalar(1);
             if (fac > 0)
             {
-                alpha[celli] += fac*(target - alpha[celli]);
-                alpha[celli] = min(max(alpha[celli], scalar(0)), scalar(1));
+                const scalar dAlpha = fac*(target - alpha[celli]);
+                alpha[celli] = min(max(alpha[celli] + dAlpha, scalar(0)), scalar(1));
+                // give > 0: liquid left the shell and must land outside it.
+                scalar give = -dAlpha*Vc[celli];
+                label cur = celli;
+                scalar rCur = r;
+                for (label step = 0; step < 4 && mag(give) > 1e-18; ++step)
+                {
+                    const label nei = outerCell(cur, rCur, z, h);
+                    if (nei < 0) break;
+                    const vector dn = C[nei] - wireOrigin;
+                    const vector rn = dn - (dn & wireUp)*wireUp;
+                    cur = nei;
+                    rCur = mag(rn);
+                    if (inShell[nei]) continue;
+                    if (give > 0)
+                    {
+                        const scalar room = max((1 - alpha[nei])*Vc[nei], scalar(0));
+                        if (room <= 1e-18) continue;
+                        const scalar take = min(give, room);
+                        alpha[nei] = min(alpha[nei] + take/Vc[nei], scalar(1));
+                        give -= take;
+                    }
+                    else
+                    {
+                        const scalar avail = max(alpha[nei]*Vc[nei], scalar(0));
+                        const scalar take = min(-give, avail);
+                        alpha[nei] = max(alpha[nei] - take/Vc[nei], scalar(0));
+                        give += take;
+                        break;
+                    }
+                }
                 Uc[celli] += fac*(wireFeedVelocity - Uc[celli]);
             }
             if (Khold > 0)

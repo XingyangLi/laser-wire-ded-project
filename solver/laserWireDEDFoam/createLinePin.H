@@ -4,7 +4,9 @@
 // wetted top plus the feed displacement. In a shell one to three cells
 // thick on the trailing face, alpha is restored toward gas above that
 // height and metal below it, and the velocity is restored toward the feed.
-// Cells outside the shell are left alone, so the pool surface is free.
+// Liquid moved out of a shell cell is given to the next cell outward, so
+// the coating is displaced rather than deleted. Cells outside that
+// exchange are left alone, so the pool surface is free.
 // The shell is the imposed pin. The gap outside it is the free surface.
 //
 // ppm sets the hold. s = min(ppm/ppmRef, 1) is the fraction of the error
