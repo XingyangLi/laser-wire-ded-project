@@ -46,7 +46,7 @@ prepare_mesh() {
         --end-time 0.022 --write-interval 0.0001 --np 1 --laser-ramp 1e-4 \
         --max-co 0.4 --capillary-dt-factor 1 \
         --neck-refine 3 \
-        --neck-x0 -0.20e-3 --neck-x1 1.40e-3 --neck-y-out 0.55e-3 \
+        --neck-x0=-0.20e-3 --neck-x1 1.40e-3 --neck-y-out 0.55e-3 \
         --neck-z0 0.30e-3 --neck-z1 1.70e-3 \
         --c-alpha-neck 4 \
         --oxygen-ppm 300 --oxygen-sigma-only \
