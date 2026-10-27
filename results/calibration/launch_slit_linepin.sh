@@ -1,8 +1,9 @@
 #!/bin/bash
 # Bare wetted neck. The trailing contact is an imposed material point of
-# the wire: it moves at the feed, inside a 2-cell shell. The pool outside
-# that shell is free. ppm sets the hold fraction s = min(ppm/300, 1).
-# The wall angle stays 40/140 at every ppm.
+# the wire: it moves at the feed, inside a 1-cell shell. The neck coating
+# on the upper trailing face is about two cells, so the shell is one cell
+# and the next cell is the free pool. ppm sets the hold fraction
+# s = min(ppm/300, 1). The wall angle stays 40/140 at every ppm.
 #
 #   LINE_TAG    case tag (default cal79)
 #   LINE_PPM    oxygen ppm (default 300)
