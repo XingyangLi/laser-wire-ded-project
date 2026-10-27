@@ -85,6 +85,8 @@ Description
 #include "fvOptions.H"
 #include "CorrectPhi.H"
 #include "fvcSmooth.H"
+#include "pinnedAlphaContactAngleFvPatchScalarField.H"
+#include "partialSlipFvPatchFields.H"
 #include <map>
 #include <algorithm>
 #include <fstream>
@@ -204,6 +206,7 @@ int main(int argc, char *argv[])
             #include "recoilPressure.H"
             #include "gasCavity.H"
             #include "contactLine.H"
+            #include "wireWallDrag.H"
             #include "porosity.H"
 
             if (pimple.frozenFlow())

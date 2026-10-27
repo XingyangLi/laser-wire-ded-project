@@ -10,8 +10,10 @@
       + turbulence->divDevRhoReff(rho, U)
         // Carman-Kozeny sink -Kmushy (U - Usolid), plus the optional
         // contact-line pin -Kcontact (U - Ucontact). Ucontact equals Usolid
-        // on the substrate line. On the wire it is the head frame (0) or
-        // the feed velocity, see contactLine.H. Kcontact = 0 leaves this
+        // on the substrate line. On the internal wire it is the head frame
+        // (0) or the feed velocity, see contactLine.H. On the true wire
+        // wall, wireWallDrag.H sets it to the feed while the trailing line
+        // sits inside the hysteresis window. Kcontact = 0 leaves this
         // identical to -Kmushy (U - Usolid).
         // Oxide skin (default off): -laplacian(muOxide, U) is an implicit
         // interfacial viscosity, and -Koxide (U - Ukeep) damps only the

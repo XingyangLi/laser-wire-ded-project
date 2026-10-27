@@ -12,6 +12,12 @@ move, so movingWallVelocity would be zero. T is near the 316L liquidus on
 the lower end and cold above the slit. p_rgh is fixedFluxPressure, which is
 what a gradient contact-angle condition needs. Other fields are zeroGradient.
 
+--pin is the drag case. alpha.metal is pinnedAlphaContactAngle (thetaA /
+thetaR). U is partialSlip with refValue equal to the feed; the solver sets
+valueFraction to no-slip on the trailing contact line. The lower wall is
+1850 K up to z = 1.6 mm so the meniscus stays liquid. A wireDrag block is
+written into meltProperties.
+
 An empty wireInlet (every inlet face belonged to a removed cell) is dropped.
 """
 import argparse
@@ -24,6 +30,9 @@ Z_HI = 1.0e-2
 # Lower end covers the painted slit (tip 0.75 mm, mouth 1.20 mm).
 Z_HOT = 1.35e-3
 T_HOT = 1700
+# Drag cases: the contact has to stay liquid while the line is carried down.
+Z_HOT_PIN = 1.6e-3
+T_HOT_PIN = 1850
 T_COLD = 600
 FEED = (0.0, 0.0, -0.02)
 
@@ -170,26 +179,45 @@ def drop_empty_inlet(text):
     return text, True
 
 
-def wall_block(field, theta):
-    ux, uy, uz = FEED
+def wall_block(field, theta, feed, pin, theta_a, theta_r):
+    uz = -abs(feed)
+    z_hot = Z_HOT_PIN if pin else Z_HOT
+    t_hot = T_HOT_PIN if pin else T_HOT
     if field == "alpha.metal":
-        body = (
-            f"        type            constantAlphaContactAngle;\n"
-            f"        theta0          {theta:g};\n"
-            f"        limit           gradient;\n"
-            f"        gradient        uniform 0;\n"
-            f"        value           uniform 0;"
-        )
+        if pin:
+            body = (
+                f"        type            pinnedAlphaContactAngle;\n"
+                f"        thetaA          {theta_a:.8g};\n"
+                f"        thetaR          {theta_r:.8g};\n"
+                f"        limit           gradient;\n"
+                f"        gradient        uniform 0;\n"
+                f"        value           uniform 0;"
+            )
+        else:
+            body = (
+                f"        type            constantAlphaContactAngle;\n"
+                f"        theta0          {theta:g};\n"
+                f"        limit           gradient;\n"
+                f"        gradient        uniform 0;\n"
+                f"        value           uniform 0;"
+            )
     elif field == "U":
-        body = (
-            f"        type            fixedValue;\n"
-            f"        value           uniform ({ux:.8g} {uy:.8g} {uz:.8g});"
-        )
+        if pin:
+            body = (
+                f"        type            partialSlip;\n"
+                f"        refValue        uniform (0 0 {uz:.8g});\n"
+                f"        valueFraction   uniform 0;"
+            )
+        else:
+            body = (
+                f"        type            fixedValue;\n"
+                f"        value           uniform (0 0 {uz:.8g});"
+            )
     elif field == "T":
         body = (
             f"        type            exprFixedValue;\n"
-            f"        value           uniform {T_HOT:g};\n"
-            f'        valueExpr       "(pos().z() < {Z_HOT:.8g}) ? {T_HOT:g} : {T_COLD:g}";'
+            f"        value           uniform {t_hot:g};\n"
+            f'        valueExpr       "(pos().z() < {z_hot:.8g}) ? {t_hot:g} : {T_COLD:g}";'
         )
     elif field == "p_rgh":
         body = (
@@ -201,7 +229,7 @@ def wall_block(field, theta):
     return f"    wireWall\n    {{\n{body}\n    }}"
 
 
-def replace_field_block(tail, field, theta):
+def replace_field_block(tail, field, theta, feed, pin, theta_a, theta_r):
     span = find_block(tail, "wireWall")
     if span is None:
         raise SystemExit(f"{field}: no wireWall boundary")
@@ -211,7 +239,34 @@ def replace_field_block(tail, field, theta):
         raise SystemExit(
             f"{field}: wireWall value is a binary list; not rewriting it"
         )
-    return tail[:start] + wall_block(field, theta) + tail[end:]
+    return tail[:start] + wall_block(field, theta, feed, pin, theta_a, theta_r) + tail[end:]
+
+
+def write_wire_drag(case, theta_a, theta_r):
+    path = Path(case) / "constant/meltProperties"
+    text = read_text(path)
+    span = find_block(text, "wireDrag")
+    if span is not None:
+        text = text[:span[0]] + text[span[1]:]
+    block = (
+        "\nwireDrag\n"
+        "{\n"
+        "    enabled         true;\n"
+        f"    thetaReceding   {theta_r:.8g};\n"
+        f"    thetaAdvancing  {theta_a:.8g};\n"
+        "    Kpin            1e12;\n"
+        "    slipFar         0.001;\n"
+        "    slipNear        5e-5;\n"
+        "    gradMin         0.25;\n"
+        "}\n"
+    )
+    banner = text.rfind("// ************************************************************************* //")
+    if banner < 0:
+        text = text.rstrip() + "\n" + block
+    else:
+        text = text[:banner] + block + "\n" + text[banner:]
+    path.write_text(text)
+    print(f"wireDrag thetaR {theta_r:.8g} thetaA {theta_a:.8g}")
 
 
 def field_files(case):
@@ -228,7 +283,7 @@ def field_files(case):
     return files
 
 
-def apply_bcs(case, theta):
+def apply_bcs(case, theta, feed, pin, theta_a, theta_r):
     case = Path(case)
     boundary = case / "constant/polyMesh/boundary"
     text = read_text(boundary)
@@ -248,18 +303,25 @@ def apply_bcs(case, theta):
     if dropped:
         print("dropped empty wireInlet")
     boundary.write_text(text)
-    print(f"wireWall type wall, {n_wall} faces, theta0 {theta:g} deg")
+    if pin:
+        print(
+            f"wireWall type wall, {n_wall} faces, "
+            f"pinned {theta_r:.8g}/{theta_a:.8g} deg, feed {feed:.8g}"
+        )
+        write_wire_drag(case, theta_a, theta_r)
+    else:
+        print(f"wireWall type wall, {n_wall} faces, theta0 {theta:g} deg")
 
     for path in field_files(case):
         head, tail = split_boundary(load_field(path), path)
         if dropped and "wireInlet" in tail:
             tail, _ = drop_block(tail, "wireInlet")
-        tail = replace_field_block(tail, path.name, theta)
+        tail = replace_field_block(tail, path.name, theta, feed, pin, theta_a, theta_r)
         save_field(path, head + tail)
         print(f"  {path.name}: wireWall set")
 
 
-def check(case, theta):
+def check(case, theta, feed, pin, theta_a, theta_r):
     case = Path(case)
     boundary = read_text(case / "constant/polyMesh/boundary")
     span = find_block(boundary, "wireWall")
@@ -286,43 +348,85 @@ def check(case, theta):
         return tail[span[0]:span[1]]
 
     ab = wall_body("alpha.metal")
-    if "constantAlphaContactAngle" not in ab:
-        raise SystemExit("alpha.metal wireWall is not constantAlphaContactAngle")
-    if not re.search(rf"theta0\s+{theta:g}\s*;", ab):
-        raise SystemExit(f"theta0 is not {theta:g} in alpha.metal")
+    ub = wall_body("U")
+    tb = wall_body("T")
+    uz = f"{-abs(feed):.8g}"
+    if pin:
+        if "pinnedAlphaContactAngle" not in ab:
+            raise SystemExit("alpha.metal wireWall is not pinnedAlphaContactAngle")
+        if not re.search(rf"thetaA\s+{theta_a:.8g}\s*;", ab):
+            raise SystemExit(f"thetaA is not {theta_a:.8g} in alpha.metal")
+        if not re.search(rf"thetaR\s+{theta_r:.8g}\s*;", ab):
+            raise SystemExit(f"thetaR is not {theta_r:.8g} in alpha.metal")
+        if "partialSlip" not in ub or uz not in ub:
+            raise SystemExit(f"U wireWall is not partialSlip at the feed: {ub}")
+        if "exprFixedValue" not in tb or "1850" not in tb:
+            raise SystemExit("T wireWall is not the liquid hot zone")
+        drag = read_text(case / "constant/meltProperties")
+        drag_span = find_block(drag, "wireDrag")
+        if drag_span is None:
+            raise SystemExit("meltProperties has no wireDrag block")
+        drag_body = drag[drag_span[0]:drag_span[1]]
+        if not re.search(r"enabled\s+true;", drag_body):
+            raise SystemExit("wireDrag is not enabled")
+        if not re.search(rf"thetaReceding\s+{theta_r:.8g}\s*;", drag_body):
+            raise SystemExit("wireDrag thetaReceding does not match the wall")
+        if not re.search(rf"thetaAdvancing\s+{theta_a:.8g}\s*;", drag_body):
+            raise SystemExit("wireDrag thetaAdvancing does not match the wall")
+    else:
+        if "constantAlphaContactAngle" not in ab:
+            raise SystemExit("alpha.metal wireWall is not constantAlphaContactAngle")
+        if not re.search(rf"theta0\s+{theta:g}\s*;", ab):
+            raise SystemExit(f"theta0 is not {theta:g} in alpha.metal")
+        if "fixedValue" not in ub or uz not in ub:
+            raise SystemExit(f"U wireWall is not the feed velocity: {ub}")
+        if "exprFixedValue" not in tb or "1700" not in tb:
+            raise SystemExit("T wireWall is not the lower-end temperature")
     if "limit" not in ab or "gradient" not in ab:
         raise SystemExit("contact-angle limit is missing")
-
-    ub = wall_body("U")
-    if "fixedValue" not in ub or "-0.02" not in ub:
-        raise SystemExit(f"U wireWall is not the feed velocity: {ub}")
-
-    tb = wall_body("T")
-    if "exprFixedValue" not in tb or "1700" not in tb:
-        raise SystemExit("T wireWall is not the lower-end temperature")
 
     pb = wall_body("p_rgh")
     if "fixedFluxPressure" not in pb:
         raise SystemExit("p_rgh wireWall is not fixedFluxPressure")
-    print(f"check ok: wall {n_wall} faces, theta0 {theta:g}")
+    if pin:
+        print(
+            f"check ok: wall {n_wall} faces, "
+            f"pinned {theta_r:.8g}/{theta_a:.8g}, feed {uz}"
+        )
+    else:
+        print(f"check ok: wall {n_wall} faces, theta0 {theta:g}")
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--case", required=True)
     ap.add_argument("--theta", type=float, default=140.0)
+    ap.add_argument("--feed", type=float, default=0.02,
+                    help="wire feed speed [m/s], downward")
+    ap.add_argument("--pin", action="store_true",
+                    help="hysteresis angle and partial-slip feed velocity")
+    ap.add_argument("--theta-a", type=float, default=140.0)
+    ap.add_argument("--theta-r", type=float, default=40.0)
     ap.add_argument("--write-dict", action="store_true")
     ap.add_argument("--apply", action="store_true")
     ap.add_argument("--check", action="store_true")
     args = ap.parse_args()
     if not (args.write_dict or args.apply or args.check):
         raise SystemExit("pass --write-dict, --apply or --check")
+    if args.pin and args.theta_a < args.theta_r:
+        raise SystemExit("thetaA is below thetaR")
     if args.write_dict:
         write_dict(args.case)
     if args.apply:
-        apply_bcs(args.case, args.theta)
+        apply_bcs(
+            args.case, args.theta, args.feed, args.pin,
+            args.theta_a, args.theta_r,
+        )
     if args.check or args.apply:
-        check(args.case, args.theta)
+        check(
+            args.case, args.theta, args.feed, args.pin,
+            args.theta_a, args.theta_r,
+        )
 
 
 if __name__ == "__main__":

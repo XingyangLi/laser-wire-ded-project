@@ -703,6 +703,14 @@ Off unless `gasCavity { enabled true; }`. This is separate from the oxide skin. 
 
 A pinch-off of the wake is an increase of the entrapment count (`PinchOff:`). The wire cavity itself becoming closed is `CavityClosure:`. Neither is resolved on the 150 µm mesh; `--wire-refine 3 --wire-refine-z` is the optional ~19 µm box, and it is a much longer run (README).
 
+### Wire-wall drag (`wireDrag`, patch `wireWall`)
+
+Off unless `wireDrag { enabled true; }` and the cut-out wire wall carries `pinnedAlphaContactAngle` on `alpha.metal` and `partialSlip` on `U`. The mesh does not move. `partialSlip`'s `refValue` is the feed velocity.
+
+`pinnedAlphaContactAngle` reads `thetaA` and `thetaR` in degrees, through the metal. The apparent angle is `acos(nHat·nf)`. Inside the window the boundary returns that angle, so the contact-angle correction does not rotate the interface normal and there is no Young force. Outside the window the angle is clamped to the nearer limit and the line can slip. This is the hysteresis pin. A fixed `constantAlphaContactAngle` is a different condition: it always drives the line to one angle, so the line slides rather than staying stuck to the wall.
+
+`wireWallDrag` then runs after the internal contact-line pass. On the trailing half of the cylindrical wall (`x > 0`), a face whose owner or immediate neighbour is an interface cell is the contact line. Inside the window that face is no-slip (`valueFraction` 1) and `Kcontact` (default `1e12` kg/m³/s) holds the interface cell on the feed velocity. Viscous diffusion from the wall does not cross a cell in a capillary step, so the sink is what carries the line down with the wire. Outside the window `valueFraction = Δ/(Δ+slipNear)` (`slipNear` default 50 µm) and `Kcontact` stays 0, so the clamped angle can slide the line. Every other wall face uses `slipFar` (default 1 mm), so the moving wire does not pump the whole pool. The log line is `WireDrag:` with the pinned-face count and the z range of the trailing line. Oxygen enters by widening that window and, when Sahoo–Belton is on, by lowering `sigma`. The internal `pinWire` model is a different mechanism and stays off for this wall.
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:
