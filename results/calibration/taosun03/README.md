@@ -519,4 +519,24 @@ Recoil on, beams still off, pool about 2100 K (not the boiling cap that opened t
 
 `stability:` steady. Width fixed. Depth falls 0.075 mm, just inside the 0.08 mm limit. The mouth in the solver log stays 0.066 mm. Recoil at this temperature does not open the column.
 
-Marangoni is the next stage (recoil left on, beams still off), then the beams. The full-domain run stays parked until a stage keeps the slit with the beams on.
+Marangoni on, recoil left on, beams still off. The crown keeps shortening. The width does not:
+
+| time | width | depth | z | state |
+| --- | --- | --- | --- | --- |
+| 14 ms | 0.060 mm | 0.700 mm | 0.45–1.15 mm | open |
+| 16 ms | 0.060 mm | 0.675 mm | 0.45–1.13 mm | open |
+| 18 ms | 0.060 mm | 0.650 mm | 0.45–1.10 mm | open |
+
+`stability:` steady. Depth moves 0.050 mm.
+
+Beams on at 18 ms, with recoil and Marangoni already on. The half-domain beam is 370 W and the temperature sits on the 3490 K clip. The solver's mouth sample (z 1.10–1.30 mm) goes bare, which is the crown above the film. The centre-plane film stays 0.060 mm wide:
+
+| time | width | depth | z | state |
+| --- | --- | --- | --- | --- |
+| 20 ms | 0.060 mm | 0.625 mm | 0.45–1.08 mm | open |
+| 22 ms | 0.060 mm | 0.600 mm | 0.45–1.05 mm | open |
+| 24 ms | 0.060 mm | 0.575 mm | 0.45–1.03 mm | open |
+
+`stability:` steady over those 4 ms. Depth moves 0.050 mm. Neck median speed stays 0.02 m/s. This is the full physics that opened a 0.36–0.50 mm column when the skin was off. With the skin, the slit holds.
+
+The full-domain run uses this recipe: 32 ranks, the cal08 track, 19 µm neck, wire feeding, beams on from the start.
