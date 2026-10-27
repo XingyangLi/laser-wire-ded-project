@@ -319,4 +319,18 @@ The wall boundary condition does enforce the angle: 40° wets and stays wet, and
 
 cal54 also ran at a time step near 0.1 µs because the Courant number sat on 0.4. cal55 and cal56 stay on the capillary step, about 1.2 µs. The mouth gap in the solver log stays 0.058 mm for the whole of cal56. Figure: `oxide_skin_slit.png`.
 
-The recipe that holds is cal56. No gas-pressure support and no solid shell were run. No full-domain demo was started.
+The recipe that holds is cal56. No gas-pressure support and no solid shell were run. The full-domain run with beams, Marangoni and recoil on is left to the other machine.
+
+`launch_slit_oxide_sweep.sh` keeps the cal56 flags and changes one number. `ppmRef` stays 300, so the skin strength is `min(ppm/300, 1)`. Sahoo–Belton `sigma(T)` is evaluated at the same ppm. Feed runs stay at 300 ppm. Width is the metric width (0.02 mm bins). Depth is the range from 2 ms to 6 ms.
+
+| tag | ppm | feed mm/s | width mm | depth mm | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal57 | 50 | 20 | 0.040 | 0.600–0.725 | drifting |
+| cal58 | 100 | 20 | 0.040 | 0.650–0.725 | steady |
+| cal59 | 200 | 20 | 0.040 | 0.725 | steady |
+| cal56 | 300 | 20 | 0.040 | 0.725 | steady |
+| cal60 | 300 | 18 | 0.040 | 0.725 | steady |
+| cal61 | 300 | 24 | 0.040 | 0.725 | steady |
+| cal62 | 300 | 28 | 0.040 | 0.725 | steady |
+
+Low oxygen does not close the slit. At 50 ppm the film stays 0.040 mm wide and open; the crown shortens, so the depth change is 0.125 mm and the metric calls it drifting. From 100 ppm up it is steady, and at 200 and 300 ppm the depth does not move. Depth is the same 0.725 mm at 18, 20, 24 and 28 mm/s.
