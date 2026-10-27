@@ -98,8 +98,16 @@ decompose_case() {
     (
         cd "$CASE"
         foamDictionary -entry numberOfSubdomains -set "$NP" system/decomposeParDict >/dev/null
-        foamDictionary -entry coeffs.n -set "(16 2 1)" system/decomposeParDict >/dev/null
+        foamDictionary -entry method -set simple system/decomposeParDict >/dev/null
+        # Split only in x. A y split of this graded mesh left two ranks with
+        # no cells, and an empty rank aborts in MPI_Allreduce. nz stays 1 so
+        # a laser column is not cut in z.
+        foamDictionary -entry coeffs.n -set "(32 1 1)" system/decomposeParDict >/dev/null
         decomposePar -force > log.decomposePar 2>&1
+        if grep -q "Number of cells = 0" log.decomposePar; then
+            echo "decompose left an empty rank" >&2
+            exit 1
+        fi
         touch case.foam
     )
 }
