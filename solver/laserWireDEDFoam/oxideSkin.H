@@ -13,7 +13,15 @@
         if (oxideGrowth && pimple.firstIter())
         {
             const scalar Vfeed = mag(wireFeedVelocity);
-            const vector Ufeed = -wireUp*Vfeed;
+            // A bare vector has no dimensions, and Sf&vector is then an
+            // area rather than a volume flux. The divergence of that is
+            // not dimensionless after multiplying by deltaT.
+            const dimensionedVector Ufeed
+            (
+                "Ufeed",
+                dimVelocity,
+                -wireUp*Vfeed
+            );
             oxideFilm -= runTime.deltaT()*fvc::div
             (
                 mesh.Sf() & Ufeed,
