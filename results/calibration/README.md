@@ -240,14 +240,21 @@ At 4 ms none of them holds a neck slit. The center plane through the neck is gas
 
 Those four were stopped. A square slot in a rectangular bead is outside the hysteresis window: once the wall jumps back, the advancing angle does not bring it in again. `launch_slit_curve.sh` replaces that initial field with a smooth pool and a taller trailing dome, and cuts a groove that is already the radiograph shape (0.06 mm at z = 1.20 mm, point at z = 0.75 mm, 0.28 mm wide in y). cal39 is 300 ppm at 20 mm/s. cal40 is 50 ppm at 20 mm/s. Both keep the wire at 300 K. Six ranks each, `nice -n 10`, write every 4 ms. `launch_slit_demo.sh` is the full cal14 domain of whichever of those holds the groove, 12 ranks, and it writes `results/calibration/slit_demo.mp4`.
 
-A film is steady only when consecutive center-plane samples stay 0.03–0.08 mm wide and at least 0.25 mm deep for 4 ms or more, with the depth moving by at most 0.08 mm (`slit_metric.py` prints `stability:`). On a 19 µm mesh that width is two or three cells, which is also how thick a VOF interface is at `cAlpha` 1, so a frame-to-frame change of shape can be the smeared interface rather than a resolved gas core. The Young force used to switch from zero inside the window to the full value on the next cell. `launch_slit_stable.sh` separates that from the beam and from Marangoni/recoil, all on the 300 ppm curved groove, 4 ranks each, stopped at 16 ms:
+A film is steady only when consecutive center-plane samples stay 0.03–0.08 mm wide and at least 0.25 mm deep for 4 ms or more, with the depth moving by at most 0.08 mm (`slit_metric.py` prints `stability:`). On a 19 µm mesh that width is two or three cells, which is also how thick a VOF interface is at `cAlpha` 1. The Young force used to switch from zero inside the window to the full value on the next cell. `launch_slit_stable.sh` separates that from the beam and from Marangoni/recoil, all on the 300 ppm curved groove, 4 ranks each, out to 16 ms. These fields are painted, not mapped.
 
-| tag | settle | contact blend | neck compression |
-| --- | --- | --- | --- |
-| cal41 | 6 ms, then a 2 ms ramp | hard switch | cAlpha 1 |
-| cal42 | off | 8° | ×4 inside the neck box |
-| cal43 | 6 ms, then a 2 ms ramp | 8° | ×4 inside the neck box |
+| tag | settle | contact blend | neck compression | what the neck does |
+| --- | --- | --- | --- | --- |
+| cal39, cal40 | off | hard switch | cAlpha 1 | bare by 4 ms (300 and 50 ppm) |
+| cal41 | 6 ms, then a 2 ms ramp | hard switch | cAlpha 1 | groove filled by 2 ms; still metal on the wire at 6 ms; bare by 10 ms, after the ramp |
+| cal42 | off | 8° | ×4 inside the neck box | sharp and wetted at 2 ms; bare from 6 ms on |
+| cal43 | 6 ms, then a 2 ms ramp | 8° | ×4 inside the neck box | a ~0.10 mm gas core at 2 ms, filled by 4 ms; still wetted at 8 ms as the ramp ends |
 
-During the settle the laser, Marangoni and recoil are off. The plate window, the oxide table and the cal14 beams are unchanged.
+None of them is a steady film. `stability:` is "no steady film" on cal41, cal42 and cal43.
+
+The split is between the beam and the capillary collapse, not between a noisy switch and a timestep. With the laser, Marangoni and recoil off, the 0.06 mm groove fills: metal is on the wire from 2 ms through 6 ms (cal41). Neck compression ×4 only delays that. cal43 still has a gas core at 2 ms and has lost it by 4 ms. The 8° blend does not hold a gap either. The capillary step stays near 1.4×10⁻⁶ s, so this is not a collapsed timestep. A 0.05 mm meniscus has a capillary time of a few hundredths of a millisecond, so 2 ms is already the equilibrium the surface tension wants, and that equilibrium is a wetted wire.
+
+Turning the laser, Marangoni and recoil on clears that wetted face. cal41 stays wetted for the whole settle and is gas beside the wire by 10 ms, 2 ms after the ramp finishes. cal39, cal40 and cal42, with those terms on from the first step, are bare by 4–6 ms. Tmax on cal42 is about 3080 K with 131 W absorbed, so recoil is on at the hot spot. The contact-line report in that window is mostly a pinned or advancing plate line; it is not a wire line oscillating between pin and advance.
+
+So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. The thin open film is not an equilibrium of this contact window once the rear beam, Marangoni and recoil are on, and it is not an equilibrium of surface tension while they are off either. No full-domain demo was started.
 
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.
