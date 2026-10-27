@@ -584,6 +584,109 @@ Main limitations to keep in mind:
   instead of stubbing.
 * The VOF bead shape diffuses slightly while it is advected to the outlet.
 
+## Contact-line pinning and porosity (single-wire track)
+
+Both models are off unless `constant/meltProperties` contains `contactLine{ enabled true; }` or
+`porosity{ enabled true; }`. `generate_case.py --contact-pinning` and `--porosity` write those
+blocks. Existing stranded-wire cases do not have the blocks, so their behaviour is unchanged.
+The dedicated setups are `cases/single_wire` (3-D solid wire, no planted pores) and
+`cases/single_wire_demo` (short 2-D run with `--pore-seed`). See the README section
+"Single-wire track: contact-line pinning and porosity".
+
+### Why not a wall contact-angle boundary condition
+
+The substrate is a block of metal cells (`alpha.metal = 1` for z < 0), not a wall. The bottom
+patch is the underside of the plate. The triple line of the bead is the curve where liquid metal,
+shielding gas and solid metal meet *inside* the mesh. `constantAlphaContactAngle` on `bottom`
+would never see it. The model therefore finds that internal line from the VOF field.
+
+### Contact-angle hysteresis, closed by solidification
+
+At each interface cell that touches solid support (substrate or metal that has already been
+molten; never unmelted wire) and also touches gas:
+
+- Apparent angle through the metal: `theta = acos( clamp( -n_alpha · n_solid, -1, 1 ) )`,
+  with `n_alpha = grad(alpha)/|grad(alpha)|` (into the metal) and `n_solid` the direction from
+  the solid neighbour toward the interface cell (out of the solid).
+- Liquid fraction of the metal at the line, `fl_m`, sets a pinning factor
+  `s = 0` above `flFree` (0.60), `s = 1` at or below `flPin` (0.15), linear between.
+  A frozen deposit with no liquid neighbour is `s = 1`.
+- The allowed window is `[(1-s) theta_R, (1-s) theta_A + s π]`. Defaults `theta_R = 20°`,
+  `theta_A = 90°` (a wide hysteresis band used for liquid steel on solid steel; not a
+  measured value for a specific pair).
+- Inside the window the Young force is zero and a Darcy sink `Kpin (U - U_substrate)`
+  (`Kpin = 1e7 kg/m³/s`) holds the line on the plate velocity. That is the pin.
+- Outside the window a volumetric Young force
+  `σ (cos theta_limit - cos theta_app) |grad alpha| / dx`, directed in the wall plane from
+  metal toward gas, restores the angle. `theta_limit` is the advancing angle when the apparent
+  angle is larger, and the receding angle when it is smaller.
+
+So a molten toe can spread only by reaching 90°, can pull back only by reaching 20°, and a toe
+that freezes is stuck and travels with the substrate. That is the deposited-bead pin.
+
+### Porosity
+
+Gas connectivity is a flood fill through cells with `alpha < alphaOpen` (0.5), seeded from the
+open boundaries (`top`, `inletGas`, `outlet`, `side`, `wireInlet`) and from every column that
+is gas all the way to the top of the domain. What the flood does not reach is enclosed.
+
+- **Lack of fusion** if that gas is within `lofBand` of the plate and a cell above it in the
+  same column is deposited metal (`meltHistory > 0.5` or cell centre above the plate). This is
+  the gap left when pinning stops the bead wetting the substrate.
+- **Keyhole** if the cavity is capped, lies more than `keyholeDepth` below the metal-column
+  height, and a neighbour is hotter than `keyholeTfrac * Tboil` or carries recoil pressure
+  above `keyholeRecoil`. Recoil here only depresses the surface; it does not remove mass.
+  An open keyhole is atmosphere, not a pore. The tag means "this closed pore was still a hot
+  cavity when it was counted".
+- **Gas entrapment** otherwise (a fold-over bubble, or a cold closed cavity).
+
+The shell liquid fraction is the mean `liquidFraction` of metal face-neighbours. Below `flLock`
+(0.35) the component is locked: `poreMarker = 1` and `alpha` is reset to at most `alphaLock`
+(0.05) so MULES cannot fill it. Remelting the shell (`fl >= flLock`) drops the lock. The reset
+removes whatever metal numerical diffusion had added; that mass error is the diffusion, not a
+physical shrinkage model.
+
+`--pore-seed` (demo only) writes two initial gas regions so a sub-millisecond run still exercises
+the classifier: a bubble inside the plate (entrapment) and a gap under a `meltHistory = 1` cap
+(lack of fusion). Production cases omit it.
+
+Outputs: `postProcessing/porosity/porosity.dat` (counts, volume, volume fraction, diameters) and
+`pores.dat` (id, type, locked flag, volume, equivalent diameter `(6V/π)^(1/3)`, centroid).
+`scripts/quantify_pores.py` prints the last sample. Half-domain runs are not mirrored.
+
+### Wire-surface pinning and the wake cavity (`--pin-wire`, `--wire-cavity`)
+
+`cases/wire_cavity` turns on a second triple line: liquid metal, argon, and **unmelted** wire. It is off unless `contactLine{ pinWire true; }`, so `cases/single_wire` and the 2-D demo keep the old rule (the feed is not a wall).
+
+The apparent angle uses the same definition as the plate, with the solid normal equal to the outward radial direction of the wire. The window is `thetaRecedingWire` / `thetaAdvancingWire` (defaults 25° / 70°, separate from the plate's 20° / 90°). Inside the window the Young force is zero and the same Darcy sink acts. The target velocity depends on `wireVelocity`:
+
+- `head` (default) — the line is held at zero velocity in the lab frame. The kink stays at a fixed height while the wire, still driven at the feed speed by the Carman–Kozeny term inside the wire, slides through it. That is the quasi-steady shape in the radiograph.
+- `wire` — the line is stuck to a material point of the wire and is carried downward at the feed speed. A kink then falls into the pool on the feed timescale (tens of milliseconds at 30 mm/s).
+
+`wireSector` (default off; `--wire-sector`) is a second window on the trailing face of the wire, the +x side that faces the bead trail. It is a stand-in for an oxide film: the line there is pinned over a wide band (defaults 60° receding / 140° advancing) while the front of the wire keeps `thetaRecedingWire` / `thetaAdvancingWire` (25° / 70°). The two windows meet through a cosine blend of width `wireSectorBlend` (default 30°) centred on `wireSectorHalfAngle` (default 90°, so the trailing half of the wire). Inside either window the head-frame sink is unchanged, so a pinned kink stays at a fixed height while melt can still flow underneath. Off, or with the entries absent, the wire line uses one window all the way around.
+
+As the metal at the line freezes, the window opens and the target velocity becomes the substrate velocity, so a solidified bead can leave with the plate. Fully solid cells are still owned by the mushy-zone sink; the contact sink does not replace it. `contactState` 5/6/7/8 are the wire line; `contactSupport` is 2 on those cells. The contact-line file appends `nWire`, pin/advance/recede counts, `zWireMax`, `zWireMin` and `thetaMeanWire`.
+
+The wire cavity is not required to be a closed pore. After the atmosphere flood, gas that touches the unmelted wire, lies below `zWireMax`, and sits in the trailing sector (default half-angle 110° about +x, out to `cavityOuter`) is the wake. If every cell of that component is enclosed, the status is closed; if any cell still reaches the atmosphere, it is open; both at once is mixed. Open gas is not locked. Volume, depth below the contact line, and the downstream extent are written to `postProcessing/wireCavity/wireCavity.dat`. `cavityMarker` is 1 (open) or 2 (closed). Half-domain volumes are not mirrored. The report needs a wire contact line, so `--wire-cavity` is tied to `--pin-wire`.
+
+`--laser-config triple` places three beams from lists (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). The defaults are two beams in front of the wire and one behind, aimed off the axis so the front spots heat the dome and the rear spot heats the wake. The Gao et al. configs are unchanged unless those lists are passed. See README section "Running on a workstation".
+
+### Oxygen-dependent surface tension and contact angle
+
+Off unless `surfaceTension { oxygenDependent true; }` (generate with `--oxygen-ppm`). The linear law and the scalar contact angles are then left as they were.
+
+Uniform melt oxygen `chamberOxygenPpm` (ppm by weight) sets the Sahoo activity `a_O = ppm × 10⁻⁴` wt%. There is no Sieverts solve and no separate oxide-phase field: the ppm is a stand-in for the chamber, and the angle table is a stand-in for the oxide film.
+
+```
+sigma = sigma_m - A (max(T, T_m) - T_m) - R T Gamma_s ln(1 + k1 a_O exp(-dH0/(R T)))
+```
+
+with `T` in the adsorption term also evaluated at `max(T, T_m)`. `sigma_m`, `A` and `T_m` default to the alloy `sigma`, `-dSigmadT` and `Tref` (316L: 1.75 N/m, 4.3×10⁻⁴ N/m/K, 1723 K). Fe–O adsorption defaults are Sahoo, DebRoy and McNallan, Metall. Trans. B 19B (1988) 483–491 (`Gamma_s = 2.03×10⁻⁵ mol/m²`, `k1 = 0.0138`, `dH0 = −1.463×10⁵ J/mol`), the Belton isotherm (Metall. Trans. B 7B (1976) 35). At 1723 K, `dsigma/dT` is still negative at 10 ppm and positive from 100 ppm upward (see README). Marangoni uses that derivative, so the tangential stress reverses with it.
+
+`oxygenAngleTable` is interpolated linearly in ppm for the plate and wire windows. The shipped knots are placeholders (10 ppm recovers 20°/90° and 25°/70°; 1000 ppm is 50°/130° and 58°/130°). Freezing still opens the active window to `[0, π]`.
+
+A pinch-off of the wake is an increase of the entrapment count (`PinchOff:`). The wire cavity itself becoming closed is `CavityClosure:`. Neither is resolved on the 150 µm mesh; `--wire-refine 3 --wire-refine-z` is the optional ~19 µm box, and it is a much longer run (README).
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:

@@ -1,0 +1,18 @@
+---
+description: Build, run and post-process the three-laser vertical-wire case
+alwaysApply: true
+---
+
+# Wire-cavity case
+
+The production track is `cases/wire_cavity`: three laser beams (two in front of a vertical solid wire, one behind), contact-line pinning on the unmelted wire, and an open/closed wake-cavity report. `cases/single_wire` and `cases/single_wire_demo` do not use wire pinning. Leave them that way unless the user asks to regenerate them.
+
+Build and run only through `scripts/run_wire_cavity.sh`. It sources OpenFOAM.com v2406 or v2412, runs `solver/Allwmake`, generates the case, decomposes for `--np` (default `nproc`) and post-processes with `scripts/quantify_pores.py`.
+
+- Full track: `./scripts/run_wire_cavity.sh` on the workstation (`taosun01`). It takes hours. Do not start it on a small VM.
+- Compile and write the case without solving: `./scripts/run_wire_cavity.sh --generate-only`.
+- Optional short check: `./scripts/run_wire_cavity.sh --smoke` (coarse 3D, 8 ms, planted wake). Then `python3 scripts/quantify_pores.py --case cases/wire_cavity_smoke --expect-wire-smoke`.
+
+Monitor `cases/wire_cavity/log.laserWireDEDFoam` for `ContactLine:`, `WireCavity:` and `Porosity:`. ParaView: `case.foam`, colour `contactState` (5–8 wire line), `contactSupport`, `cavityMarker`.
+
+Beam positions, powers and angles are flags on `generate_case.py` (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). `--oxygen-ppm` switches on Sahoo–Belton `sigma(T, a_O)` and the placeholder contact-angle table; the sweep is `scripts/sweep_wire_cavity_oxygen.sh`. Defaults and the wire-pin model are in README section "Running on a workstation" and `docs/MODEL_NOTES.md`.

@@ -18,6 +18,25 @@ IOdictionary meltProperties
     )
 );
 
+// Laser, Marangoni and recoil stay off until tEnd, then rise over tRamp.
+// Absent (tEnd 0) they are on from the first step.
+const scalar settleEnd =
+    meltProperties.subOrEmptyDict("settle").getOrDefault<scalar>("tEnd", 0);
+const scalar settleRampDt =
+    meltProperties.subOrEmptyDict("settle").getOrDefault<scalar>("tRamp", 0.002);
+const auto settleScale = [=](const scalar t) -> scalar
+{
+    if (settleEnd <= 0) return 1.0;
+    if (t <= settleEnd) return 0.0;
+    if (settleRampDt <= SMALL) return 1.0;
+    return min((t - settleEnd)/settleRampDt, scalar(1));
+};
+if (settleEnd > 0)
+{
+    Info<< "Settle: laser, Marangoni and recoil off until " << settleEnd
+        << " s, then ramp " << settleRampDt << " s" << nl;
+}
+
 // --- Thermal properties (rho comes from transportProperties)
 const dictionary& metalThermoDict = meltProperties.subDict("metal");
 const dictionary& gasThermoDict   = meltProperties.subDict("gas");
@@ -375,5 +394,7 @@ boolList inWireZone(mesh.nCells(), false);
 
 // --- Surface tension (liquid-only CSF, sigma(T), Marangoni, capillary dt)
 #include "createSurfaceTension.H"
+#include "createContactLine.H"
+#include "createPorosity.H"
 
 mesh.setFluxRequired(T.name());

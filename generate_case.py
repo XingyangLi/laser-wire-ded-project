@@ -69,8 +69,10 @@ def build_parser():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     a = ap.add_argument
     a("--case", default="case_lwded", help="output case directory")
-    a("--laser-config", default="single", choices=["single"] + sorted(PAPER_CONFIGS),
+    a("--laser-config", default="single", choices=["single", "triple"] + sorted(PAPER_CONFIGS),
       help="single = one vertical Gaussian beam with an inclined side-fed wire; "
+           "triple = three beams, two in front of a vertical wire and one behind "
+           "(radiograph-scale defaults, every beam overridable); "
            "normal | lof | transitional_r = Gao et al. (Nat. Commun. 2026) triple-beam coaxial "
            "conditions (Table S1: power, scan speed, feed rate and beam arrangement '+'/'-')")
     a("--material", default=None, choices=sorted(MATERIALS), help="sets both wire and substrate material")
@@ -87,6 +89,26 @@ def build_parser():
            "enlarges the spot on z=0. Default None = collimated (fixed radius).")
     a("--beam-direction", default=None, choices=["+", "-"],
       help="coaxial head: '+' two spots in front of the wire + one behind, '-' one in front + two behind")
+    a("--beam-azimuths", default=None,
+      help="comma list of beam azimuths [deg] from the travel direction "
+           "(0 = in front, -x; 180 = behind the wire, +x). "
+           "triple default: 55,-55,180 (two in front, one behind)")
+    a("--beam-inclinations", default=None,
+      help="comma list of beam inclinations from vertical [deg], one value or one per beam. "
+           "triple default: 32,32,22. --beam-angle is the shared paper-head angle")
+    a("--beam-powers", default=None,
+      help="comma list of beam powers [W]. triple default: 700,700,450 "
+           "(scaled to --power when --power is set and this is omitted)")
+    a("--beam-radii-each", default=None,
+      help="comma list of 1/e^2 beam radii [m]. triple default: 0.7e-3,0.7e-3,0.55e-3. "
+           "--beam-radius remains the shared paper-head radius")
+    a("--beam-aim-radii", default=None,
+      help="comma list: horizontal distance [m] from the wire axis to each beam axis "
+           "at the aim height. 0 = the beam crosses the wire axis. "
+           "triple default: 1.4e-3,1.4e-3,0.9e-3")
+    a("--beam-aim-heights", default=None,
+      help="comma list: height [m] above the substrate where each beam axis is aimed. "
+           "triple default: 0.4e-3,0.4e-3,0.3e-3. The axis continues to the plate")
     # laser
     a("--power", type=float, default=None, help="laser power [W] (total of all beams)")
     a("--spot-radius", type=float, default=1.2e-3, help="beam radius [m] (1/e^2 radius for Gaussian)")
@@ -240,8 +262,16 @@ def build_parser():
     a("--uniform-downstream", type=float, default=None,
       help="end of the uniform-dx region downstream of the laser [m] (default downstream - 2 mm, >= 2.5 mm)")
     a("--wire-refine", type=int, default=None,
-      help="levels of x-y halving of the cells in a vertical box around the wire (full height, keeps the "
-           "vertical cell columns of the ray-traced laser). Default 1 for stranded (100 -> 50 um), 0 for solid")
+      help="levels of halving of the cells in a vertical box around the wire "
+           "(full height). Default: x and y only, so the ray-traced laser keeps "
+           "vertical columns. Default 1 for stranded (100 -> 50 um), 0 for solid. "
+           "On the 150 um wire-cavity mesh, 3 levels is about 19 um and 4 levels "
+           "about 9 um in the refined directions")
+    a("--wire-refine-z", action="store_true",
+      help="with --wire-refine: also halve z inside that box. Needed for a "
+           "roughly isotropic 10-20 um neck. The laser still groups cells by "
+           "their x-y centre, and the box is full height so each refined column "
+           "stays one column. Much more expensive than x-y only")
     a("--refine-halfwidth", type=float, default=None,
       help="half width of the refined box around the wire axis [m] (default wire radius + 0.3 mm)")
     a("--domain-y", default="auto", choices=["auto", "half", "full"],
@@ -259,6 +289,104 @@ def build_parser():
       help="multiplies the argon viscosity (damps parasitic gas currents, raises dt; "
            "gas shear on the pool stays negligible). 1 = physical")
     a("--mushy-C", type=float, default=1e8, help="Carman-Kozeny constant [kg/m3/s]")
+    a("--contact-pinning", action="store_true",
+      help="solver contactLine{}: pin the metal/gas/solid triple line on the substrate. "
+           "While the metal there is liquid the contact angle (through the metal) may sit "
+           "anywhere between --theta-receding and --theta-advancing; inside that window the "
+           "line is pinned to the substrate velocity. As it freezes the window opens to "
+           "0-180 deg, so the deposited bead stays where it solidified. Default off, so "
+           "stranded / multi-wire cases are unchanged")
+    a("--theta-receding", type=float, default=20.0,
+      help="contact-line pinning: receding angle through the metal [deg] (default 20)")
+    a("--theta-advancing", type=float, default=90.0,
+      help="contact-line pinning: advancing angle through the metal [deg] (default 90)")
+    a("--contact-force-factor", type=float, default=1.0,
+      help="scale on the Young force outside the contact-angle window (default 1). "
+           "The force is still capped at 2*sigma/h^2")
+    a("--pin-wire", action="store_true",
+      help="with --contact-pinning: also pin the melt/argon/unmelted-wire triple line, "
+           "with its own hysteresis window. Default off, so the feed is not a wall "
+           "and existing single-wire cases are unchanged")
+    a("--theta-receding-wire", type=float, default=25.0,
+      help="wire contact line: receding angle through the metal [deg] (default 25). "
+           "With --wire-sector this is the front-side window")
+    a("--theta-advancing-wire", type=float, default=70.0,
+      help="wire contact line: advancing angle through the metal [deg] (default 70). "
+           "With --wire-sector this is the front-side window")
+    a("--wire-sector", action="store_true",
+      help="with --pin-wire: wider hysteresis on the trailing side of the wire (+x, "
+           "the bead trail), blended into the front window. Default off, so the wire "
+           "line keeps one window all the way around and existing cases are unchanged")
+    a("--theta-receding-wire-trail", type=float, default=60.0,
+      help="trailing wire sector: receding angle [deg] (default 60, used with --wire-sector)")
+    a("--theta-advancing-wire-trail", type=float, default=140.0,
+      help="trailing wire sector: advancing angle [deg] (default 140, used with --wire-sector)")
+    a("--wire-sector-half-angle", type=float, default=90.0,
+      help="trailing sector half-angle about +x [deg] (default 90: the trailing half of the wire)")
+    a("--wire-sector-blend", type=float, default=30.0,
+      help="full width of the cosine blend between the trailing and front windows [deg] "
+           "(default 30)")
+    a("--oxygen-ppm", type=float, default=None,
+      help="uniform dissolved oxygen in the melt [ppm by weight], a stand-in for "
+           "the chamber set-point. Turns on Sahoo-Belton sigma(T, a_O) and, with "
+           "contact-line pinning, the oxygen contact-angle table. Omit to keep "
+           "the linear sigma(T) model and the scalar angles")
+    a("--oxygen-sigma-only", action="store_true",
+      help="with --oxygen-ppm: Sahoo-Belton sigma(T, a_O) only. The scalar "
+           "contact angles stay as set, so a wetting window is not replaced "
+           "by the placeholder oxygen angle table")
+    a("--oxygen-wire-angles", action="store_true",
+      help="with --oxygen-ppm: the plate window stays at --theta-receding and "
+           "--theta-advancing. The wire window and the trailing-sector window "
+           "are interpolated in ppm from an oxide-film table (poorer wetting "
+           "as oxygen rises). Sahoo-Belton sigma(T, a_O) stays on")
+    a("--neck-refine", type=int, default=0,
+      help="halving levels inside --neck-box, in x, y and z. On the 150 um mesh, "
+           "3 levels is about 19 um. Each level is a nested box, two coarse "
+           "cells larger than the next, so the jump at every interface is 2:1. "
+           "Local to the trailing wire face; the rest of the track stays coarse")
+    a("--contact-blend", type=float, default=0.0,
+      help="degrees over which the Young force ramps up just outside the "
+           "hysteresis window. 0 keeps the hard advancing/receding switch")
+    a("--c-alpha-neck", type=float, default=1.0,
+      help="extra MULES interface compression inside the neck box. 1 leaves "
+           "the global cAlpha unchanged. A 0.05 mm film on a 19 um mesh is "
+           "only a few cells wide, so the smeared interface is the film "
+           "unless this is raised")
+    a("--settle", type=float, default=0.0,
+      help="seconds at the start with the laser, Marangoni and recoil off, "
+           "so a painted meniscus can sit before the beams and the "
+           "thermocapillary stress turn on")
+    a("--settle-ramp", type=float, default=0.002,
+      help="seconds after --settle over which laser, Marangoni and recoil rise to full")
+    a("--neck-box", default="0.32e-3:0.90e-3:0:0.22e-3:0.55e-3:1.45e-3",
+      help="trailing-face box x0:x1:y0:y1:z0:z1 [m] about the wire axis. "
+           "On a half mesh the plane y = 0 is included")
+    a("--rear-power-dip", default=None, metavar="T0,T1,FACTOR",
+      help="multiply rear-beam (beam 3) power by FACTOR on [T0, T1) seconds, "
+           "then restore it. A brief notch perturbation. Example: 0.42,0.50,0.30")
+    a("--wire-pin-frame", default="head", choices=["head", "wire"],
+      help="pinned wire line: 'head' holds it still in the lab/head frame so a kink "
+           "stays at a fixed height while the wire feeds through (default); "
+           "'wire' sticks the line to the feed velocity")
+    a("--porosity", action="store_true",
+      help="solver porosity{}: enclosed shielding gas is classified as gas entrapment, "
+           "lack-of-fusion (gas on the plate under deposited metal) or keyhole (a hot "
+           "recoil cavity that has closed). Once the metal shell freezes, the pore is "
+           "locked so numerical diffusion cannot fill it. Writes postProcessing/porosity/. "
+           "Default off")
+    a("--pore-seed", action="store_true",
+      help="initial condition for the short demo only: one subsurface gas bubble and one "
+           "lack-of-fusion cavity under a solid metal cap, so pore quantification runs "
+           "without waiting for the pool to fold a bubble in. Not for production tracks")
+    a("--wire-cavity", action="store_true",
+      help="with --porosity and --pin-wire: report the gas cavity behind and around the "
+           "unmelted wire (open or closed), its volume, depth below the wire contact line "
+           "and downstream length. Writes postProcessing/wireCavity/wireCavity.dat")
+    a("--wire-cavity-seed", action="store_true",
+      help="smoke-test initial condition: hot metal wetting the leading side of the wire "
+           "and a gas wake behind it, so the wire line and the cavity report are non-zero "
+           "on the first steps. Not for the production three-laser track")
     # domain / mesh
     a("--dim", default="3d", choices=["3d", "2d"], help="3d half-domain (symmetry y=0) or quasi-2D x-z")
     a("--resolution", default="medium", choices=sorted(RES), help="coarse 150um, medium 100um, fine 75um")
@@ -283,10 +411,75 @@ def build_parser():
 
 
 # ----------------------------------------------------------------------------
+def csv_floats(text, name):
+    """Comma-separated floats, or None if text is None."""
+    if text is None:
+        return None
+    try:
+        vals = [float(p) for p in str(text).split(",") if p.strip()]
+    except ValueError as exc:
+        raise SystemExit(f"{name} must be a comma-separated list of numbers, got {text!r}") from exc
+    if not vals:
+        raise SystemExit(f"{name} is empty")
+    return vals
+
+
+def fit_list(vals, n, name):
+    if vals is None:
+        return None
+    if len(vals) == 1 and n > 1:
+        return vals * n
+    if len(vals) != n:
+        raise SystemExit(f"{name} has {len(vals)} values for {n} beams")
+    return vals
+
+
 def graded(length, dx, ratio):
     """cells for a section starting at dx and growing by 'ratio' (last/first)."""
     n = max(1, round(length / (dx * (1 + ratio) / 2.0)))
     return n
+
+
+# Dissolved oxygen [ppm by weight] and contact angles through the metal [deg]:
+# plate receding, plate advancing, wire receding, wire advancing.
+# PLACEHOLDER knots so a chamber-oxygen sweep moves the hysteresis window.
+# Not a fit to sessile-drop data. Linear in ppm, clamped outside the ends.
+# At 10 ppm the window is the historical 20/90 (plate) and 25/70 (wire).
+# The upward trend stands in for an oxide film (poorer wetting, wider hysteresis)
+# until advancing/receding angles are measured. See README.
+OXYGEN_ANGLE_TABLE = (
+    (10, 20, 90, 25, 70),
+    (100, 28, 100, 35, 90),
+    (500, 40, 120, 48, 115),
+    (1000, 50, 130, 58, 130),
+)
+
+# Oxide film on the solid wire, not a sessile-drop fit. Columns [deg]:
+# ppm, wire receding, wire advancing, trailing receding, trailing advancing.
+# The plate window is not in this table. Higher ppm stands in for a thicker
+# oxide: the trailing face wets less, so a gas slit can stay open.
+WIRE_OXIDE_TABLE = (
+    (0, 25, 70, 30, 80),
+    (50, 32, 80, 45, 100),
+    (100, 42, 100, 60, 120),
+    (300, 58, 125, 85, 150),
+    (1000, 70, 140, 110, 165),
+)
+
+
+def oxide_wire_angles(ppm):
+    """Return (wireR, wireA, trailR, trailA) [deg] at this oxygen level."""
+    tab = WIRE_OXIDE_TABLE
+    if ppm <= tab[0][0]:
+        return tab[0][1:]
+    if ppm >= tab[-1][0]:
+        return tab[-1][1:]
+    for lo, hi in zip(tab, tab[1:]):
+        if ppm <= hi[0]:
+            span = hi[0] - lo[0]
+            w = (ppm - lo[0]) / span if span else 0.0
+            return tuple(lo[i] + w * (hi[i] - lo[i]) for i in range(1, 5))
+    return tab[-1][1:]
 
 
 class Case:
@@ -294,16 +487,23 @@ class Case:
         self.a = a
         coax = a.laser_config != "single"
         self.coax = coax
+        self.triple = a.laser_config == "triple"
         a.wire_diameter_given = a.wire_diameter is not None
         a.wfs_capped = False
         cfg = PAPER_CONFIGS.get(a.laser_config, {})
+        # triple: radiograph-scale vertical wire. Two beams in front, one behind.
+        # Powers below are the unscaled defaults; --power rescales them.
         dflt = dict(
-            power=cfg.get("power", 2000.0), scan_speed=cfg.get("scan_speed", 0.010),
-            wire_feed_speed=cfg.get("wire_feed_speed", 0.025),
-            wire_diameter=0.9e-3 if coax else 1.0e-3, feed_angle=90.0 if coax else 45.0,
-            wire_gap=0.05e-3 if coax else 0.3e-3,
-            upstream=3.5e-3 if coax else 4.5e-3, downstream=6.5e-3 if coax else 7.0e-3,
-            half_width=3.0e-3 if coax else 4.0e-3, substrate_thickness=2.0e-3 if coax else 2.5e-3,
+            power=cfg.get("power", 1850.0 if self.triple else 2000.0),
+            scan_speed=cfg.get("scan_speed", 0.006 if self.triple else 0.010),
+            wire_feed_speed=cfg.get("wire_feed_speed", 0.030 if self.triple else 0.025),
+            wire_diameter=1.0e-3 if (self.triple or not coax) else 0.9e-3,
+            feed_angle=90.0 if coax else 45.0,
+            wire_gap=0.15e-3 if self.triple else (0.05e-3 if coax else 0.3e-3),
+            upstream=5.0e-3 if self.triple else (3.5e-3 if coax else 4.5e-3),
+            downstream=5.0e-3 if self.triple else (6.5e-3 if coax else 7.0e-3),
+            half_width=3.5e-3 if self.triple else (3.0e-3 if coax else 4.0e-3),
+            substrate_thickness=2.0e-3 if coax else 2.5e-3,
             beam_direction=cfg.get("direction", "+"),
         )
         for k, v in dflt.items():
@@ -322,8 +522,14 @@ class Case:
             a.strand_material_list = mats
             self.comp_names = list(dict.fromkeys(mats))
             a.wire_material = a.wire_material or "+".join(self.comp_names)
-        wm = a.wire_material or a.material or ("Invar36" if coax else "316L")
-        sm = a.substrate_material or a.material or ("SS304" if coax else wm)
+        if self.triple:
+            # Alloy of the radiograph is not in the image. 316L is the single-wire
+            # stand-in (not the paper Invar/SS304 pair).
+            wm = a.wire_material or a.material or "316L"
+            sm = a.substrate_material or a.material or wm
+        else:
+            wm = a.wire_material or a.material or ("Invar36" if coax else "316L")
+            sm = a.substrate_material or a.material or ("SS304" if coax else wm)
         a.wire_material, a.substrate_material = wm, sm
         if a.end_time is None and a.track_length:
             a.end_time = round(a.track_length / a.scan_speed, 4)
@@ -336,6 +542,40 @@ class Case:
         self.m = self.mw if self.mw is not None else self.ms
         self.dx = a.dx or RES[a.resolution]
         self.d2 = a.dim == "2d"
+        self.custom_beams = False
+        self.beam_specs = None
+        beam_flags = any((
+            a.beam_azimuths, a.beam_inclinations, a.beam_powers,
+            a.beam_radii_each, a.beam_aim_radii, a.beam_aim_heights,
+        ))
+        if self.triple or beam_flags:
+            if not coax:
+                raise SystemExit(
+                    "per-beam aim points need --laser-config triple "
+                    "(or normal/lof/transitional_r)")
+            if self.d2:
+                raise SystemExit(
+                    "--laser-config triple needs --dim 3d "
+                    "(the two front beams are aimed out of the x-z plane)")
+            self.custom_beams = True
+            self.beam_specs = self.resolve_beams()
+            listed = sum(b["power"] for b in self.beam_specs)
+            if a.beam_powers is not None and abs(listed - a.power) > 1.0:
+                print(f"[generate] --beam-powers sum to {listed:.0f} W; "
+                      f"using that as the total (was --power {a.power:.0f} W)")
+            a.power = listed
+        if a.pin_wire and not a.contact_pinning:
+            raise SystemExit("--pin-wire needs --contact-pinning")
+        if a.wire_cavity and not a.porosity:
+            raise SystemExit("--wire-cavity needs --porosity")
+        if a.wire_cavity and not a.pin_wire:
+            raise SystemExit("--wire-cavity needs --pin-wire (the depth is measured from the wire contact line)")
+        if a.wire_cavity_seed and not a.wire_cavity:
+            raise SystemExit("--wire-cavity-seed needs --wire-cavity")
+        if self.triple and abs(a.gas_height - 2.5e-3) < 1e-12:
+            print("[generate] triple-beam: gas height 2.50 -> 3.50 mm so a ~2 mm bead and the "
+                  "vertical wire fit (pass --gas-height to choose another value)")
+            a.gas_height = 3.5e-3
         def _abs_sub():
             if a.absorptivity_substrate is not None:
                 return a.absorptivity_substrate
@@ -357,7 +597,13 @@ class Case:
         self.liquidus_unmixed = a.liquidus_unmixed_threshold
         th = math.radians(a.feed_angle)
         sgn = -1.0 if a.feed_side == "front" else 1.0
-        self.up = (sgn * math.cos(th), 0.0, math.sin(th))   # tip -> feeder
+        ux, uz = sgn * math.cos(th), math.sin(th)
+        # cos(90 deg) is a few ulps, which would tilt a "vertical" wire by ~1e-16.
+        if abs(ux) < 1e-12:
+            ux = 0.0
+        if abs(uz) < 1e-12:
+            uz = 0.0
+        self.up = (ux, 0.0, uz)   # tip -> feeder
         self.th = th
         dx = self.dx
         if a.wire_type == "stranded" and a.strand_diameter:
@@ -373,6 +619,26 @@ class Case:
         self.full = (a.domain_y == "full") and not (a.dim == "2d")
         if a.wire_refine is None:
             a.wire_refine = 1 if a.wire_type == "stranded" else 0
+        if a.wire_refine < 0:
+            raise SystemExit("--wire-refine must be >= 0")
+        if a.wire_refine_z and a.wire_refine < 1:
+            raise SystemExit("--wire-refine-z needs --wire-refine of at least 1")
+        if a.oxygen_ppm is not None and a.oxygen_ppm < 0:
+            raise SystemExit("--oxygen-ppm must be >= 0")
+        if a.oxygen_sigma_only and a.oxygen_ppm is None:
+            raise SystemExit("--oxygen-sigma-only needs --oxygen-ppm")
+        if a.oxygen_wire_angles and a.oxygen_ppm is None:
+            raise SystemExit("--oxygen-wire-angles needs --oxygen-ppm")
+        if a.oxygen_wire_angles and a.oxygen_sigma_only:
+            raise SystemExit("--oxygen-wire-angles cannot be combined with --oxygen-sigma-only")
+        if a.neck_refine < 0:
+            raise SystemExit("--neck-refine must be >= 0")
+        if a.oxygen_wire_angles:
+            wr, wa, tr, ta = oxide_wire_angles(a.oxygen_ppm)
+            a.theta_receding_wire = wr
+            a.theta_advancing_wire = wa
+            a.theta_receding_wire_trail = tr
+            a.theta_advancing_wire_trail = ta
         if a.refine_halfwidth is None:
             a.refine_halfwidth = Rw + 0.3e-3
         # weave: the laser focus and the wire axis travel a triangular zigzag in y.
@@ -398,7 +664,12 @@ class Case:
                 print(f"[generate] weave: domain half-width {a.half_width*1e3:.2f} -> {need*1e3:.2f} mm "
                       "so the zigzag stays inside the mesh")
                 a.half_width = need
-        self.dx_min = self.dx / 2 ** a.wire_refine
+        # The neck box is refined again after the wire box, in x, y and z.
+        # The capillary limit has to see that product, not the coarser of the two.
+        neck_levels = int(getattr(a, "neck_refine", 0) or 0)
+        z_levels = (a.wire_refine if a.wire_refine_z else 0) + neck_levels
+        xy_levels = a.wire_refine + neck_levels
+        self.dx_min = self.dx / 2 ** max(xy_levels, z_levels, 0)
         # stranded wire geometry
         a.wire_feed_speed_nominal = a.wire_feed_speed
         self.strands = None
@@ -659,7 +930,8 @@ class Case:
             ncy = 2 * int(math.floor(hwy / dx + 0.5)) if self.full else int(math.floor(hwy / dx + 0.5))
             self.n_refine_cols = ncx * ncy
             nz = nzs + nzg
-            self.ncells = self.ncells_block + self.n_refine_cols * nz * (4 ** a.wire_refine - 1)
+            split = 8 if a.wire_refine_z else 4
+            self.ncells = self.ncells_block + self.n_refine_cols * nz * (split ** a.wire_refine - 1)
 
     @staticmethod
     def grading(secs):
@@ -734,18 +1006,82 @@ actions
 """ + FOOT
 
     def refine_mesh_dict(self):
-        return header("dictionary", "refineMeshDict", "system") + """set             wireBox;
+        dirs = "(tan1 tan2 tan3)" if self.a.wire_refine_z else "(tan1 tan2)"
+        note = (
+            "x, y and z. Full-height box: the laser still keys columns by cell-centre x,y"
+            if self.a.wire_refine_z else
+            "x and y only (no z split: vertical spacing stays at the core dx)"
+        )
+        return header("dictionary", "refineMeshDict", "system") + f"""set             wireBox;
+coordinateSystem global;
+globalCoeffs
+{{
+    tan1        (1 0 0);
+    tan2        (0 1 0);
+    tan3        (0 0 1);
+}}
+directions      {dirs};     // {note}
+useHexTopology  no;
+geometricCut    no;
+writeMesh       no;
+""" + FOOT
+
+    def neck_box_level(self, level):
+        """Box for one refineMesh pass. level 0 is the outer 2:1 shell."""
+        x0, x1, y0, y1, z0, z1 = self.neck_bounds()
+        n = self.a.neck_refine
+        if level < 0 or level >= n:
+            raise SystemExit(f"neck refine level {level} is outside 0..{n - 1}")
+        # Two cells of the spacing that exists before this pass. The next
+        # pass is smaller by that pad, so the interface is one 2:1 jump.
+        pad = 0.0
+        for i in range(level, n - 1):
+            pad += 2.0 * self.dx / (2 ** i)
+        return (x0 - pad, x1 + pad, y0 - pad, y1 + pad, z0 - pad, z1 + pad)
+
+    def topo_set_neck(self, level=0):
+        """Trailing-face box. Local in z as well as x and y."""
+        x0, x1, y0, y1, z0, z1 = self.neck_box_level(level)
+        dx_here = self.dx / 2 ** (level + 1)
+        return header("dictionary", f"topoSetDict.neck{level}", "system") + f"""// trailing face of the wire, neck band, refine pass {level} of {self.a.neck_refine}
+// spacing after this pass is about {dx_here*1e6:.1f} um
+actions
+(
+    {{
+        name    neckBox;
+        type    cellSet;
+        action  new;
+        source  boxToCell;
+        box     ({f(x0)} {f(y0)} {f(z0)}) ({f(x1)} {f(y1)} {f(z1)});
+    }}
+);
+""" + FOOT
+
+    def refine_mesh_dict_neck(self):
+        return header("dictionary", "refineMeshDict.neck", "system") + """set             neckBox;
 coordinateSystem global;
 globalCoeffs
 {
     tan1        (1 0 0);
     tan2        (0 1 0);
+    tan3        (0 0 1);
 }
-directions      (tan1 tan2);     // split in x and y only (no z split: columns stay intact)
+directions      (tan1 tan2 normal);  // x, y and z; v2406 names the third axis "normal"
 useHexTopology  no;
 geometricCut    no;
 writeMesh       no;
 """ + FOOT
+
+    def neck_bounds(self):
+        parts = [float(x) for x in str(self.a.neck_box).split(":")]
+        if len(parts) != 6:
+            raise SystemExit("--neck-box needs x0:x1:y0:y1:z0:z1")
+        x0, x1, y0, y1, z0, z1 = parts
+        if not self.full:
+            y0 = min(y0, -1e-4)
+        if not (x0 < x1 and y0 < y1 and z0 < z1):
+            raise SystemExit("--neck-box is not a positive volume")
+        return x0, x1, y0, y1, z0, z1
 
     def topo_set(self):
         s_top = self.zt / math.sin(self.th)
@@ -809,10 +1145,14 @@ patches
         (
             volScalarFieldValue alpha.metal 1
             volScalarFieldValue cWire 1
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue T {f(a.preheat)}
             volVectorFieldValue U (0 0 0)
         );
     }}
 """ if self.strands is None else "    // stranded wire: written by setExprFields (system/setExprFieldsDict)\n"
+        # The wire cylinder is last so a cavity seed that overlaps the wire
+        # cannot mark the unmelted core as already molten.
         return header("dictionary", "setFieldsDict", "system") + f"""defaultFieldValues
 (
     volScalarFieldValue alpha.metal 0
@@ -830,8 +1170,119 @@ regions
             volScalarFieldValue alpha.metal 1
         );
     }}
-{wire});
+{self.pore_seed_regions()}{self.wire_cavity_seed_regions()}{wire});
 """ + FOOT
+
+    def pore_seed_regions(self):
+        """Demo initial condition: a subsurface bubble and a lack-of-fusion cavity.
+
+        Both are ordinary gas in the VOF field. The bubble is inside the plate, so the
+        porosity model classes it as gas entrapment. The cavity sits on the plate under a
+        solid cap (meltHistory 1) and is classed as lack-of-fusion. Neither is a physical
+        start to a production track; --pore-seed is for the short pipeline demo.
+        """
+        if not getattr(self.a, "pore_seed", False):
+            return ""
+        dx = self.dx
+        margin = 4 * dx
+        usable0 = self.x0 + margin
+        usable1 = self.x1 - margin
+        if usable1 - usable0 < 8 * dx:
+            raise SystemExit("--pore-seed needs a longer domain in x (raise --downstream)")
+        width_bub = min(1.0e-3, max(3 * dx, 0.30 * (usable1 - usable0)))
+        width_cap = min(1.4e-3, max(5 * dx, 0.40 * (usable1 - usable0)))
+        gap = max(2 * dx, 0.4e-3)
+        total = width_bub + gap + width_cap
+        x0b = max(usable0, min(self.a.laser_x + max(1.2e-3, 4 * dx), usable1 - total))
+        x1b = x0b + width_bub
+        x0c = x1b + gap
+        x1c = x0c + width_cap
+        inset = max(dx, 0.18 * (x1c - x0c))
+        # Middle of the uniform substrate layer (the top ~0.8 mm). A thin box of
+        # height ~dx falls between cell centres once blockMesh grades that layer.
+        zf = min(8.0e-4, -self.zb)
+        z0b = -0.72 * zf
+        z1b = -0.28 * zf
+        # First gas cell above the plate, with a solid cap of already-deposited
+        # metal above it. Tall enough that one VOF step cannot open the cavity.
+        z_pocket = 3.5e-4
+        z_cap = 1.05e-3
+        y0, y1 = -1.0, 1.0
+        return f"""    boxToCell       // pore seed: subsurface gas bubble (entrapment once the shell is solid)
+    {{
+        box ({f(x0b)} {f(y0)} {f(z0b)}) ({f(x1b)} {f(y1)} {f(z1b)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue cWire 0
+        );
+    }}
+    boxToCell       // pore seed: solid cap of "already deposited" metal above the plate
+    {{
+        box ({f(x0c)} {f(y0)} 0) ({f(x1c)} {f(y1)} {f(z_cap)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue cWire 0
+        );
+    }}
+    boxToCell       // pore seed: gas on the plate under that cap (lack-of-fusion)
+    {{
+        box ({f(x0c + inset)} {f(y0)} 0) ({f(x1c - inset)} {f(y1)} {f(z_pocket)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 0
+            volScalarFieldValue meltHistory 0
+            volScalarFieldValue cWire 0
+        );
+    }}
+"""
+
+    def wire_cavity_seed_regions(self):
+        """Smoke initial condition: hot metal on the leading side of the wire and a wake behind it.
+
+        The wire cylinder is applied after this region, so the unmelted core stays cold
+        wire (cWire 1, meltHistory 0). Gas is left against the trailing side of the wire.
+        Production tracks omit --wire-cavity-seed.
+        """
+        if not getattr(self.a, "wire_cavity_seed", False):
+            return ""
+        xw = self.origin[0]
+        R = self.R
+        dx = self.dx
+        x_lead0 = xw - max(1.6e-3, 4 * dx)
+        x_lead1 = xw + 0.2 * R
+        z_lead = max(1.3e-3, 3.5 * dx)
+        x_tr0 = xw + R + 0.75 * dx
+        x_tr1 = xw + max(2.0e-3, 5 * dx)
+        z_hug = max(0.45e-3, 1.25 * dx)
+        Tm = min(self.mw["Tliq"] + 250.0, 0.5 * (self.mw["Tliq"] + self.mw["Tboil"]))
+        y0, y1 = -1.0, 1.0
+        return f"""    boxToCell       // wire-cavity seed: hot metal wetting the leading side of the wire
+    {{
+        box ({f(x_lead0)} {f(y0)} 0) ({f(x_lead1)} {f(y1)} {f(z_lead)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue cWire 0
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue T {f(Tm)}
+        );
+    }}
+    boxToCell       // wire-cavity seed: trailing metal on the plate; gas stays against the wire
+    {{
+        box ({f(x_tr0)} {f(y0)} 0) ({f(x_tr1)} {f(y1)} {f(z_hug)});
+        fieldValues
+        (
+            volScalarFieldValue alpha.metal 1
+            volScalarFieldValue cWire 0
+            volScalarFieldValue meltHistory 1
+            volScalarFieldValue T {f(Tm)}
+        );
+    }}
+"""
 
     def set_expr_fields(self):
         """initial stranded wire (helix frozen in the wire, t = 0) between the tip and above the top."""
@@ -944,6 +1395,32 @@ snGradSchemes
 }
 """ + FOOT
 
+    def neck_compression_entries(self):
+        """Extra MULES compression on faces inside the neck box. Empty if unused."""
+        factor = float(getattr(self.a, "c_alpha_neck", 1) or 1)
+        if factor <= 1:
+            return ""
+        x0, x1, y0, y1, z0, z1 = self.neck_bounds()
+        return (
+            f"        cAlphaNeck      {f(factor)};\n"
+            f"        cAlphaNeckMin   ({f(x0)} {f(y0)} {f(z0)});\n"
+            f"        cAlphaNeckMax   ({f(x1)} {f(y1)} {f(z1)});\n"
+        )
+
+    def settle_block(self):
+        """Hold laser, Marangoni and recoil off, then ramp them on."""
+        tend = float(getattr(self.a, "settle", 0) or 0)
+        if tend <= 0:
+            return ""
+        ramp = float(getattr(self.a, "settle_ramp", 0.002) or 0)
+        return (
+            "\nsettle   // laser, Marangoni and recoil\n"
+            "{\n"
+            f"    tEnd    {f(tend)};\n"
+            f"    tRamp   {f(ramp)};\n"
+            "}\n"
+        )
+
     def fv_solution(self):
         # refined wire box (hanging faces, many thin gas gaps in the stranded wire): the default GAMG
         # coarsest-level solve runs to the full 1e-7 tolerance in every V-cycle and took >50 % of the
@@ -969,7 +1446,7 @@ snGradSchemes
         nAlphaCorr      2;
         nAlphaSubCycles 1;
         cAlpha          1;
-        MULESCorr       yes;
+""" + self.neck_compression_entries() + """        MULESCorr       yes;
         nLimiterIter    5;
         solver          smoothSolver;
         smoother        symGaussSeidel;
@@ -1068,12 +1545,80 @@ argon
 sigma           {f(self.ms['sigma'])};   // not used: see constant/meltProperties surfaceTension
 """ + FOOT
 
+    def resolve_beams(self):
+        """Per-beam aim, power and size. Paper configs keep the shared focus unless a list is set."""
+        a = self.a
+        if a.beam_azimuths:
+            az = csv_floats(a.beam_azimuths, "--beam-azimuths")
+        elif self.triple:
+            az = [55.0, -55.0, 180.0]
+        elif a.beam_direction == "+":
+            az = [60.0, -60.0, 180.0]
+        else:
+            az = [0.0, 120.0, -120.0]
+        n = len(az)
+        if a.beam_inclinations:
+            angles = fit_list(csv_floats(a.beam_inclinations, "--beam-inclinations"), n, "--beam-inclinations")
+        elif self.triple and n == 3:
+            angles = [32.0, 32.0, 22.0]
+        else:
+            angles = [a.beam_angle] * n
+        if a.beam_powers:
+            powers = fit_list(csv_floats(a.beam_powers, "--beam-powers"), n, "--beam-powers")
+        elif self.triple and n == 3:
+            base = [700.0, 700.0, 450.0]
+            scale = a.power / sum(base)
+            powers = [p * scale for p in base]
+        else:
+            powers = [a.power / n] * n
+        if a.beam_radii_each:
+            radii = fit_list(csv_floats(a.beam_radii_each, "--beam-radii-each"), n, "--beam-radii-each")
+        elif self.triple and n == 3:
+            radii = [0.70e-3, 0.70e-3, 0.55e-3]
+        else:
+            radii = [a.beam_radius] * n
+        if a.beam_aim_radii:
+            aim_r = fit_list(csv_floats(a.beam_aim_radii, "--beam-aim-radii"), n, "--beam-aim-radii")
+        elif self.triple and n == 3:
+            aim_r = [1.40e-3, 1.40e-3, 0.90e-3]
+        else:
+            aim_r = [0.0] * n
+        if a.beam_aim_heights:
+            aim_z = fit_list(csv_floats(a.beam_aim_heights, "--beam-aim-heights"), n, "--beam-aim-heights")
+        elif self.triple and n == 3:
+            aim_z = [0.40e-3, 0.40e-3, 0.30e-3]
+        else:
+            aim_z = [a.focus_height] * n
+        return [
+            dict(azimuth=az[i], angle=angles[i], power=powers[i], radius=radii[i],
+                 aim_r=aim_r[i], aim_z=aim_z[i])
+            for i in range(n)
+        ]
+
     def beams(self):
         """list of (name, power, focus, direction, radius, profile)."""
         a = self.a
         P = a.power * (a.power_2d_factor if self.d2 else 1.0)
         if not self.coax:
             return [("main", P, (a.laser_x, self.ywire, 0.0), (0.0, 0.0, -1.0), a.spot_radius, a.profile)]
+        if self.custom_beams:
+            out = []
+            for i, b in enumerate(self.beam_specs):
+                phi = math.radians(b["azimuth"])
+                thb = math.radians(b["angle"])
+                # 0 deg = travel direction of the head (-x); 180 deg = behind the wire (+x)
+                sx, sy = -math.cos(phi), math.sin(phi)
+                d = (math.sin(thb) * sx, math.sin(thb) * sy, -math.cos(thb))
+                mag = math.sqrt(sum(c * c for c in d)) or 1.0
+                d = tuple(c / mag for c in d)
+                aim = (
+                    self.origin[0] + b["aim_r"] * sx,
+                    self.ywire + b["aim_r"] * sy,
+                    b["aim_z"],
+                )
+                name = f"beam{i+1}_az{int(round(b['azimuth']))}"
+                out.append((name, b["power"], aim, d, b["radius"], "gaussian"))
+            return out
         th = math.radians(a.beam_angle)
         F = (a.laser_x, self.ywire, a.focus_height)
         # spot azimuths measured from the travel direction of the head (= -x, the substrate moves +x)
@@ -1198,7 +1743,7 @@ surfaceTension
     liquidOnly          true;
     alphaMin            1e-3;
     capillaryDtFactor   {f(a.capillary_dt_factor)};
-}}
+{self.oxygen_surface_block()}}}
 
 vaporisation
 {{
@@ -1209,6 +1754,7 @@ vaporisation
     pAmbient    101325;
     recoilMax   2e5;
 }}
+{self.settle_block()}
 
 surfaceLosses
 {{
@@ -1252,7 +1798,7 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
     alphaHit        {f(self.alpha_hit)};
     tStart          0;
     tRamp           {f(a.laser_ramp)};
-    shadowing       {'false' if a.no_shadowing else 'true'};
+{self.power_dip_block()}    shadowing       {'false' if a.no_shadowing else 'true'};
     planar2D        {'true' if self.d2 else 'false'};
     width2D         {f(self.width2D)};
 }}
@@ -1268,7 +1814,186 @@ statistics
     beadProbeOffset {f(max(3e-4, 3*self.dx))};
     beadHeightThreshold {f(0.2*self.dx)};
 }}
-""" + FOOT
+{self.contact_line_block()}{self.porosity_block()}""" + FOOT
+
+    def power_dip_block(self):
+        """Optional rear-beam power window written into the laser dictionary."""
+        raw = getattr(self.a, "rear_power_dip", None)
+        if not raw:
+            return ""
+        parts = [float(x) for x in str(raw).split(",")]
+        if len(parts) != 3:
+            raise SystemExit("--rear-power-dip needs tStart,tEnd,factor")
+        t0, t1, fac = parts
+        if not (0.0 <= t0 < t1) or not (0.0 < fac < 1.0):
+            raise SystemExit("--rear-power-dip needs 0 <= tStart < tEnd and factor in (0, 1)")
+        return (
+            "    powerDip        // rear beam only; other beams stay at full power\n"
+            "    {\n"
+            "        beam    2;\n"
+            f"        tStart  {t0:g};\n"
+            f"        tEnd    {t1:g};\n"
+            f"        factor  {fac:g};\n"
+            "    }\n"
+        )
+
+    def oxygen_surface_block(self):
+        """Sahoo-Belton coefficients. Empty when --oxygen-ppm is omitted."""
+        ppm = getattr(self.a, "oxygen_ppm", None)
+        if ppm is None:
+            return ""
+        return (
+            "    // oxygenDependent false restores sigma = sigma + dSigmadT*(max(T,Tref)-Tref).\n"
+            "    // a_O [wt%] = chamberOxygenPpm * 1e-4 (uniform melt oxygen; Sieverts not solved).\n"
+            "    // Fe-O adsorption: Sahoo, DebRoy, McNallan, Metall. Trans. B 19B (1988) 483.\n"
+            "    // sigma_m and A fall back to sigma and -dSigmadT above (316L preset at Tref).\n"
+            "    oxygenDependent  true;\n"
+            f"    chamberOxygenPpm {f(ppm)};\n"
+            "    oxygenGammaS     2.03e-05;     // mol/m^2\n"
+            "    oxygenK1         0.0138;       // 1/wt%\n"
+            "    oxygenDeltaH0    -146300;      // J/mol\n"
+            "    oxygenR          8.314462618;  // J/mol/K\n"
+        )
+
+    def contact_line_block(self):
+        a = self.a
+        if not getattr(a, "contact_pinning", False):
+            if getattr(a, "wire_sector", False):
+                raise SystemExit("--wire-sector needs --contact-pinning and --pin-wire")
+            return ""
+        every = 1 if a.end_time <= 0.05 else 10
+        pin_wire = bool(getattr(a, "pin_wire", False))
+        angle_table = ""
+        wire_only = getattr(a, "oxygen_wire_angles", False)
+        if getattr(a, "oxygen_ppm", None) is not None and not getattr(a, "oxygen_sigma_only", False):
+            if wire_only:
+                rows = "\n".join(
+                    f"        ({f(ppm)} {f(a.theta_receding)} {f(a.theta_advancing)} "
+                    f"{f(wr)} {f(wa)} {f(tr)} {f(ta)})"
+                    for ppm, wr, wa, tr, ta in WIRE_OXIDE_TABLE
+                )
+                angle_table = (
+                    "    // Oxide film on the wire. Plate columns repeat the scalar plate window.\n"
+                    "    // Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire\n"
+                    "    //                 thetaRWireTrail thetaAWireTrail.\n"
+                    "    // oxygenWireAnglesOnly: the plate columns are not applied.\n"
+                    "    oxygenWireAnglesOnly true;\n"
+                    "    oxygenAngleTable\n"
+                    "    (\n"
+                    f"{rows}\n"
+                    "    );\n"
+                )
+            else:
+                rows = "\n".join(
+                    f"        ({f(ppm)} {f(tr)} {f(ta)} {f(wr)} {f(wa)})"
+                    for ppm, tr, ta, wr, wa in OXYGEN_ANGLE_TABLE
+                )
+                angle_table = (
+                    "    // PLACEHOLDER. Columns [deg]: ppm thetaR thetaA thetaRWire thetaAWire.\n"
+                    "    // Linear in ppm, clamped outside the knots. Ignored if oxygenDependent is false.\n"
+                    "    // Replace with sessile-drop advancing/receding angles before treating\n"
+                    "    // the cavity as a prediction. 10 ppm reproduces 20/90 and 25/70.\n"
+                    "    oxygenAngleTable\n"
+                    "    (\n"
+                    f"{rows}\n"
+                    "    );\n"
+                )
+        if pin_wire:
+            sector_txt = ""
+            if getattr(a, "wire_sector", False):
+                if a.theta_advancing_wire_trail < a.theta_receding_wire_trail:
+                    raise SystemExit(
+                        "--theta-advancing-wire-trail is below --theta-receding-wire-trail"
+                    )
+                sector_txt = (
+                    "    // Trailing (+x) window, blended into the front window.\n"
+                    "    wireSector      true;\n"
+                    f"    thetaRecedingWireTrail {f(a.theta_receding_wire_trail)};"
+                    "  // deg, trailing side\n"
+                    f"    thetaAdvancingWireTrail {f(a.theta_advancing_wire_trail)};"
+                    "  // deg, trailing side\n"
+                    f"    wireSectorHalfAngle {f(a.wire_sector_half_angle)};"
+                    "  // deg about +x\n"
+                    f"    wireSectorBlend {f(a.wire_sector_blend)};"
+                    "  // deg, cosine blend full width\n"
+                )
+            wire_txt = (
+                "    pinWire         true;    // melt/gas/unmelted-wire line, own angles\n"
+                f"    thetaRecedingWire  {f(a.theta_receding_wire)};   // deg, through the metal\n"
+                f"    thetaAdvancingWire {f(a.theta_advancing_wire)};   // deg, through the metal\n"
+                f"    wireVelocity    {a.wire_pin_frame};   // head: kink fixed in the lab frame; "
+                "wire: stuck to the feed\n"
+                + sector_txt
+            )
+            comment = (
+                "// pinWire: the unmelted wire is a second wall, with its own window.\n"
+                "// wireVelocity head holds that line still while the wire feeds through it.\n"
+            )
+        elif getattr(a, "wire_sector", False):
+            raise SystemExit("--wire-sector needs --pin-wire")
+        else:
+            wire_txt = "    pinWire         false;   // unmelted wire is not a support\n"
+            comment = "// Unmelted wire is not a support (pinWire false).\n"
+        return (
+            "\ncontactLine   // triple-line pinning (postProcessing/contactLine)\n"
+            "// Substrate window [thetaReceding, thetaAdvancing] through the metal.\n"
+            "// Inside the window the line is pinned to the substrate velocity. Freezing opens\n"
+            "// the window to [0, 180] deg (contactState 2).\n"
+            + comment +
+            "{\n"
+            "    enabled         true;\n"
+            f"    thetaReceding   {f(a.theta_receding)};   // deg, substrate / deposit\n"
+            f"    thetaAdvancing  {f(a.theta_advancing)};   // deg, substrate / deposit\n"
+            + wire_txt +
+            "    flPin           0.15;    // at/below this liquid fraction the window is fully open\n"
+            "    flFree          0.60;    // at/above this the molten window is used as written\n"
+            "    flSolid         0.20;    // solid support: metal below this\n"
+            "    Kpin            1e7;     // kg/m3/s\n"
+            "    gradMin         0.25;    // |grad alpha| * dx above this is an interface cell\n"
+            f"    forceFactor     {f(a.contact_force_factor)};   // scale of the Young force outside the window\n"
+            f"    forceBlend      {f(getattr(a, 'contact_blend', 0))};   // deg, 0 = hard switch\n"
+            "    zSubstrate      0;\n"
+            f"    interval        {every};\n"
+            + angle_table +
+            "}\n"
+        )
+
+    def porosity_block(self):
+        a = self.a
+        if not getattr(a, "porosity", False):
+            return ""
+        every = 1 if a.end_time <= 0.05 else 10
+        lof = max(6 * self.dx, 8e-4)
+        depth = max(2 * self.dx, 2e-4)
+        cavity = ""
+        if getattr(a, "wire_cavity", False):
+            outer = max(3.0 * self.R, 1.8e-3)
+            cavity = (
+                "    wireCavity      true;     // open or closed gas behind/around the wire\n"
+                f"    cavityOuter     {f(outer)};   // radial extent from the wire axis [m]\n"
+                "    cavityHalfAngle 110;      // deg, half-width of the trailing (+x) sector\n"
+            )
+        return (
+            "\nporosity   // enclosed gas: entrapment / lack-of-fusion / keyhole (postProcessing/porosity)\n"
+            "// Locked (shell liquid fraction < flLock) pores are held at alpha <= alphaLock.\n"
+            "// keyhole requires a closed cavity that is still hot or under recoil; evaporation\n"
+            "// does not remove mass, so an open depression is not a pore.\n"
+            "{\n"
+            "    enabled         true;\n"
+            "    alphaOpen       0.50;     // gas for the connectivity flood-fill\n"
+            "    alphaLock       0.05;     // locked pores cannot be filled above this\n"
+            "    flLock          0.35;     // mean shell liquid fraction that freezes the pore\n"
+            f"    lofBand         {f(lof)};   // lack-of-fusion: gas within this of the plate [m]\n"
+            "    keyholeTfrac    0.85;     // shell temperature / Tboil\n"
+            f"    keyholeDepth    {f(depth)};   // pore this far below the metal column surface [m]\n"
+            "    keyholeRecoil   5000;     // Pa, alternative to the temperature test\n"
+            "    minCells        1;\n"
+            "    zSubstrate      0;\n"
+            f"    Tboil           {f(self.mw['Tboil'])};\n"
+            f"    interval        {every};\n"
+            + cavity +
+            "}\n"
+        )
 
     def rigid_substrate_block(self):
         a = self.a
@@ -1392,17 +2117,18 @@ statistics
 
     def function_objects(self):
         a = self.a
+        blocks = []
         xs = self.record_planes()
-        if not xs:
-            return ""
-        dt = a.record_interval or 0.5 * self.dx_min / a.scan_speed
-        a.record_interval = dt
-        flds = ["alpha.metal", "T", "liquidFraction", "meltHistory", "cWire"]
-        if self.comp_names:
-            flds += [f"c{c}" for c in self.comp_names] + [f"u{c}" for c in self.comp_names]
-        surf = "\n".join(f"            x{i} {{ type cuttingPlane; point ({f(x)} 0 0); normal (1 0 0); interpolate false; }}"
-                         for i, x in enumerate(xs))
-        return f"""    recordPlanes    // y-z planes behind the pool: the passing (solid) track, stacked into the build later
+        if xs:
+            dt = a.record_interval or 0.5 * self.dx_min / a.scan_speed
+            a.record_interval = dt
+            flds = ["alpha.metal", "T", "liquidFraction", "meltHistory", "cWire"]
+            if self.comp_names:
+                flds += [f"c{c}" for c in self.comp_names] + [f"u{c}" for c in self.comp_names]
+            surf = "\n".join(
+                f"            x{i} {{ type cuttingPlane; point ({f(x)} 0 0); normal (1 0 0); interpolate false; }}"
+                for i, x in enumerate(xs))
+            blocks.append(f"""    recordPlanes    // y-z planes behind the pool: the passing (solid) track, stacked into the build later
     {{
         type            surfaces;
         libs            (sampling);
@@ -1415,8 +2141,26 @@ statistics
         {{
 {surf}
         }}
-    }}
-"""
+    }}""")
+        # Side view through the wire, same cut as a radiograph. y = 20 um sits
+        # inside the first cell layer of a half domain (the symmetry plane
+        # itself does not cut those cells).
+        if not self.d2:
+            blocks.append(f"""    sidePlane
+    {{
+        type            surfaces;
+        libs            (sampling);
+        writeControl    adjustableRunTime;
+        writeInterval   {f(a.write_interval)};
+        surfaceFormat   raw;
+        interpolationScheme cell;
+        fields          (alpha.metal T liquidFraction cavityMarker contactState sigmaT);
+        surfaces
+        {{
+            xz {{ type cuttingPlane; point (0 2e-5 0); normal (0 1 0); interpolate false; }}
+        }}
+    }}""")
+        return "\n".join(blocks) + ("\n" if blocks else "")
 
     # ------------------------------------------------------------------
     def fields(self):
@@ -1519,6 +2263,11 @@ statistics
         refine = "".join(f"topoSet -dict system/topoSetDict.refine > log.topoSet.refine{i} 2>&1\n"
                          f"refineMesh -overwrite -dict system/refineMeshDict > log.refineMesh{i} 2>&1\n"
                          for i in range(self.a.wire_refine))
+        if self.a.neck_refine > 0:
+            refine += "".join(
+                f"topoSet -dict system/topoSetDict.neck{i} > log.topoSet.neck{i} 2>&1\n"
+                f"refineMesh -overwrite -dict system/refineMeshDict.neck > log.refineMesh.neck{i} 2>&1\n"
+                for i in range(self.a.neck_refine))
         exprf = "setExprFields > log.setExprFields 2>&1\n" if self.strands is not None else ""
         return f"""#!/bin/bash
 # Laser wire DED case: mesh, initial fields, run (np={np_}).  Usage: ./Allrun [np]
@@ -1539,7 +2288,9 @@ if [ "$NP" -gt 1 ]; then
     foamDictionary -entry coeffs.n -set "$N" system/decomposeParDict > /dev/null
     decomposePar -force > log.decomposePar 2>&1
     [ -n "$MESH_ONLY" ] && exit 0
-    mpirun -np $NP laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
+    # WSL reports nproc hardware threads. Open MPI otherwise counts cores
+    # and refuses np greater than the core count (12 on TaoSun-01).
+    mpirun --use-hwthread-cpus -np $NP laserWireDEDFoam -parallel > log.laserWireDEDFoam 2>&1
 else
     [ -n "$MESH_ONLY" ] && exit 0
     laserWireDEDFoam > log.laserWireDEDFoam 2>&1
@@ -1561,6 +2312,10 @@ fi
         if self.a.wire_refine > 0:
             write(s / "topoSetDict.refine", self.topo_set_refine())
             write(s / "refineMeshDict", self.refine_mesh_dict())
+        if self.a.neck_refine > 0:
+            for level in range(self.a.neck_refine):
+                write(s / f"topoSetDict.neck{level}", self.topo_set_neck(level))
+            write(s / "refineMeshDict.neck", self.refine_mesh_dict_neck())
         write(s / "controlDict", self.control_dict())
         write(s / "fvSchemes", self.fv_schemes())
         write(s / "fvSolution", self.fv_solution())
@@ -1668,7 +2423,18 @@ def main(argv=None):
           f"P={a.power:.0f} W in {len(c.beams())} beam(s), A={c.Awire}/{c.A}, end={a.end_time} s, "
           f"v_scan={a.scan_speed*1e3:.1f} mm/s, WFS={a.wire_feed_speed*1e3:.1f} mm/s, "
           f"d_wire={a.wire_diameter*1e3:.2f} mm @ {a.feed_angle:.0f} deg ({a.feed_side} feed)")
-    if a.laser_config != "single" or True:
+    if c.custom_beams:
+        print("[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):")
+        for n, pw, F, d, r, _pr in c.beams():
+            # where the axis meets the plate
+            if abs(d[2]) > 1e-12:
+                t = (0.0 - F[2]) / d[2]
+                hit = (F[0] + t * d[0], F[1] + t * d[1])
+            else:
+                hit = (F[0], F[1])
+            print(f"    {n}: {pw:.0f} W, 1/e^2 {r*1e3:.2f} mm, aim ({F[0]*1e3:.2f}, {F[1]*1e3:.2f}, {F[2]*1e3:.2f}) mm, "
+                  f"plate hit ({hit[0]*1e3:.2f}, {hit[1]*1e3:.2f}) mm")
+    else:
         w_plate, z_plate = c.spot_size_at_z(0.0)
         w_1mm, z_1mm = c.spot_size_at_z(0.001)
         zR = getattr(a, "rayleigh_length", None)
@@ -1698,9 +2464,35 @@ def main(argv=None):
                   f"{c.weave_wavelength*1e3:.2f} mm of travel ({nzig:.1f} zigzags over the track)")
         if a.wire_refine:
             hwy = a.refine_halfwidth_y or a.refine_halfwidth
+            axes = "x,y,z" if a.wire_refine_z else "x,y"
             print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
-                  f"refined {a.wire_refine}x "
+                  f"refined {a.wire_refine}x in {axes} "
                   f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+    if a.wire_refine and not c.strands:
+        hwy = a.refine_halfwidth_y or a.refine_halfwidth
+        axes = "x,y,z" if a.wire_refine_z else "x,y"
+        print(f"[generate] wire box +-{a.refine_halfwidth*1e3:.2f} mm in x, +-{hwy*1e3:.2f} mm in y, "
+              f"refined {a.wire_refine}x in {axes} "
+              f"({c.n_refine_cols} columns) -> dx_min = {c.dx_min*1e6:.0f} um; domain y: {a.domain_y}")
+    if a.neck_refine:
+        x0, x1, y0, y1, z0, z1 = c.neck_bounds()
+        print(f"[generate] neck box x {x0*1e3:.2f}..{x1*1e3:.2f} y {y0*1e3:.2f}..{y1*1e3:.2f} "
+              f"z {z0*1e3:.2f}..{z1*1e3:.2f} mm, {a.neck_refine} nested xyz levels "
+              f"-> dx_min = {c.dx_min*1e6:.0f} um")
+    if getattr(a, "oxygen_ppm", None) is not None:
+        if a.oxygen_sigma_only:
+            angles = "scalar contact angles kept"
+        elif a.oxygen_wire_angles:
+            angles = (
+                "plate window kept, wire "
+                f"{a.theta_receding_wire:.0f}/{a.theta_advancing_wire:.0f} and trailing "
+                f"{a.theta_receding_wire_trail:.0f}/{a.theta_advancing_wire_trail:.0f} "
+                "from the oxide table"
+            )
+        else:
+            angles = "placeholder angle table"
+        print(f"[generate] oxygen model ON: chamberOxygenPpm = {a.oxygen_ppm:g} "
+              f"(a_O = {a.oxygen_ppm * 1e-4:g} wt%). Linear sigma(T) is off. {angles}.")
     print(f"[generate] mesh {c.n[0]} x {c.n[1]} x ({c.n[2]}+{c.n[3]}) = {c.ncells_block} block cells -> {c.ncells} cells, dx={c.dx*1e6:.0f} um; "
           f"capillary dt ~ {s['capillary_dt']:.2e} s; expected bead area {c.bead_area*1e6:.2f} mm^2; "
           f"E_L = {s['energy_per_length_J_per_mm']:.0f} J/mm")
@@ -1715,6 +2507,21 @@ def main(argv=None):
                  f"({b0['axis_to_wire_surface_at_tip_in_w']:.2f} w from the wire surface, rel. intensity "
                  f"{b0['rel_intensity_at_wire_surface_at_tip']:.3f}), {b0['axis_offset_at_plate_m']*1e3:.2f} mm "
                  f"at the plate" if b0 else ""))
+    if getattr(a, "contact_pinning", False) or getattr(a, "porosity", False):
+        print(f"[generate] single-track extras: contact-line pinning "
+              f"{'ON' if a.contact_pinning else 'off'}"
+              f" (thetaR {a.theta_receding:.0f} / thetaA {a.theta_advancing:.0f} deg)"
+              + (f", wire pin ON (thetaR {a.theta_receding_wire:.0f} / thetaA {a.theta_advancing_wire:.0f} deg, "
+                 f"frame {a.wire_pin_frame})" if getattr(a, "pin_wire", False) else "")
+              + (f", trailing wire sector {a.theta_receding_wire_trail:.0f}/"
+                 f"{a.theta_advancing_wire_trail:.0f} deg within "
+                 f"{a.wire_sector_half_angle:.0f} deg of +x "
+                 f"(blend {a.wire_sector_blend:.0f} deg)"
+                 if getattr(a, "wire_sector", False) else "")
+              + f", porosity {'ON' if a.porosity else 'off'}"
+              + (", wire cavity ON" if getattr(a, "wire_cavity", False) else "")
+              + (", pore seed ON" if getattr(a, "pore_seed", False) else "")
+              + (", wire-cavity seed ON" if getattr(a, "wire_cavity_seed", False) else ""))
     if a.print:
         return 0
     out = Path(a.case)

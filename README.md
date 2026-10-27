@@ -112,6 +112,236 @@ which laserWireDEDFoam
 
 ---------------------------------------------------------------------------------------------
 
+## 2b. Single-wire track: contact-line pinning and porosity
+
+The stranded / Fe–Ni cases are unchanged. Pinning and porosity are **off unless the case dictionary asks for them**, and the generator only writes those dictionaries with `--contact-pinning` and `--porosity`.
+
+Two setups are in the tree:
+
+| case | what it is |
+|---|---|
+| `cases/single_wire` | one solid 1.0 mm 316L wire, one vertical beam, side feed, contact-line pinning and porosity **on**, no planted pores. Coarse mesh (~0.15 mm), 3 mm of travel. This is the case to run locally when you want a real bead. It is a full melt-pool run (hours on a laptop, not a smoke test). |
+| `cases/single_wire_demo` | the same physics on a tiny 2-D mesh (~150 cells), end time 30 ms, `--power-2d-factor 8`, plus `--pore-seed`. The seed makes the pore counter report one locked entrapment pore and one locked lack-of-fusion pore immediately. The run is the pipeline check (about a second here). |
+
+### What was added
+
+**Contact-line pinning** (`constant/meltProperties`, `contactLine{}`). The plate is meshed metal, so the bead/pool/gas triple line is inside the domain, not a boundary condition on `bottom`. While the metal at that line is liquid, the contact angle through the metal may lie anywhere between a receding angle (default 20°) and an advancing angle (default 90°). Inside that window the Young force is zero and a momentum sink holds the line on the substrate velocity: the line is pinned. Outside the window a localised Young force advances or recedes the line back to the nearer limit. As the metal at the line freezes, the allowed window opens to 0–180°, so a solidified bead stays at the angle it froze at and is carried with the plate. Unmelted wire is not treated as a wall, so the feed is not pinned. Field `contactState`: 1 hysteresis pin, 2 solidification pin, 3 advancing, 4 receding.
+
+**Porosity** (`porosity{}`). Shielding gas is already the VOF gas phase. Gas that cannot reach the atmosphere (top, outlet, far side, wire inlet) is a pore:
+
+- **gas entrapment** (type 1) — a closed bubble that is not a surface lack-of-fusion gap and not a still-hot keyhole;
+- **lack of fusion** (type 2) — closed gas sitting on the plate and covered by deposited metal (the gap left when the contact line pins before the bead wets the substrate);
+- **keyhole** (type 3) — a closed cavity whose neighbourhood is still near boiling or under recoil pressure. Recoil in this solver dents the surface but does not remove mass, so an *open* depression is not counted. A pore is tagged keyhole only after that hot cavity has closed.
+
+Once the metal cells around the pore have a mean liquid fraction below `flLock` (0.35), the pore is locked (`poreMarker` 1, `alpha.metal` held at or below 0.05) so numerical diffusion cannot fill it. If the shell remelts, the lock releases. Evaporation still removes heat, not mass.
+
+### Dependencies, build, run
+
+Python 3 (standard library) for `generate_case.py`, `run_case.py` and `scripts/quantify_pores.py`. The solver needs **OpenFOAM.com v2406 or v2412**.
+
+```bash
+# build (WSL or Linux). Do not compile on a Windows mount: see section 2.
+source /usr/lib/openfoam/openfoam2406/etc/bashrc   # or openfoam2412
+cd solver && ./Allwmake
+export PATH="$FOAM_USER_APPBIN:$PATH"              # or LWDED_APPBIN=$HOME/lwded_bin ./Allwmake
+
+# short pipeline check (serial, well under a minute once the solver is built)
+./scripts/run_single_wire_demo.sh                  # Allrun + quantify_pores.py --expect-demo
+
+# or by hand
+cd cases/single_wire_demo && ./Allrun 1
+python3 ../../scripts/quantify_pores.py --case . --expect-demo
+
+# the real single-wire track (no planted pores; long)
+cd cases/single_wire && ./Allrun 4
+python3 ../../scripts/quantify_pores.py --case .
+```
+
+Regenerate either case from the repo root (the command that matches `case_params.json`):
+
+```bash
+python3 generate_case.py --case cases/single_wire_demo --laser-config single \
+  --wire-type solid --material 316L --dim 2d --dx 3e-4 \
+  --upstream 2e-3 --downstream 3.5e-3 --substrate-thickness 1.2e-3 --gas-height 1.6e-3 \
+  --power 1200 --power-2d-factor 8 --scan-speed 0.01 --wire-feed-speed 0.02 \
+  --wire-diameter 1e-3 --feed-angle 55 --wire-gap 0.2e-3 --feed-start 0 --laser-ramp 5e-5 \
+  --end-time 0.03 --write-interval 0.01 --max-co 0.5 --np 1 \
+  --contact-pinning --porosity --pore-seed
+
+python3 generate_case.py --case cases/single_wire --laser-config single \
+  --wire-type solid --material 316L --resolution coarse \
+  --power 1800 --scan-speed 0.01 --wire-feed-speed 0.02 --wire-diameter 1e-3 \
+  --feed-angle 50 --wire-gap 0.2e-3 --feed-start 0 --track-length 3e-3 \
+  --write-interval 0.02 --np 4 --rigid-substrate 100 \
+  --contact-pinning --porosity
+```
+
+`--pore-seed` is only for the demo. It plants one gas bubble inside the plate and one gas gap under a solid cap so the counter and the lock run immediately. A production track should omit it and let pores appear only if the free surface actually closes one in.
+
+### Outputs and how to view them
+
+| file / field | meaning |
+|---|---|
+| `postProcessing/contactLine/contactLine.dat` | time, counts of molten / pinned / advancing / receding / frozen cells, mean contact angle, pinned length |
+| `postProcessing/porosity/porosity.dat` | time, pore count by type, locked count, pore volume, volume fraction, mean and max equivalent diameter |
+| `postProcessing/porosity/pores.dat` | one row per pore: id, type, locked flag, volume, equivalent diameter, centroid, cell count, shell liquid fraction |
+| `contactState` | ParaView: where the triple line is pinned or moving |
+| `poreMarker`, `poreType` | ParaView: locked pores and their class |
+| `log.laserWireDEDFoam` | lines `ContactLine:` and `Porosity:` |
+
+`python3 scripts/quantify_pores.py --case <case>` prints the last sample. `--expect-demo` checks the **whole history** of the short case: a locked entrapment pore, a locked lack-of-fusion pore, a molten contact line and a solidification-pinned line. On the 30 ms demo the planted pores lock immediately; once the pool (T well above the liquidus, contact angle inside the 20–90° window, most of the line pinned) remelts their shells, the lock releases and a cavity can disappear before the end time. That is the model, not a failed run. Equivalent diameter is the sphere with the same gas volume, `(6V/π)^(1/3)`. Volume fraction is pore volume / (pore volume + metal volume) on the mesh that was solved. The demo fraction is not a process prediction: the planted pores are large next to a 150-cell 2-D domain.
+
+In ParaView, open `case.foam` (Decomposed Case if you used `mpirun`), colour by `contactState`, `poreMarker` or `poreType`. The usual melt-pool file `postProcessing/meltPool/meltPool.dat` is unchanged.
+
+### Assumptions that matter
+
+- Default angles (20° / 90°) are a wide hysteresis window for liquid steel on solid steel, not a measurement for one alloy pair. Change them with `--theta-receding` / `--theta-advancing`.
+- Pinning acts where the free surface meets solid substrate or already-deposited metal. It does not pin the unmelted wire unless the case sets `pinWire` (`--pin-wire`), which is what `cases/wire_cavity` does.
+- A pore has to be topologically closed. An open keyhole depression is not a pore; this solver's recoil does not bore a vapour channel by removing mass.
+- Locking a pore deletes the metal that numerical diffusion had pushed into it. That is intentional, and it is a small mass error equal to that diffusion.
+- 2-D demo "volumes" are the extruded cell volumes (one cell in y). Use `cases/single_wire` for a 3-D bead.
+
+## 2c. Running on a workstation
+
+`cases/wire_cavity` is the three-laser, vertical-wire track aimed at the side-view radiograph (scale bar 1000 µm): a ~1 mm wire feeds straight down into a dome a few millimetres long and about 1.5–2 mm tall, with the wire near the trailing edge. Two beams heat the plate in front of the wire and one heats the wake behind it. The melt/argon/solid-wire contact line is pinned with its own hysteresis window, and the cavity report follows the gas behind and around the wire.
+
+The case is meant to be run on a multi-core Linux workstation (the one used here is `taosun01`). One script sources OpenFOAM, builds the solver, writes the case, decomposes it, runs it and prints the pore and cavity summary:
+
+```bash
+./scripts/run_wire_cavity.sh                 # all cores reported by nproc
+./scripts/run_wire_cavity.sh --np 16         # choose the core count
+./scripts/run_wire_cavity.sh --generate-only # write the case, do not solve
+./scripts/run_wire_cavity.sh --smoke         # optional coarse 3D case, end time 8 ms
+./scripts/run_wire_cavity.sh --oxygen-ppm 100
+./scripts/sweep_wire_cavity_oxygen.sh --np 24
+```
+
+If OpenFOAM.com v2406 or v2412 is not installed, the script stops and prints the Ubuntu commands (`openfoam2406-dev` or `openfoam2412-dev` from `dl.openfoam.com`). Details, the default beam table, what to watch in the log, and how to read the cavity file are in that script's header and in `AGENTS.md`.
+
+A local Cursor agent opened in this repo should follow `AGENTS.md` (and `.cursor/rules/wire-cavity.mdc`): build with the script, do not launch the full track on a small machine, and post-process with `scripts/quantify_pores.py`.
+
+### Default process (override any of it from the command line)
+
+Laboratory frame: the substrate moves in +x, the head is fixed, so the travel direction of the head is −x. Azimuth 0° is in front of the wire, 180° is behind it.
+
+| beam | azimuth | inclination from vertical | aim from the wire axis | aim height | power | 1/e² radius |
+|---|---|---|---|---|---|---|
+| front-left | +55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| front-right | −55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| rear | 180° | 22° | 0.9 mm | 0.3 mm | 450 W | 0.55 mm |
+
+The beam axis is aimed at that point and continues down to the plate, so the plate spot sits a little further out (`aim height × tan(inclination)`): about 1.65 mm in front of the wire for the front pair and about 1.0 mm behind it for the rear beam. Total power 1850 W. Wire: solid 316L, diameter 1.0 mm, vertical, feed 30 mm/s, initial gap 0.15 mm. Scan speed 6 mm/s over 4 mm. The wire cross-section times WFS/scan speed is about 3.9 mm², the area of a dome a few millimetres wide and roughly 1.5–2 mm tall. 316L is a stand-in; the radiograph does not name the alloy.
+
+Substrate contact angles stay 20° / 90°. The wire line uses 25° / 70° (`--theta-receding-wire`, `--theta-advancing-wire`). Inside that window the line is held still in the head frame (`--wire-pin-frame head`) so a kink can stay part-way up the wire while the wire feeds through it. `--wire-pin-frame wire` sticks the line to the feed velocity instead. These angles are a starting hysteresis band, not a measured pair. `--wire-sector` adds a wider window on the trailing side of the wire only (defaults 60° / 140° within 90° of +x, cosine blend 30°). It is off unless you pass it, so the production track keeps one window around the wire.
+
+Lists accepted by `generate_case.py`: `--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`. One value is copied to every beam. `--power` rescales the default 700/700/450 split. `--laser-config normal|lof|transitional_r` is unchanged unless you pass one of those lists.
+
+### While it runs, and afterwards
+
+```bash
+tail -f cases/wire_cavity/log.laserWireDEDFoam
+grep -E 'ContactLine:|WireCavity:|Porosity:|End' cases/wire_cavity/log.laserWireDEDFoam
+python3 scripts/quantify_pores.py --case cases/wire_cavity
+```
+
+| file / field | meaning |
+|---|---|
+| `postProcessing/contactLine/contactLine.dat` | substrate line, then `nWire`, `nWirePinned`, `zWireMax` / `zWireMin` (contact-line height on the wire), `thetaMeanWire` |
+| `postProcessing/wireCavity/wireCavity.dat` | status 0 none / 1 open / 2 closed / 3 mixed, contact-line height, cavity volume (open and closed), depth below the contact line, downstream length, centroid |
+| `contactState` | 5 wire hysteresis, 6 wire solidification, 7 wire advancing, 8 wire receding (1–4 remain the substrate line) |
+| `contactSupport` | 1 substrate or deposit, 2 unmelted wire |
+| `cavityMarker` | 1 open wire cavity, 2 closed wire cavity |
+
+`cases/single_wire` and `cases/single_wire_demo` do not set `pinWire` or `wireCavity`. Re-running them uses the previous substrate-only pin and the enclosed-pore counter.
+
+The full track is a half-domain mesh (y ≥ 0, symmetry plane): about 30 000 cells at 0.15 mm, end time 0.67 s. The capillary time-step ceiling is about 2.7×10⁻⁵ s, so the run is on the order of 25 000 steps. That is hours on a workstation (use the `ExecutionTime` printed each step to scale it); memory stays well under the size of a desktop. The −55° beam is the mirror of the +55° beam and is folded onto the meshed half by the solver's `symmetryY` (the same rule as the paper configs). Reported laser power is doubled back by `statistics/powerFactor`. Pass `--domain-y full` to mesh both sides explicitly.
+
+### Dissolved oxygen
+
+The cavity behind the wire is assumed to feel chamber oxygen through the melt's surface tension and through the contact-angle window. Both are off unless you pass `--oxygen-ppm`. Without that flag the linear `sigma(T)` model and the fixed 20°/90° and 25°/70° windows are unchanged.
+
+With the flag, `surfaceTension/oxygenDependent` is true and `chamberOxygenPpm` is a **uniform dissolved oxygen in the melt, ppm by weight**. It is a stand-in for the chamber set-point: Sieverts' law with the gas is not solved. The activity in the adsorption law is `a_O = chamberOxygenPpm × 10⁻⁴` wt% (the 1 wt% standard state).
+
+Sahoo–Belton / Szekely form (evaluated at `T_eval = max(T, T_m)`, frozen below the liquidus):
+
+```
+sigma(T, a_O) = sigma_m - A (T_eval - T_m)
+              - R T_eval Gamma_s ln( 1 + k1 a_O exp(-dH0 / (R T_eval)) )
+```
+
+The Marangoni coefficient is the analytic derivative (zero where `sigma` is clipped at `sigmaMin`, or where `T < T_m`):
+
+```
+dsigma/dT = -A - R Gamma_s ln(1 + K a_O) - Gamma_s (K a_O)/(1 + K a_O) * dH0 / T_eval
+K = k1 exp(-dH0 / (R T_eval))
+```
+
+`dH0` is negative, so the last term is positive and `dsigma/dT` changes sign once oxygen adsorption wins.
+
+| symbol | default | role |
+|---|---|---|
+| `sigma_m`, `A`, `T_m` | the case `sigma`, `-dSigmadT`, `Tref` | 316L preset: 1.75 N/m, 4.3×10⁻⁴ N/m/K, 1723 K (Mills, *Recommended Values of Thermophysical Properties for Selected Commercial Alloys*, Woodhead, 2002, low-oxygen slope of that order). At `a_O = 0` this is the old linear law. |
+| `Gamma_s` | 2.03×10⁻⁵ mol/m² | Fe–O saturation coverage |
+| `k1` | 0.0138 /wt% | Fe–O entropy factor |
+| `dH0` | −1.463×10⁵ J/mol | Fe–O segregation enthalpy |
+| `R` | 8.314462618 J/mol/K | gas constant |
+
+Fe–O coefficients: Sahoo, DebRoy and McNallan, *Metall. Trans. B* 19B (1988) 483–491, the isotherm Belton, *Metall. Trans. B* 7B (1976) 35–42, in the weld-pool form associated with Szekely. They are a surrogate for 316L, not a 316L fit. Override them with `oxygenGammaS`, `oxygenK1`, `oxygenDeltaH0`, `oxygenSigmaM`, `oxygenA`, `oxygenTm` in `surfaceTension`.
+
+Reference values at the 1723 K anchor (`scripts/compare_oxygen_sweep.py --print-model`):
+
+| ppm | `a_O` wt% | `sigma(T_m)` N/m | `dsigma/dT(T_m)` N/m/K |
+|---|---|---|---|
+| 0 | 0 | 1.750 | −4.3×10⁻⁴ |
+| 10 | 0.001 | 1.657 | −1.3×10⁻⁵ (still negative, near reversal) |
+| 100 | 0.01 | 1.296 | +6.7×10⁻⁴ |
+| 500 | 0.05 | 0.882 | +7.0×10⁻⁴ |
+| 1000 | 0.1 | 0.688 | +6.3×10⁻⁴ |
+
+The solver logs `OxygenSigma:` and writes `postProcessing/oxygen/sigma.dat` plus the fields `sigmaT` and `dSigmadTField`.
+
+Contact angles, only while `oxygenDependent` is true, come from `contactLine/oxygenAngleTable`: linear in ppm, clamped outside the knots. **These knots are placeholders, not sessile-drop measurements.** The rise and the wider window stand in for an oxide film (poorer wetting) until the angles are calibrated. At 10 ppm the window is the historical one.
+
+| ppm | plate receding | plate advancing | wire receding | wire advancing |
+|---|---|---|---|---|
+| 10 | 20° | 90° | 25° | 70° |
+| 100 | 28° | 100° | 35° | 90° |
+| 500 | 40° | 120° | 48° | 115° |
+| 1000 | 50° | 130° | 58° | 130° |
+
+Solidification still opens whichever window is active toward 0–180°. Pinning inside the window is unchanged.
+
+```bash
+./scripts/run_wire_cavity.sh --oxygen-ppm 100          # full track -> cases/wire_cavity_ox100
+./scripts/run_wire_cavity.sh --smoke --oxygen-ppm 10   # 8 ms check
+./scripts/sweep_wire_cavity_oxygen.sh --np 24          # 10, 100, 500, 1000 ppm, full track
+./scripts/sweep_wire_cavity_oxygen.sh --smoke          # same levels, 8 ms each
+python3 scripts/compare_oxygen_sweep.py                # cavity volume and bubble count vs time
+```
+
+`WireCavity:` is still the open wake. `Porosity:` / `nEntrapment` is the bubble count. A rise in that count is logged as `PinchOff:`. The wire-touching cavity going from open or mixed to closed is `CavityClosure:`. Both are appended to `postProcessing/wireCavity/events.dat`. The compare script plots cavity volume and entrapment count against time for each ppm.
+
+### Cells near the wire
+
+A neck that pinches into a bubble is about 10–20 µm. The production mesh is 150 µm, so it will not resolve pinch-off. `--wire-refine N` halves a full-height box around the wire (default half-width = wire radius + 0.3 mm, here ±0.8 mm). By default only x and y are halved, which keeps the vertical spacing at 150 µm: the laser's column march is unchanged, and a neck in z is still one coarse cell. `--wire-refine-z` also halves z inside that box. Columns stay grouped by cell-centre x,y because the box is full height.
+
+On this half-domain track (TaoSun-01: Intel i9-10920X, 12 cores / 24 threads, 62 GB, OpenFOAM.com v2406 under WSL):
+
+| setting | spacing in the wire box | cells | capillary ceiling | steps over 0.67 s | cell-steps vs production |
+|---|---|---|---|---|---|
+| production | 150 µm | 30 305 | 2.7×10⁻⁵ s | ~2.5×10⁴ | 1 |
+| `--wire-refine 3` | 19 µm in x,y; 150 µm in z | 122 000 | 1.2×10⁻⁶ s | ~5.6×10⁵ | ~90× |
+| `--wire-refine 3 --wire-refine-z` | 19 µm | 771 000 | 1.2×10⁻⁶ s | ~5.6×10⁵ | ~570× |
+| `--wire-refine 4 --wire-refine-z` | 9 µm | 6.0×10⁶ | 4×10⁻⁷ s | ~1.6×10⁶ | ~10⁴× |
+
+Cell-steps are `(cells / 30305) × (steps / 25000)`. Wall time is that factor times the production run if the step cost scales with cell count and the 24 ranks stay busy. The production track is already hours; the 19 µm isotropic box is hundreds of times that, and the 9 µm box is not a routine run on this machine. Memory for the 19 µm box is still a small fraction of 62 GB. The 19 µm x,y-only mesh is the cheaper sensitivity test; it does not resolve a vertical neck. Count `ExecutionTime` on the first few minutes and multiply by `steps_total / steps_done` before leaving a refined job overnight.
+
+```bash
+./scripts/run_wire_cavity.sh --np 24 --oxygen-ppm 100 --wire-refine 3 --wire-refine-z
+```
+
+The optional `--smoke` case is the same beams on a coarse mesh (0.4 mm) for 8 ms, with `--wire-cavity-seed`, and only checks that the wire-line and cavity files are written. It is not part of `cases/wire_cavity`. With `--oxygen-ppm` the smoke case is `cases/wire_cavity_smoke_ox<ppm>`.
+
 ## 3. Generate, mesh, run, visualize a case
 
 Run everything inside WSL with OpenFOAM sourced. Cases are best run from a WSL-home directory
