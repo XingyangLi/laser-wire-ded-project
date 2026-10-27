@@ -1,8 +1,9 @@
 #!/bin/bash
-# Finer full-domain mesh: 13 um over a wider wire-and-pool band, columns
-# kept whole and packed so 16-24 ranks each own a similar cell count.
-# Physics is the shell treatment (recoil off inside the oxide shell) so the
-# slit is the one the slab kept. Beams, Marangoni, skin and feed stay on.
+# Finer full-domain mesh: 14 um over a band wider than the old 0.5 mm neck,
+# columns kept whole. A 13 um band of 604k cells was slower on 16 ranks
+# (8.9 s/step) than on 8 (4.0 s/step), so this box stays near 200k cells
+# and the long run uses whichever of 8 and 16 is actually faster.
+# Physics is the shell treatment (recoil off inside the oxide shell).
 #
 #   bash launch_fine.sh            # mesh, benchmark, then the 22 ms run
 #   bash launch_fine.sh run 16     # skip the mesh and the benchmark
@@ -32,7 +33,7 @@ prepare_mesh() {
     rm -rf "$CASE"
     python3 "$TAO_ROOT/generate_case.py" --case "$CASE" \
         --laser-config triple \
-        --wire-type solid --material 316L --dx 1.04e-4 --domain-y half \
+        --wire-type solid --material 316L --dx 1.12e-4 --domain-y half \
         --upstream 4e-3 --downstream 7e-3 --half-width 3.5e-3 \
         --substrate-thickness 2e-3 --gas-height 3.5e-3 --gas-uniform-height 2.6e-3 \
         --wire-diameter 1e-3 --feed-angle 90 --wire-gap 0.08e-3 --feed-start 0 \
@@ -46,8 +47,8 @@ prepare_mesh() {
         --end-time 0.022 --write-interval 0.0001 --np 1 --laser-ramp 1e-4 \
         --max-co 0.4 --capillary-dt-factor 1 \
         --neck-refine 3 \
-        --neck-x0=-0.20e-3 --neck-x1 1.40e-3 --neck-y-out 0.55e-3 \
-        --neck-z0 0.30e-3 --neck-z1 1.70e-3 \
+        --neck-x0=0.05e-3 --neck-x1 1.05e-3 --neck-y-out 0.32e-3 \
+        --neck-z0 0.45e-3 --neck-z1 1.45e-3 \
         --c-alpha-neck 4 \
         --oxygen-ppm 300 --oxygen-sigma-only \
         --oxide-skin --oxide-skin-mu 20 --oxide-skin-k 1e14 \
@@ -236,18 +237,16 @@ main() {
         return
     fi
     prepare_mesh
-    # Short step-time samples. 8 is the reference. Use 16 or 24 when that
-    # rate is at least as fast as 8, otherwise keep the fastest count.
+    # 8 is the reference. 16 is used only when it is at least as fast.
     bench 8
     bench 16
-    bench 24
     local best
     best="$("$PY" - "$CASE" <<'PY'
 import sys
 from pathlib import Path
 case = Path(sys.argv[1])
 rates = {}
-for np in (8, 16, 24):
+for np in (8, 16):
     text = (case / f"log.bench.{np}").read_text(errors="replace")
     times = [float(line.split()[2]) for line in text.splitlines() if line.startswith("ExecutionTime")]
     steps = sum(1 for line in text.splitlines() if line.startswith("Time = "))
