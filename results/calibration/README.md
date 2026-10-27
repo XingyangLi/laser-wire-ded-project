@@ -390,3 +390,27 @@ cal74 carries oxide coverage on the free surface. It starts at 0, moves with the
 | cal76 | travel speed, no skin | 0 | bare face | 0.025 × 0.020 | 0.025 × 0.020 | no steady film |
 
 None of them generates a thin open slit. On cal74 the coverage does reach the cap (oxMax = 2) and about 170 trailing cells are damped, but the mouth gap stays at about 0.001 mm, so the skin is sitting on a closed face. The only thin signal is a one-cell wisp near z = 1.4 mm. Marangoni and recoil do not push a film open in 8 ms; the neck stays a bare face. At 4 mm/s the substrate moves 0.032 mm in 8 ms, and the wire feeds 0.16 mm. That does not entrain a gas film on the trailing face. The capillary number of the travel speed is about 2×10⁻⁵.
+
+## Wire-wall drag
+
+cal77 starts from the same bare neck and gives the wire a real wall. The mesh is static. The wall velocity is the feed, 24 mm/s downward. `alpha.metal` on that wall is `pinnedAlphaContactAngle` with a window of 40° receding and 140° advancing: inside the window the imposed angle is the apparent angle, so the Young force is zero and the line can stay stuck. `U` is `partialSlip` at the feed. The solver sets no-slip, and a momentum sink (`Kpin` 1×10¹² kg/m³/s), on the trailing contact only: the highest metal still touching the wall, and the 0.20 mm band under it. The rest of the wall slips, so the moving wire does not pump the pool. Plate window 10°/40°. Oxygen is Sahoo–Belton at 300 ppm, with the angle table off. Laser, Marangoni and recoil are off. 10 ms, 12 ranks. No painted film.
+
+The contact starts at z = 1.20 mm with an apparent angle of 117°. About 25 faces stay pinned. The angle falls and remains inside the window (slip stays at 0 or 1).
+
+| time | z of the wetted top | angle | pinned faces |
+| --- | --- | --- | --- |
+| 0 | 1.20 mm | 117° | 24 |
+| 2 ms | 1.18 mm | 73° | 27 |
+| 2.7 ms | 0.58 mm | 71° | 36 |
+| 4 ms | 0.65 mm | 60° | 21 |
+| 6 ms | 0.63 mm | 59° | 20 |
+| 8 ms | 0.63 mm | 59° | 21 |
+| 10 ms | 0.65 mm | 60° | 21 |
+
+In 10 ms the wire itself moves 0.24 mm. The wetted top moves about 0.55 mm, most of it between 2 and 3 ms, then sits near 0.63 mm.
+
+The center-plane gap tells the other half of that motion. At 2 ms the trailing face is still metal up to 1.15 mm, and the crown above that is open gas. At 4, 6, 8 and 10 ms the face is gas from 0.35 mm to 1.55 mm (the metric cap of 0.40 mm). The metric reads a bare face at every sample. No thin open slit appears, so the feed sweep (18/24/28 mm/s) and the oxygen sweep (50/100/300 ppm) were not run.
+
+| tag | ppm | feed | window | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cal77 | 300 | 24 mm/s | 40°/140° | bare face | bare face | bare face | bare face | bare face | no steady film |
