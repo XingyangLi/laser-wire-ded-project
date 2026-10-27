@@ -24,6 +24,45 @@ CROP = (240, 100, 470, 310)  # left, top, right, bottom
 WIRE_R = 0.5
 
 
+def first_metal_gap(x, z, alpha):
+    """Gap from the wire face to the first metal, where the face itself is gas.
+
+    The two-bin metric in slit_metric treats a one-cell wall as a bare face.
+    This reports that wall: width is x of the first metal minus the wire radius,
+    depth is the contiguous run that reaches highest.
+    """
+    edges = np.arange(0.70, 1.45, 0.025)
+    ok = []
+    for z0 in edges:
+        face = (z >= z0) & (z < z0 + 0.025) & (x > 0.49) & (x < 0.53)
+        metal = (z >= z0) & (z < z0 + 0.025) & (x > 0.48) & (x < 1.2) & (alpha >= 0.5)
+        if not np.any(face) or float(np.mean(alpha[face] < 0.5)) <= 0.6 or not np.any(metal):
+            ok.append(None)
+            continue
+        width = float(x[metal].min()) - 0.50
+        ok.append(width if 0.02 <= width <= 0.12 else None)
+    best = None
+    i = 0
+    while i < len(ok):
+        if ok[i] is None:
+            i += 1
+            continue
+        j = i
+        while j < len(ok) and ok[j] is not None:
+            j += 1
+        lo = float(edges[i])
+        hi = float(edges[j - 1] + 0.025)
+        widths = [w for w in ok[i:j] if w is not None]
+        rec = (hi, hi - lo, lo, float(np.median(widths)))
+        if best is None or rec[0] > best[0]:
+            best = rec
+        i = j
+    if best is None:
+        return None
+    hi, depth, lo, width = best
+    return {"z_hi": hi, "depth": depth, "z_lo": lo, "width": width}
+
+
 def draw_neck(ax, x, z, alpha, title):
     """x, z are millimetres in the lab frame (trailing is +x)."""
     plot_x = -x
@@ -87,12 +126,23 @@ def main():
     for ax, case, tag, time_name in zip(axes[1:], args.case, tags, times):
         x, z, alpha = load_alpha(case, time_name)
         row = measure(x, z, alpha)
+        gap = first_metal_gap(x, z, alpha)
         print(f"{tag} t={time_name}: {fmt(row)}")
-        draw_neck(
-            ax, x, z, alpha,
-            f"{tag}  t={time_name} s\n{row['depth_mm']:.2f} mm deep, "
-            f"{row['width_mm']:.3f} mm wide",
-        )
+        if gap is not None:
+            print(
+                f"{tag} t={time_name}: first metal {gap['width']:.3f} mm, "
+                f"depth {gap['depth']:.3f} mm, z {gap['z_lo']:.3f}..{gap['z_hi']:.3f}"
+            )
+            title = (
+                f"{tag}  t={time_name} s\n"
+                f"{gap['depth']:.2f} mm deep, {gap['width']:.3f} mm to first metal"
+            )
+        else:
+            title = (
+                f"{tag}  t={time_name} s\n{row['depth_mm']:.2f} mm deep, "
+                f"{row['width_mm']:.3f} mm wide"
+            )
+        draw_neck(ax, x, z, alpha, title)
     fig.suptitle(
         args.suptitle
         or (

@@ -414,3 +414,31 @@ The center-plane gap tells the other half of that motion. At 2 ms the trailing f
 | tag | ppm | feed | window | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | stability |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | cal77 | 300 | 24 mm/s | 40°/140° | bare face | bare face | bare face | bare face | bare face | no steady film |
+
+## Imposed line pin
+
+cal78–cal86 start from the same bare neck. The trailing contact is a material point of the wire. On the first step the solver records the wetted top on the trailing face, z0 = 1.215 mm. After that the line height is `z0 + feed_z * t`, and the log line `LinePin:` follows that height. A two-cell shell on the trailing face is held at gas above the line and metal below it, and the shell velocity is the feed. Liquid that leaves a shell cell is passed to the next cell outward. That next cell is restored toward metal, chosen by radius, so the displaced coating stays beside the gap. Cells beyond it, and the pool below the line, are free. The wall angle stays 40°/140° at every ppm. Laser, Marangoni and recoil are off. 10 ms, 12 ranks. No painted film.
+
+ppm sets the hold. `s = min(ppm/300, 1)` is the fraction of the alpha error and the velocity error removed after every alpha solve, and the fraction of `Kpin` (1×10¹² kg/m³/s). At 50 ppm, s = 1/6. At 100 ppm, s = 1/3. At 300 ppm, s = 1 and the shell is overwritten. Sahoo–Belton `sigma` still follows ppm. The angle window does not.
+
+The line height and the shell are imposed. The gap from the wire surface (x = 0.50 mm) to the first metal is 0.039 mm at every sample below, which is the two-cell shell (the first metal sits at x = 0.539 mm). Depth grows with the feed: at 10 ms the wire has moved 0.18, 0.24 and 0.28 mm, and the measured run is 0.175, 0.250 and 0.300 mm. The extra is one 0.025 mm slice. The two-bin metric in `slit_metric.py` reads a one-cell wall as a bare face, so its width is 0.020 mm and its depth misses the top of the run, where the wall is a single cell. Both numbers are in the table. The steady test wants width 0.03–0.08 mm, depth at least 0.25 mm, and a change of at most 0.08 mm in depth over 4 ms. Depth here increases at the feed rate, about 0.05 mm every 2 ms, so none of the runs is a steady film. The gap stays open and keeps deepening.
+
+The metal past the shell is free. At 10 ms it is one cell thick at the top of the gap (z ≈ 1.20 mm) and extends to about 0.65–0.69 mm lower down, where the line has reached the bead. That outer extent is the pool sitting against the imposed gap. The gap width itself stays 0.039 mm from the bottom of the run to the top.
+
+50, 100 and 300 ppm produce the same gap at a given feed. s = 1/6 still puts the shell back on the target each step, and the momentum sink stays far above ρ/Δt, so the velocity stays at the feed. Oxygen changes the hold fraction and Sahoo–Belton `sigma`. It does not change the width or the depth in this smoke.
+
+Figures: `linepin_feed_300ppm.png` (radiograph, then 18/24/28 mm/s at 300 ppm, 10 ms) and `linepin_ppm_24mms.png` (50/100/300 ppm at 24 mm/s, 10 ms).
+
+| tag | ppm | feed | s | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | two-bin at 10 ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cal78 | 300 | 18 mm/s | 1 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.125, open |
+| cal83 | 50 | 18 mm/s | 1/6 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.125, open |
+| cal84 | 100 | 18 mm/s | 1/3 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.150, open |
+| cal79 | 300 | 24 mm/s | 1 | 0.050 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal81 | 50 | 24 mm/s | 1/6 | 0.050 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal82 | 100 | 24 mm/s | 1/3 | 0.050 × 0.039 | 0.125 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal80 | 300 | 28 mm/s | 1 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.275, open |
+| cal85 | 50 | 28 mm/s | 1/6 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.300, open |
+| cal86 | 100 | 28 mm/s | 1/3 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.275, open |
+
+Entries are depth × width in millimetres, from the wire surface to the first metal. Every run reports `no steady film`.
