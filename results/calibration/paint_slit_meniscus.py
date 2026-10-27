@@ -166,15 +166,15 @@ def classify(x, y, z):
 
 
 def replace_internal(path, declaration):
-    text = Path(path).read_text()
-    i = text.find("internalField")
-    j = text.find("boundaryField")
+    data = Path(path).read_bytes()
+    i = data.find(b"internalField")
+    j = data.rfind(b"boundaryField")
     if i < 0 or j < 0 or j < i:
         raise SystemExit(f"no internalField/boundaryField in {path}")
-    text = text[:i] + declaration + "\n\n" + text[j:]
-    text = text.replace("format      binary;", "format      ascii;")
-    text = text.replace("format          binary;", "format          ascii;")
-    Path(path).write_text(text)
+    out = data[:i] + declaration.encode() + b"\n\n" + data[j:]
+    out = out.replace(b"format      binary;", b"format      ascii;")
+    out = out.replace(b"format          binary;", b"format          ascii;")
+    Path(path).write_bytes(out)
 
 
 def write_scalar(path, values):
@@ -194,15 +194,23 @@ def write_vector(path, values):
 
 
 def scan_velocity(path):
-    text = Path(path).read_text()
-    key = "internalField"
-    i = text.find(key)
-    line = text[i:text.find("\n", i)]
-    if "uniform" not in line or "(" not in line:
+    """Substrate velocity from 0/U. setFields writes that field in binary."""
+    data = Path(path).read_bytes()
+    key = data.find(b"internalField")
+    if key < 0:
         return (0.004, 0.0, 0.0)
-    body = line[line.find("(") + 1:line.find(")")]
-    u, v, w = (float(p) for p in body.split())
-    return (u, v, w)
+    head = data[key:key + 120]
+    if b"nonuniform" in head:
+        head = b""
+    if b"uniform" in head and b"(" in head:
+        body = head[head.find(b"(") + 1:head.find(b")")].decode("ascii", "replace")
+        u, v, w = (float(p) for p in body.split())
+        return (u, v, w)
+    paren = data.find(b"(", key)
+    if paren < 0 or paren + 1 + 24 > len(data):
+        return (0.004, 0.0, 0.0)
+    raw = np.frombuffer(data, dtype="<f8", count=3, offset=paren + 1)
+    return (float(raw[0]), float(raw[1]), float(raw[2]))
 
 
 def paint(case, wire_t, dry_run, gap_mm, film_mm):

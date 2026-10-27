@@ -67,6 +67,26 @@ def read_internal(path, kind):
     n = int(n_str.strip())
     if rest.startswith(b"("):
         rest = rest[1:]
+    head = data[: max(i, 0) + 80]
+    ascii_field = b"format      ascii" in head or b"format          ascii" in head
+    if ascii_field:
+        vals = []
+        for line in rest.splitlines():
+            line = line.strip()
+            if not line or line.startswith(b")") or line.startswith(b";"):
+                if line.startswith(b")"):
+                    break
+                continue
+            if kind == "scalar":
+                vals.append(float(line))
+            else:
+                body = line.strip(b"()").split()
+                vals.append([float(p) for p in body])
+            if len(vals) == n:
+                break
+        if len(vals) != n:
+            return None
+        return np.asarray(vals, dtype=float)
     width = 8 if kind == "scalar" else 24
     if len(rest) < n * width:
         return None

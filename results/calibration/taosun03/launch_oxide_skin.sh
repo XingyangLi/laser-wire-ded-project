@@ -184,6 +184,15 @@ prepare_case() {
     "$PY" "$TAO_ROOT/results/calibration/paint_slit_meniscus.py" \
         --case "$CASE" --wire-t 300 --film-mm 0.05
     "$PY" "$DIR/score_film.py" "$CASE" 0
+    decompose_case
+    echo "PREPARE_OK skin56"
+}
+
+decompose_case() {
+    if [[ -d "$CASE/processor0" ]]; then
+        echo "DECOMPOSE already present"
+        return 0
+    fi
     tao_source_foam
     (
         cd "$CASE"
@@ -192,11 +201,15 @@ prepare_case() {
         decomposePar -force > log.decomposePar 2>&1
         touch case.foam
     )
-    echo "PREPARE_OK skin56"
 }
 
 main() {
-    prepare_case
+    if [[ "${1:-}" == "resume" ]]; then
+        echo "RESUME skin56 $(date --iso-8601=seconds)"
+        decompose_case
+    else
+        prepare_case
+    fi
     echo "STAGE skin 0 -> 0.006"
     run_stage 0.006 "$CASE/log.skin"
     if ! film_window 0.002 0.006; then
@@ -224,6 +237,11 @@ main() {
     enable_term beams 0.018
     run_stage 0.024 "$CASE/log.beams"
     "$PY" "$DIR/neck_state.py" "$CASE" --latest --smear-max 0.9 || true
+    if ! film_window 0.020 0.024; then
+        echo "BEAMS_FILM_FAILED"
+    else
+        echo "BEAMS_FILM_HELD"
+    fi
     echo "SKIN56_DONE"
 }
 
