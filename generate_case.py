@@ -359,6 +359,21 @@ def build_parser():
            "thermocapillary stress turn on")
     a("--settle-ramp", type=float, default=0.002,
       help="seconds after --settle over which laser, Marangoni and recoil rise to full")
+    a("--oxide-skin", action="store_true",
+      help="oxide membrane on the trailing wire face: interfacial viscosity "
+           "on the alpha gradient, plus a damper of the radial velocity in "
+           "the gas and the interface within --oxide-skin-gap of the wire. "
+           "Strength is min(oxygen ppm / --oxide-skin-ppm-ref, 1) when "
+           "--oxygen-ppm is set, and full strength otherwise. Off by default")
+    a("--oxide-skin-mu", type=float, default=200.0,
+      help="oxide-skin interfacial viscosity [Pa.s] (default 200)")
+    a("--oxide-skin-k", type=float, default=1.0e12,
+      help="oxide-skin radial damper [kg/m^3/s] (default 1e12)")
+    a("--oxide-skin-gap", type=float, default=0.10e-3,
+      help="oxide skin acts within this distance of the wire face [m] "
+           "(default 0.10 mm)")
+    a("--oxide-skin-ppm-ref", type=float, default=300.0,
+      help="oxygen ppm that gives full oxide-skin strength (default 300)")
     a("--neck-box", default="0.32e-3:0.90e-3:0:0.22e-3:0.55e-3:1.45e-3",
       help="trailing-face box x0:x1:y0:y1:z0:z1 [m] about the wire axis. "
            "On a half mesh the plane y = 0 is included")
@@ -637,6 +652,13 @@ class Case:
             raise SystemExit("--oxygen-wire-angles cannot be combined with --oxygen-sigma-only")
         if a.neck_refine < 0:
             raise SystemExit("--neck-refine must be >= 0")
+        if a.oxide_skin_mu < 0 or a.oxide_skin_k < 0 or a.oxide_skin_gap <= 0:
+            raise SystemExit(
+                "--oxide-skin-mu and --oxide-skin-k must be >= 0 "
+                "and --oxide-skin-gap must be > 0"
+            )
+        if a.oxide_skin_ppm_ref <= 0:
+            raise SystemExit("--oxide-skin-ppm-ref must be > 0")
         if a.oxygen_wire_angles:
             wr, wa, tr, ta = oxide_wire_angles(a.oxygen_ppm)
             a.theta_receding_wire = wr
@@ -1818,7 +1840,7 @@ statistics
     beadProbeOffset {f(max(3e-4, 3*self.dx))};
     beadHeightThreshold {f(0.2*self.dx)};
 }}
-{self.contact_line_block()}{self.porosity_block()}""" + FOOT
+{self.oxide_skin_block()}{self.contact_line_block()}{self.porosity_block()}""" + FOOT
 
     def power_dip_block(self):
         """Optional rear-beam power window written into the laser dictionary."""
@@ -1857,6 +1879,27 @@ statistics
             "    oxygenK1         0.0138;       // 1/wt%\n"
             "    oxygenDeltaH0    -146300;      // J/mol\n"
             "    oxygenR          8.314462618;  // J/mol/K\n"
+        )
+
+    def oxide_skin_block(self):
+        """Trailing-face oxide membrane. Empty unless --oxide-skin."""
+        a = self.a
+        if not getattr(a, "oxide_skin", False):
+            return ""
+        return (
+            "\n// Oxide membrane on the trailing wire face. Strength is\n"
+            "// min(chamberOxygenPpm/ppmRef, 1) when oxygenDependent is true.\n"
+            "oxideSkin\n"
+            "{\n"
+            "    enabled         true;\n"
+            f"    muSkin          {f(a.oxide_skin_mu)};\n"
+            f"    Kskin           {f(a.oxide_skin_k)};\n"
+            f"    gapThreshold    {f(a.oxide_skin_gap)};\n"
+            "    zMin            0.0003;\n"
+            "    zMax            0.00155;\n"
+            f"    ppmRef          {f(a.oxide_skin_ppm_ref)};\n"
+            "    alphaGas        0.98;\n"
+            "}\n"
         )
 
     def contact_line_block(self):

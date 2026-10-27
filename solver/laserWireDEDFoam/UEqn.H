@@ -1,6 +1,7 @@
     MRF.correctBoundaryVelocity(U);
 
     #include "marangoni.H"
+    #include "oxideSkin.H"
 
     fvVectorMatrix UEqn
     (
@@ -12,10 +13,15 @@
         // on the substrate line. On the wire it is the head frame (0) or
         // the feed velocity, see contactLine.H. Kcontact = 0 leaves this
         // identical to -Kmushy (U - Usolid).
-      + fvm::Sp(Kmushy + Kcontact, U)
+        // Oxide skin (default off): -laplacian(muOxide, U) is an implicit
+        // interfacial viscosity, and -Koxide (U - Ukeep) damps only the
+        // radial part. mu = 0 and K = 0 leave both terms absent.
+      - fvm::laplacian(muOxide, U)
+      + fvm::Sp(Kmushy + Kcontact + Koxide, U)
      ==
         Kmushy*Usolid
       + Kcontact*Ucontact
+      + Koxide*Ukeep
       + Fmarangoni
       + Fbuoy
       + Fcontact
