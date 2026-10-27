@@ -46,6 +46,11 @@ const scalar contactFlSolid = contactDict.getOrDefault<scalar>("flSolid", 0.20);
 const scalar contactKpin = contactDict.getOrDefault<scalar>("Kpin", 1e7);
 const scalar contactGradMin = contactDict.getOrDefault<scalar>("gradMin", 0.25);
 const scalar contactForceFactor = contactDict.getOrDefault<scalar>("forceFactor", 1.0);
+// Degrees (stored in radians) over which the Young force grows outside the
+// window. Zero keeps the hard switch: full force on the first cell that
+// leaves the window, none on the cell that is still inside it.
+const scalar contactForceBlend =
+    contactDict.getOrDefault<scalar>("forceBlend", 0)*contactDeg;
 const scalar contactZSub = contactDict.getOrDefault<scalar>("zSubstrate", 0.0);
 const bool contactPinWire = contactDict.getOrDefault<bool>("pinWire", false);
 scalar contactThetaRwire =
@@ -245,7 +250,8 @@ if (contactEnabled)
     Info<< "  thetaR " << contactThetaR0/contactDeg
         << " deg  thetaA " << contactThetaA0/contactDeg
         << " deg  Kpin " << contactKpin
-        << "  flPin/flFree " << contactFlPin << "/" << contactFlFree;
+        << "  flPin/flFree " << contactFlPin << "/" << contactFlFree
+        << "  forceBlend " << contactForceBlend/contactDeg << " deg";
     if (contactPinWire)
     {
         Info<< nl << "    wire line: thetaR " << contactThetaRwire/contactDeg

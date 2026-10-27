@@ -345,6 +345,20 @@ def build_parser():
            "3 levels is about 19 um. Each level is a nested box, two coarse "
            "cells larger than the next, so the jump at every interface is 2:1. "
            "Local to the trailing wire face; the rest of the track stays coarse")
+    a("--contact-blend", type=float, default=0.0,
+      help="degrees over which the Young force ramps up just outside the "
+           "hysteresis window. 0 keeps the hard advancing/receding switch")
+    a("--c-alpha-neck", type=float, default=1.0,
+      help="extra MULES interface compression inside the neck box. 1 leaves "
+           "the global cAlpha unchanged. A 0.05 mm film on a 19 um mesh is "
+           "only a few cells wide, so the smeared interface is the film "
+           "unless this is raised")
+    a("--settle", type=float, default=0.0,
+      help="seconds at the start with the laser, Marangoni and recoil off, "
+           "so a painted meniscus can sit before the beams and the "
+           "thermocapillary stress turn on")
+    a("--settle-ramp", type=float, default=0.002,
+      help="seconds after --settle over which laser, Marangoni and recoil rise to full")
     a("--neck-box", default="0.32e-3:0.90e-3:0:0.22e-3:0.55e-3:1.45e-3",
       help="trailing-face box x0:x1:y0:y1:z0:z1 [m] about the wire axis. "
            "On a half mesh the plane y = 0 is included")
@@ -1381,6 +1395,32 @@ snGradSchemes
 }
 """ + FOOT
 
+    def neck_compression_entries(self):
+        """Extra MULES compression on faces inside the neck box. Empty if unused."""
+        factor = float(getattr(self.a, "c_alpha_neck", 1) or 1)
+        if factor <= 1:
+            return ""
+        x0, x1, y0, y1, z0, z1 = self.neck_bounds()
+        return (
+            f"        cAlphaNeck      {f(factor)};\n"
+            f"        cAlphaNeckMin   ({f(x0)} {f(y0)} {f(z0)});\n"
+            f"        cAlphaNeckMax   ({f(x1)} {f(y1)} {f(z1)});\n"
+        )
+
+    def settle_block(self):
+        """Hold laser, Marangoni and recoil off, then ramp them on."""
+        tend = float(getattr(self.a, "settle", 0) or 0)
+        if tend <= 0:
+            return ""
+        ramp = float(getattr(self.a, "settle_ramp", 0.002) or 0)
+        return (
+            "\nsettle   // laser, Marangoni and recoil\n"
+            "{\n"
+            f"    tEnd    {f(tend)};\n"
+            f"    tRamp   {f(ramp)};\n"
+            "}\n"
+        )
+
     def fv_solution(self):
         # refined wire box (hanging faces, many thin gas gaps in the stranded wire): the default GAMG
         # coarsest-level solve runs to the full 1e-7 tolerance in every V-cycle and took >50 % of the
@@ -1406,7 +1446,7 @@ snGradSchemes
         nAlphaCorr      2;
         nAlphaSubCycles 1;
         cAlpha          1;
-        MULESCorr       yes;
+""" + self.neck_compression_entries() + """        MULESCorr       yes;
         nLimiterIter    5;
         solver          smoothSolver;
         smoother        symGaussSeidel;
@@ -1714,6 +1754,7 @@ vaporisation
     pAmbient    101325;
     recoilMax   2e5;
 }}
+{self.settle_block()}
 
 surfaceLosses
 {{
@@ -1910,6 +1951,7 @@ statistics
             "    Kpin            1e7;     // kg/m3/s\n"
             "    gradMin         0.25;    // |grad alpha| * dx above this is an interface cell\n"
             f"    forceFactor     {f(a.contact_force_factor)};   // scale of the Young force outside the window\n"
+            f"    forceBlend      {f(getattr(a, 'contact_blend', 0))};   // deg, 0 = hard switch\n"
             "    zSubstrate      0;\n"
             f"    interval        {every};\n"
             + angle_table +

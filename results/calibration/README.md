@@ -240,4 +240,14 @@ At 4 ms none of them holds a neck slit. The center plane through the neck is gas
 
 Those four were stopped. A square slot in a rectangular bead is outside the hysteresis window: once the wall jumps back, the advancing angle does not bring it in again. `launch_slit_curve.sh` replaces that initial field with a smooth pool and a taller trailing dome, and cuts a groove that is already the radiograph shape (0.06 mm at z = 1.20 mm, point at z = 0.75 mm, 0.28 mm wide in y). cal39 is 300 ppm at 20 mm/s. cal40 is 50 ppm at 20 mm/s. Both keep the wire at 300 K. Six ranks each, `nice -n 10`, write every 4 ms. `launch_slit_demo.sh` is the full cal14 domain of whichever of those holds the groove, 12 ranks, and it writes `results/calibration/slit_demo.mp4`.
 
+A film is steady only when consecutive center-plane samples stay 0.03–0.08 mm wide and at least 0.25 mm deep for 4 ms or more, with the depth moving by at most 0.08 mm (`slit_metric.py` prints `stability:`). On a 19 µm mesh that width is two or three cells, which is also how thick a VOF interface is at `cAlpha` 1, so a frame-to-frame change of shape can be the smeared interface rather than a resolved gas core. The Young force used to switch from zero inside the window to the full value on the next cell. `launch_slit_stable.sh` separates that from the beam and from Marangoni/recoil, all on the 300 ppm curved groove, 4 ranks each, stopped at 16 ms:
+
+| tag | settle | contact blend | neck compression |
+| --- | --- | --- | --- |
+| cal41 | 6 ms, then a 2 ms ramp | hard switch | cAlpha 1 |
+| cal42 | off | 8° | ×4 inside the neck box |
+| cal43 | 6 ms, then a 2 ms ramp | 8° | ×4 inside the neck box |
+
+During the settle the laser, Marangoni and recoil are off. The plate window, the oxide table and the cal14 beams are unchanged.
+
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.

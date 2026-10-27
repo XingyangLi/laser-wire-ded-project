@@ -76,6 +76,42 @@
     surfaceScalarField::Boundary& phicBf =
         phic.boundaryFieldRef();
 
+    // Extra compression inside the neck box. A 0.05 mm film on a 19 um
+    // mesh is only two or three cells wide, which is the smeared interface
+    // itself unless cAlpha is raised there. cAlphaNeck 1 leaves phic alone.
+    {
+        const scalar cAlphaNeck =
+            alphaControls.getOrDefault<scalar>("cAlphaNeck", 1);
+        if (cAlphaNeck > 1)
+        {
+            const vector neckMin = alphaControls.getOrDefault<vector>
+            (
+                "cAlphaNeckMin",
+                vector(0.32e-3, -1e-4, 0.55e-3)
+            );
+            const vector neckMax = alphaControls.getOrDefault<vector>
+            (
+                "cAlphaNeckMax",
+                vector(0.90e-3, 0.22e-3, 1.45e-3)
+            );
+            scalarField& phici = phic.primitiveFieldRef();
+            const vectorField& Cf = mesh.Cf().primitiveField();
+            for (label facei = 0; facei < phici.size(); ++facei)
+            {
+                const vector& c = Cf[facei];
+                if
+                (
+                    c.x() >= neckMin.x() && c.x() <= neckMax.x()
+                 && c.y() >= neckMin.y() && c.y() <= neckMax.y()
+                 && c.z() >= neckMin.z() && c.z() <= neckMax.z()
+                )
+                {
+                    phici[facei] *= cAlphaNeck;
+                }
+            }
+        }
+    }
+
     // Do not compress interface at non-coupled boundary faces
     // (inlets, outlets etc.)
     forAll(phic.boundaryField(), patchi)

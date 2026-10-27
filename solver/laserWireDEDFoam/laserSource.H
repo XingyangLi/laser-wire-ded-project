@@ -21,6 +21,7 @@
     const scalar t = runTime.value();
     if (!lOn || t < lStart || t > lStop) ramp = 0.0;
     else if (lRamp > SMALL) ramp = min((t - lStart)/lRamp, 1.0);
+    ramp *= settleScale(t);
 
     // Optional brief scale on one beam (index into the beams list, 0-based).
     // Absent from the dictionary, every beam keeps ramp*powerScale.

@@ -29,6 +29,7 @@
                 );
             }
         }
+        pRecoil *= settleScale(runTime.value());
         pRecoil.correctBoundaryConditions();
         stForcef += fvc::interpolate(pRecoil)*fvc::snGrad(alpha1);
     }

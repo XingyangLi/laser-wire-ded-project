@@ -241,6 +241,14 @@
                     const scalar dCos = Foam::cos(thetaA) - Foam::cos(thetaApp);
                     scalar fMag =
                         contactForceFactor*sigmaT[celli]*dCos*magG/h;
+                    if (contactForceBlend > SMALL)
+                    {
+                        fMag *= max
+                        (
+                            min((thetaApp - thetaA)/contactForceBlend, scalar(1)),
+                            scalar(0)
+                        );
+                    }
                     const scalar fMax = 2.0*max(sigmaT[celli], SMALL)/sqr(h);
                     fMag = max(min(fMag, fMax), -fMax);
                     Fcontact[celli] = (fMag*max(min(a, scalar(1)), scalar(0)))*tOut;
@@ -260,6 +268,14 @@
                     const scalar dCos = Foam::cos(thetaR) - Foam::cos(thetaApp);
                     scalar fMag =
                         contactForceFactor*sigmaT[celli]*dCos*magG/h;
+                    if (contactForceBlend > SMALL)
+                    {
+                        fMag *= max
+                        (
+                            min((thetaR - thetaApp)/contactForceBlend, scalar(1)),
+                            scalar(0)
+                        );
+                    }
                     const scalar fMax = 2.0*max(sigmaT[celli], SMALL)/sqr(h);
                     fMag = max(min(fMag, fMax), -fMax);
                     Fcontact[celli] = (fMag*max(min(a, scalar(1)), scalar(0)))*tOut;

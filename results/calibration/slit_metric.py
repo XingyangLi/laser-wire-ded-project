@@ -150,6 +150,50 @@ def measure(x, z, alpha):
     )
 
 
+def stability(samples):
+    """A film is steady when consecutive samples stay thin and deep.
+
+    Width 0.03–0.08 mm, depth at least 0.25 mm, open, for at least 4 ms,
+    with the depth moving by at most 0.08 mm and the width by at most 0.03 mm.
+    """
+    good = []
+    for t, row in samples:
+        w = row["width_mm"]
+        good.append(
+            row["open"]
+            and row["depth_mm"] >= 0.25
+            and 0.03 <= w <= 0.08
+        )
+    best = (0, 0)
+    i = 0
+    n = len(good)
+    while i < n:
+        if not good[i]:
+            i += 1
+            continue
+        j = i
+        while j < n and good[j]:
+            j += 1
+        if j - i > best[1] - best[0]:
+            best = (i, j)
+        i = j
+    i, j = best
+    if j - i < 2:
+        return "no steady film"
+    ts = [samples[k][0] for k in range(i, j)]
+    depths = [samples[k][1]["depth_mm"] for k in range(i, j)]
+    widths = [samples[k][1]["width_mm"] for k in range(i, j)]
+    dur = ts[-1] - ts[0]
+    dspan = max(depths) - min(depths)
+    wspan = max(widths) - min(widths)
+    steady = dur + 1e-9 >= 0.004 and dspan <= 0.08 and wspan <= 0.03
+    state = "steady" if steady else "drifting"
+    return (
+        f"film {dur * 1e3:.1f} ms  depth {min(depths):.3f}–{max(depths):.3f} mm  "
+        f"width {min(widths):.3f}–{max(widths):.3f} mm  {state}"
+    )
+
+
 def fmt(row):
     zlo = "—" if row["z_lo_mm"] is None else f"{row['z_lo_mm']:.2f}"
     zhi = "—" if row["z_hi_mm"] is None else f"{row['z_hi_mm']:.2f}"
@@ -181,6 +225,7 @@ def main():
         if not times:
             print(f"{tag}: no side plane yet")
             continue
+        samples = []
         for t in times:
             try:
                 x, z, alpha = load_alpha(case, t)
@@ -189,6 +234,12 @@ def main():
                 continue
             row = measure(x, z, alpha)
             print(f"{tag} t={t}: {fmt(row)}")
+            try:
+                samples.append((float(t), row))
+            except ValueError:
+                continue
+        if len(samples) >= 2:
+            print(f"{tag} stability: {stability(samples)}")
 
 
 if __name__ == "__main__":

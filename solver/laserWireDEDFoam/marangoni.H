@@ -32,6 +32,7 @@ if (marangoniOn && (oxygenDependent || mag(subP.dsig) > 0 || mag(wireP.dsig) > 0
     // that the light gas next to the interface is not accelerated (parasitic currents)
     Fmarangoni = (2.0*rho/(rho1 + rho2))*active*dSigmadTField*dimensionedScalar(dimForce/dimLength/dimTemperature, 1.0)*(gradT - nHat*(nHat & gradT))*magGradAlpha;
 }
+Fmarangoni *= settleScale(runTime.value());
 
 // Optional Boussinesq buoyancy of the liquid metal:
 //   F_b = -alpha fl rho_m beta (T - Tliquidus) g
