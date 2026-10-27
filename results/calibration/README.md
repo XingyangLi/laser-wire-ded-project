@@ -352,3 +352,27 @@ Width and depth are the metric values at 2, 4 and 6 ms. A zero is no thin gap.
 No run holds a film. The 0.10 mm paint is a 0.025 mm wisp at 2 ms and is gone after that. The wetted neck never opens a thin gap: at 6 ms the metal fraction in x = 0.50–0.56 mm is 1.00 at z = 0.70 mm and 0.08 at z = 1.10 mm, so the lower neck stays wet and the crown is gas. The 0.30, 0.50 and 0.75 mm paints are still open at 2 ms. The two shorter ones still have about the painted depth (0.35 and 0.48 mm). The 0.75 mm paint has already shortened to 0.48 mm. By 6 ms the depths are 0, 0 and 0.025 mm. The solver mouth gap is about 0.001 mm once the coverage has saturated, so the membrane is locking a closed face. The time step sits on Courant 0.4 while that face is moving.
 
 There is no steady depth for a new oxygen and feed table. The table above is the uniform skin, which preserves the paint. The growing skin does not select a slit, and it does not keep the painted depth either.
+
+## Gas pressure, gas flux, and a feed-length skin
+
+The uniform skin preserves the paint, so these smokes ask whether a cavity pressure, a gas supply, or a shorter skin can choose the depth. The metric is unchanged: width 0.03–0.08 mm, depth at least 0.25 mm, open, steady for at least 4 ms. Beams, Marangoni and recoil stay off. 12 ranks, nice 10, 6 ms. A zero in the table is no thin gap. The smears that remain are one cell wide (0.020 mm) and sit above the painted film.
+
+`pSupport` is a face force on interfaces whose gas side faces the wire, and only while that gas is within 0.10 mm of the wire. `qRef` is a gas volume flux at the highest of those interfaces, times feed/20 mm/s. Both scale with `min(ppm/300, 1)`. The oxide skin is off for cal68–cal70. All three start from a 0.1 mm film at 300 ppm and 20 mm/s.
+
+| tag | mechanism | 2 ms, depth × width | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal68 | 5 kPa, no flux | 0.050 × 0.020 | 0.075 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal69 | flux 5 mm/s, aimed above the bead | 0.050 × 0.020 | 0.075 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal70 | flux 50 mm/s at the cavity | 0.075 × 0.020, capped | — | — | stopped |
+
+5 kPa does not hold a 0.05 mm film. The capillary pressure across that gap is about 20 kPa, so the 1–5 kPa range is too small. cal69 fed the bare wire above the bead (contact height 1.79 mm) and never reached the film. cal70 feeds the cavity (contact height about 1.4 mm). At 2 ms the painted film is a capped one-cell gap, and the time step has fallen to 30 ns, so the run was stopped.
+
+The other mechanism is the cal56 membrane, on from the first step, but only over a length `feed × tau` below z = 1.20 mm. Strength is full at 300 ppm. cal71 is a 0.1 mm paint and a 0.072 mm shell (18 mm/s × 4 ms). cal72 and cal73 use a 0.75 mm paint, which is longer than the shell, so a held depth could have been the shell length rather than the paint.
+
+| tag | shell mm | painted mm | feed mm/s | 2 ms | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cal71 | 0.072 | 0.10 | 18 | 0.025 × 0.020 | 0.025 × 0.020 | 0.050 × 0.020 | no steady film |
+| cal72 | 0.36 | 0.75 | 18 | 0.025 × 0.020 | 0.050 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal73 | 0.56 | 0.75 | 28 | 0.025 × 0.020 | 0.050 × 0.020 | 0.025 × 0.020 | no steady film |
+
+The shell does not hold the film when it stops short of the lower lip. The lip is free, and the film closes through the damped region. The depth does not become the oxidised length, and it does not change from 18 to 28 mm/s. No oxygen and feed table follows, because none of these runs left a steady slit.
