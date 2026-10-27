@@ -26,6 +26,16 @@
         scalar nWire = 0, nWirePin = 0, nWireAdv = 0, nWireRec = 0;
         scalar thWireSum = 0, wWire = 0;
         scalar zWireMax = -GREAT, zWireMin = GREAT;
+        // WireForce: classification and Young-force size on the trailing
+        // half. Reporting only. near = interface within 4h of the surface,
+        // touch = within 1h, inBand = inside the r < R+1.75h test, beyond =
+        // the interface that the band drops. No velocity cap exists: Kcontact
+        // is a sink only while the angle sits inside the window.
+        scalar nNear = 0, nTouch = 0, nInBand = 0, nBeyond = 0, nTrail = 0;
+        scalar nMissGas = 0, nMissLiq = 0, nMissWire = 0;
+        scalar nForced = 0, nNoTan = 0, nAtCap = 0, nTouchForced = 0, nFreeze = 0;
+        scalar fAbsMax = 0, pYoungMax = 0, sigSum = 0, nSig = 0;
+        scalar rD = GREAT;
 
         forAll(alpha1, celli)
         {
@@ -92,6 +102,29 @@
                 {
                     useWire = true;
                     nSub = rad/r;
+                }
+            }
+
+            if (contactPinWire)
+            {
+                const vector dAxD = C[celli] - wireOrigin;
+                const scalar sAxD = dAxD & wireUp;
+                const vector radD = dAxD - sAxD*wireUp;
+                rD = mag(radD);
+                // Trailing half only (+x). The front window is a different angle.
+                if ((radD & vector(1, 0, 0)) > 0 && rD > SMALL && rD < wireRadius + 4.0*h)
+                {
+                    nNear += 1;
+                    if (mag(rD - wireRadius) < h) nTouch += 1;
+                    if (rD < wireRadius + 1.75*h)
+                    {
+                        nInBand += 1;
+                        if (useWire) nTrail += 1;
+                        else if (!gasNbr) nMissGas += 1;
+                        else if (!liquidNbr) nMissLiq += 1;
+                        else if (!wireNbr) nMissWire += 1;
+                    }
+                    else nBeyond += 1;
                 }
             }
 
@@ -281,6 +314,26 @@
                     Fcontact[celli] = (fMag*max(min(a, scalar(1)), scalar(0)))*tOut;
                 }
             }
+
+            if (useWire && sPin >= 0.5) nFreeze += 1;
+            if (useWire && !pinned)
+            {
+                const scalar fAbs = mag(Fcontact[celli]);
+                if (fAbs > SMALL)
+                {
+                    nForced += 1;
+                    fAbsMax = max(fAbsMax, fAbs);
+                    pYoungMax = max(pYoungMax, fAbs*h);
+                    const scalar aClip = max(min(a, scalar(1)), scalar(0));
+                    const scalar fCap =
+                        2.0*max(sigmaT[celli], SMALL)/max(sqr(h), SMALL)*aClip;
+                    if (fCap > SMALL && fAbs >= 0.98*fCap) nAtCap += 1;
+                    sigSum += sigmaT[celli];
+                    nSig += 1;
+                    if (mag(rD - wireRadius) < h) nTouchForced += 1;
+                }
+                else nNoTan += 1;
+            }
         }
 
         Kcontact.correctBoundaryConditions();
@@ -341,6 +394,102 @@
                     << " m";
             }
             Info<< endl;
+
+            // Groove-mouth gap on the center plane, z = 1.10–1.30 mm.
+            // pCap = 2*sigma/w is the capillary pressure of a circular
+            // meniscus spanning that gap. pYoung = |F|*h is the Young
+            // body force turned into a pressure on one cell.
+            scalar mouthGap = GREAT;
+            scalar mouthSig = 0, nMouthSig = 0, hSum = 0, nH = 0;
+            forAll(alpha1, celli)
+            {
+                const scalar zM = C[celli].z();
+                if (zM < 1.10e-3 || zM > 1.30e-3) continue;
+                if (C[celli].y() > 8.0e-5 || C[celli].x() < 0) continue;
+                const vector dM = C[celli] - wireOrigin;
+                const scalar sM = dM & wireUp;
+                const scalar rM = mag(dM - sM*wireUp);
+                const scalar hM = Foam::cbrt(max(V[celli], SMALL));
+                if (alpha1[celli] > 0.5 && rM > wireRadius)
+                {
+                    mouthGap = min(mouthGap, rM - wireRadius);
+                }
+                if
+                (
+                    alpha1[celli] > 0.1 && alpha1[celli] < 0.9
+                 && rM < wireRadius + 2.0e-4
+                )
+                {
+                    mouthSig += sigmaT[celli];
+                    nMouthSig += 1;
+                    hSum += hM;
+                    nH += 1;
+                }
+            }
+            reduce(mouthGap, minOp<scalar>());
+            reduce(mouthSig, sumOp<scalar>());
+            reduce(nMouthSig, sumOp<scalar>());
+            reduce(hSum, sumOp<scalar>());
+            reduce(nH, sumOp<scalar>());
+            reduce(nNear, sumOp<scalar>());
+            reduce(nTouch, sumOp<scalar>());
+            reduce(nInBand, sumOp<scalar>());
+            reduce(nBeyond, sumOp<scalar>());
+            reduce(nTrail, sumOp<scalar>());
+            reduce(nMissGas, sumOp<scalar>());
+            reduce(nMissLiq, sumOp<scalar>());
+            reduce(nMissWire, sumOp<scalar>());
+            reduce(nForced, sumOp<scalar>());
+            reduce(nNoTan, sumOp<scalar>());
+            reduce(nAtCap, sumOp<scalar>());
+            reduce(nTouchForced, sumOp<scalar>());
+            reduce(nFreeze, sumOp<scalar>());
+            reduce(fAbsMax, maxOp<scalar>());
+            reduce(pYoungMax, maxOp<scalar>());
+            reduce(sigSum, sumOp<scalar>());
+            reduce(nSig, sumOp<scalar>());
+            const scalar sigM =
+                (nMouthSig > SMALL) ? mouthSig/max(nMouthSig, SMALL)
+              : ((nSig > SMALL) ? sigSum/max(nSig, SMALL) : scalar(1.2));
+            const scalar hM =
+                (nH > SMALL) ? hSum/max(nH, SMALL) : scalar(19e-6);
+            const char* mouthState = "open";
+            scalar wMouth = mouthGap;
+            scalar pCap = 0;
+            if (mouthGap > 0.5*GREAT)
+            {
+                mouthState = "bare";
+                wMouth = 0;
+                pCap = 2.0*sigM/max(hM, SMALL);
+            }
+            else if (mouthGap < 0.5*hM)
+            {
+                mouthState = "closed";
+                pCap = 2.0*sigM/max(hM, SMALL);
+            }
+            else pCap = 2.0*sigM/mouthGap;
+            const scalar ratio = (pCap > SMALL) ? pYoungMax/pCap : 0;
+            Info<< "WireForce: near " << label(nNear)
+                << " touch " << label(nTouch)
+                << " touchForced " << label(nTouchForced)
+                << " inBand " << label(nInBand)
+                << " beyond " << label(nBeyond)
+                << " trail " << label(nTrail)
+                << " missGas " << label(nMissGas)
+                << " missLiq " << label(nMissLiq)
+                << " missWire " << label(nMissWire)
+                << " forced " << label(nForced)
+                << " noTan " << label(nNoTan)
+                << " atCap " << label(nAtCap)
+                << " sink " << label(nWirePin)
+                << " freeze " << label(nFreeze)
+                << " pYoung " << pYoungMax
+                << " pCap " << pCap
+                << " ratio " << ratio
+                << " wMouth " << wMouth*1e3
+                << " mm " << mouthState
+                << " velCap none band 1.75h"
+                << endl;
 
             if (Pstream::master())
             {

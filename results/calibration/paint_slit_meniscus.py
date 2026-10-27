@@ -6,7 +6,8 @@ after 4 ms. This initial field is two ellipsoids (a pool on the plate, a
 taller dome on the trailing side) with a groove cut along the wire. The
 groove mouth is `--gap-mm` (default 0.06 mm) at z = 1.20 mm and tapers to a
 point at z = 0.75 mm. It is only 0.28 mm wide in y so the center plane cuts
-through it. A 0.12 mm mouth is the wider groove.
+through it. `--film-mm` replaces that taper with a uniform gas layer of that
+thickness on the trailing half of the wire, from z = 0.30 mm to 1.50 mm.
 
 Runs on the serial mesh, after 0/ has been copied from 0.orig and before
 decomposePar. Wire cells stay unmelted and at rest.
@@ -22,6 +23,10 @@ Z_TIP = 0.75e-3
 Z_MOUTH = 1.20e-3
 W_MOUTH = 0.060e-3
 Y_GROOVE = 0.28e-3
+# Uniform trailing-face film. 0 keeps the tapered groove.
+FILM = 0.0
+Z_FILM_LO = 0.30e-3
+Z_FILM_HI = 1.50e-3
 # Pool on the plate, top near the slit tip. Dome is taller and trailing.
 POOL_C = (0.0, 0.0, 0.20e-3)
 POOL_R = (1.15e-3, 0.95e-3, 0.55e-3)
@@ -133,11 +138,21 @@ def in_groove(x, y, z):
     return x < xs + gap_width(z)
 
 
+def in_film(x, y, z):
+    """Uniform gas layer on the trailing half, not only the groove mouth."""
+    if FILM <= 0 or z < Z_FILM_LO or z > Z_FILM_HI or x <= 0:
+        return False
+    r = math.hypot(x, y)
+    return WIRE_R < r < WIRE_R + FILM
+
+
 def classify(x, y, z):
     """wire, slit, dome, pool, plate, substrate, gas."""
     if (x * x + y * y) < WIRE_R * WIRE_R and z > 0.08e-3:
         return "wire"
-    if in_groove(x, y, z):
+    if in_film(x, y, z):
+        return "slit"
+    if FILM <= 0 and in_groove(x, y, z):
         return "slit"
     if z > 0.0 and in_ellipsoid(x, y, z, DOME_C, DOME_R):
         return "dome"
@@ -190,12 +205,21 @@ def scan_velocity(path):
     return (u, v, w)
 
 
-def paint(case, wire_t, dry_run, gap_mm):
-    global W_MOUTH
+def paint(case, wire_t, dry_run, gap_mm, film_mm):
+    global W_MOUTH, FILM
     if gap_mm <= 0 or gap_mm > 0.40:
         raise SystemExit("--gap-mm must be in (0, 0.40]")
+    if film_mm < 0 or film_mm > 0.40:
+        raise SystemExit("--film-mm must be in [0, 0.40]")
     W_MOUTH = gap_mm * 1e-3
-    print(f"groove mouth {gap_mm:.3f} mm at z = {Z_MOUTH * 1e3:.2f} mm")
+    FILM = film_mm * 1e-3
+    if FILM > 0:
+        print(
+            f"trailing film {film_mm:.3f} mm from z = {Z_FILM_LO * 1e3:.2f}"
+            f" to {Z_FILM_HI * 1e3:.2f} mm"
+        )
+    else:
+        print(f"groove mouth {gap_mm:.3f} mm at z = {Z_MOUTH * 1e3:.2f} mm")
     cc = cell_centres(case)
     n = len(cc)
     alpha = np.zeros(n)
@@ -270,9 +294,11 @@ def main():
     ap.add_argument("--wire-t", type=float, default=300.0)
     ap.add_argument("--gap-mm", type=float, default=0.06,
                     help="groove width at z = 1.20 mm (0.06 narrow, 0.12 wide)")
+    ap.add_argument("--film-mm", type=float, default=0.0,
+                    help="uniform trailing-face gas film [mm]; 0 keeps the tapered groove")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    paint(args.case, args.wire_t, args.dry_run, args.gap_mm)
+    paint(args.case, args.wire_t, args.dry_run, args.gap_mm, args.film_mm)
 
 
 if __name__ == "__main__":
