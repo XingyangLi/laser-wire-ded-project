@@ -15,7 +15,7 @@
             // Carry coverage with the surface flow, then grow it only on
             // the free surface. Bulk cells are cleared so the scalar stays
             // on the interface.
-            const scalar dt = runTime.deltaTValue();
+            const dimensionedScalar dt("dt", dimTime, runTime.deltaTValue());
             oxideFilm -= dt*fvc::div(phi, oxideFilm, "div(phi,oxideFilm)");
             const volVectorField gradOx(fvc::grad(alpha1));
             scalarField& ox = oxideFilm.primitiveFieldRef();
@@ -33,7 +33,7 @@
                 ox[celli] = min(max(ox[celli], scalar(0)), scalar(2));
                 if (iface)
                 {
-                    ox[celli] = min(ox[celli] + dt*sRate, scalar(2));
+                    ox[celli] = min(ox[celli] + dt.value()*sRate, scalar(2));
                 }
                 else
                 {
