@@ -476,7 +476,7 @@ Beams alone deposit on the crown. At 0.706 s the neck liquid reaches the 3490 K 
 
 Recoil is the term that opens the column. At 0.704 s, 2 ms after the ramp, 1011 cells inside the wire that were metal are gas: x = 0.19–0.47 mm, z = 0.43–1.09 mm. That gas moves into the wire and down the wire, |U| median 3.4 m/s, maximum 5.8 m/s, every one of those cells with Ux < −0.2 m/s and 99% with Uz < −0.2 m/s. `Qheat` on the new gas is zero. The liquid against it is hot, and by 0.705 s that liquid carries `pRecoil` at the 2×10⁵ Pa cap and `Qheat` up to 2.9×10¹⁴ W/m³. The beam heats the metal. Recoil, which pushes along `snGrad(alpha)` into the liquid, is what turns that metal into the column. Once the column is open the gas slows: at 0.705 s the same interior gas has |U| median 0.5 m/s.
 
-The column at 0.705 s is 0.88 mm deep (z = 0.54–1.42 mm) and 0.28–0.50 mm wide. It is open, with no bead wall on the outside. The inner edge stays near x = 0.32–0.41 mm, inside the 0.50 mm wire radius, for the whole height. The width peaks near z = 0.8–0.9 mm and does not taper to a point.
+The run finishes at 0.706 s with the column 0.92 mm deep (z = 0.50–1.42 mm) and 0.36–0.50 mm wide. It is open, with no bead wall on the outside. The inner edge stays near x = 0.32–0.45 mm, inside the 0.50 mm wire radius, for the whole height. The width peaks near z = 0.8–1.1 mm and does not taper to a point. 1547 cells inside the wire have become gas.
 
 ## Nine-micrometre neck
 
