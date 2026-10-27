@@ -695,6 +695,8 @@ Two terms enter the momentum equation. Cells with `|grad alpha| h > 0.25` carry 
 
 `lengthTau` greater than zero turns growth off and limits the membrane to a length `feed × lengthTau` below `zMouth` (default 1.20 mm). The strength is still the ppm factor, on from the first step. The oxidised length is what can change with feed.
 
+`--oxide-skin-surface` writes `surface true` and leaves growth off. Coverage starts at 0, is advected with the mixture flux, and grows at `(ppm/ppmRef)/tau` on free-surface cells (`tau` 1 ms). It is cleared off the interface. The damper and the viscosity then follow that coverage, and only where gas faces the trailing wire, with no fixed z window. A wetted neck has no gas film, so the skin does not lock it.
+
 ### Gas cavity (`--gas-cavity`)
 
 Off unless `gasCavity { enabled true; }`. This is separate from the oxide skin. `pSupport` is applied like the recoil force, `p * snGrad(alpha)`, only on interfaces whose gas side faces the wire and only while that gas is within `gapMax` of the wire. `qRef` is a gas volume flux at the trailing triple line, in a band below the contact. It scales with `(ppm/ppmRef) * (feed/feedRef)`, is a metal-fraction sink in those cells, and is a volume source in the pressure equation. The z limits are a cap. The log line is `GasCavity:`.

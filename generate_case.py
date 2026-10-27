@@ -376,6 +376,10 @@ def build_parser():
            "(default 0.10 mm)")
     a("--oxide-skin-ppm-ref", type=float, default=300.0,
       help="oxygen ppm that gives full oxide-skin strength (default 300)")
+    a("--oxide-skin-surface", action="store_true",
+      help="oxide coverage is a passive scalar on the free surface, carried "
+           "by the flow. The damper acts only where gas faces the trailing "
+           "wire, so it does not freeze a wetted neck")
     a("--oxide-skin-length-tau", type=float, default=0.0,
       help="if > 0, the skin is on from the first step over a length "
            "feed*tau below z = 1.20 mm, and growth is left off")
@@ -679,6 +683,8 @@ class Case:
             )
         if a.oxide_skin_ppm_ref <= 0:
             raise SystemExit("--oxide-skin-ppm-ref must be > 0")
+        if a.oxide_skin_surface:
+            a.oxide_skin = True
         if a.oxide_skin_length_tau < 0:
             raise SystemExit("--oxide-skin-length-tau must be >= 0")
         if a.gas_cavity and a.gas_pressure <= 0 and a.gas_q <= 0:
@@ -1428,6 +1434,7 @@ divSchemes
     div(phi,meltHistory) Gauss upwind;
     div(alphaPhi,cWire) Gauss upwind;
     div(phiOxide,oxideFilm) Gauss upwind;
+    div(phi,oxideFilm) Gauss upwind;
     div(alphaPhi,cComp) Gauss vanLeer;   // multi-component tracers (bounded TVD: keeps strand fragments sharp)
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
 }
@@ -1914,7 +1921,13 @@ statistics
         if not getattr(a, "oxide_skin", False):
             return ""
         length_tau = a.oxide_skin_length_tau
-        if length_tau > 0:
+        if a.oxide_skin_surface:
+            growth = (
+                "    growth          false;\n"
+                "    surface         true;\n"
+                f"    tau             {f(1.0e-3)};\n"
+            )
+        elif length_tau > 0:
             growth = (
                 "    growth          false;\n"
                 f"    lengthTau       {f(length_tau)};\n"

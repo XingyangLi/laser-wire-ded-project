@@ -10,7 +10,39 @@
         // film down with the wire, then add oxide on the exposed trailing
         // face. The rate already contains the ppm factor, so the damper
         // below is not multiplied by it again.
-        if (oxideGrowth && pimple.firstIter())
+        if (oxideSurface && pimple.firstIter())
+        {
+            // Carry coverage with the surface flow, then grow it only on
+            // the free surface. Bulk cells are cleared so the scalar stays
+            // on the interface.
+            const scalar dt = runTime.deltaTValue();
+            oxideFilm -= dt*fvc::div(phi, oxideFilm, "div(phi,oxideFilm)");
+            const volVectorField gradOx(fvc::grad(alpha1));
+            scalarField& ox = oxideFilm.primitiveFieldRef();
+            const scalarField& aOx = alpha1.primitiveField();
+            const vectorField& gOx = gradOx.primitiveField();
+            const scalarField& VpOx = mesh.V();
+            const scalar sRate = oxideSkinStrength/oxideTau;
+            forAll(ox, celli)
+            {
+                const scalar h = Foam::cbrt(max(VpOx[celli], SMALL));
+                const bool iface =
+                    mag(gOx[celli])*h > 0.25
+                 && aOx[celli] > 0.02
+                 && aOx[celli] < 0.98;
+                ox[celli] = min(max(ox[celli], scalar(0)), scalar(2));
+                if (iface)
+                {
+                    ox[celli] = min(ox[celli] + dt*sRate, scalar(2));
+                }
+                else
+                {
+                    ox[celli] = 0;
+                }
+            }
+            oxideFilm.correctBoundaryConditions();
+        }
+        else if (oxideGrowth && pimple.firstIter())
         {
             const scalar Vfeed = mag(wireFeedVelocity);
             // A bare vector has no dimensions, and Sf&vector is then an
@@ -85,11 +117,33 @@
             const vector rad = d - s*wireUp;
             const scalar r = mag(rad);
             const scalar h = Foam::cbrt(max(Vp[celli], SMALL));
-            const bool onTrail = (rad & trail) > 0 && s >= oxideSkinZLo && s <= oxideSkinZHi;
+            const bool onTrail =
+                (rad & trail) > 0 && s >= oxideSkinZLo && s <= oxideSkinZHi;
+            const bool trailSide = (rad & trail) > 0;
+            const vector nRad = rad/(r + VSMALL);
+            const bool gasTowardWire =
+                (mag(gA[celli])*h > 0.25) && ((nRad & gA[celli]) > 0);
+            bool inShell = false;
+            if (oxideSurface)
+            {
+                // No z window. Hold only a gas film on the trailing face.
+                inShell =
+                    trailSide
+                 && r > wireRadius
+                 && r < wireRadius + oxideSkinGap
+                 && gasTowardWire;
+            }
+            else
+            {
+                inShell =
+                    onTrail
+                 && r > wireRadius - 0.5*h
+                 && r < wireRadius + oxideSkinGap;
+            }
 
             if
             (
-                onTrail
+                (oxideSurface ? trailSide : onTrail)
              && a[celli] > 0.5
              && r > wireRadius
              && r < wireRadius + 0.40e-3
@@ -102,14 +156,12 @@
                 }
             }
 
-            if (!onTrail) continue;
-            if (r < wireRadius - 0.5*h || r > wireRadius + oxideSkinGap) continue;
+            if (!inShell) continue;
 
-            // Uniform skin: one strength on the whole shell. Growing skin:
-            // that strength is already in the coverage, so a cell scales
-            // with min(coverage, 1) and a barely covered cell is left free.
+            // Uniform skin: one strength on the whole shell. Growing or
+            // surface skin: the ppm factor is already in the coverage.
             scalar fac = oxideSkinStrength;
-            if (oxideGrowth)
+            if (oxideGrowth || oxideSurface)
             {
                 fac = min(max(oxNow[celli], scalar(0)), scalar(1));
                 if (fac < scalar(0.02)) continue;
@@ -156,7 +208,7 @@
             Info<< "OxideSkin: cells " << nSkin
                 << " muCells " << nMu
                 << " strength " << oxideSkinStrength;
-            if (oxideGrowth)
+            if (oxideGrowth || oxideSurface)
             {
                 const scalar oxMax = returnReduce
                 (

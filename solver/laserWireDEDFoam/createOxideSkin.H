@@ -57,6 +57,10 @@ const scalar oxideSkinPpmRef = max
 const scalar oxideSkinAlphaGas = oxideSkinDict.getOrDefault<scalar>("alphaGas", 0.98);
 // Absent key: the uniform membrane, so an older case stays reproducible.
 const bool oxideGrowth = oxideSkinDict.getOrDefault<bool>("growth", false);
+// surface: coverage is a passive scalar on the free surface, carried by
+// the mixture flux. The damper then acts only where gas faces the wire,
+// so a wetted neck is not frozen and a film that opens can be held.
+const bool oxideSurface = oxideSkinDict.getOrDefault<bool>("surface", false);
 const scalar oxideTau = max
 (
     oxideSkinDict.getOrDefault<scalar>("tau", 5.0e-4),
@@ -166,7 +170,13 @@ if (oxideSkinEnabled)
         << " lengthTau " << oxideLengthTau
         << " ppmRef " << oxideSkinPpmRef
         << " alphaGas " << oxideSkinAlphaGas;
-    if (oxideGrowth)
+    if (oxideSurface)
+    {
+        Info<< " surface on"
+            << " tau " << oxideTau << " s"
+            << " coverage 0, advected by phi";
+    }
+    else if (oxideGrowth)
     {
         Info<< " growth on"
             << " tau " << oxideTau << " s"
