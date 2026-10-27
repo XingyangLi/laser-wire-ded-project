@@ -570,3 +570,11 @@ On the slab, with the beams on from t = 0 and the pool on the 3490 K clip, the 2
 | skinRshell | cap 2×10⁵ Pa, off inside the shell | 0.060 × 0.825 mm | 0.060 × 0.825 mm | 0.060 × 0.825 mm | steady |
 
 All four stay open. The 2×10⁵ Pa run's depth falls below 0.25 mm by 4 ms (z 1.13–1.28 mm). The 5×10⁴ Pa cap and the shell switch leave the depth at 0.825 mm. The 1×10⁴ Pa cap shortens it by 0.025 mm and is still inside the steady limit.
+
+## Imposed trailing-face pin
+
+The painted-film full-domain reruns were stopped. This case does not paint a slit. `cases/wire_cavity_drag24` is the settled smokeS neck at 0.7047 s, copied onto four ranks. Before the pin moves, the centre plane has no gap: depth 0, width 0, metal from z = 0.50 mm to 1.42 mm. Laser off, recoil off, Marangoni off. The feed is 24 mm/s from 0.7047 s with no ramp. Sahoo–Belton sigma stays on at 100 ppm. That ppm also sets the contact-angle table: the wire window is 20°/95° and the trailing sector is 12°/140°. The existing contact line is still `wireVelocity head`, so that line is held in the lab frame. Marangoni is off, so the ppm does not add a surface-stress flow. It still sets sigma(T) and those angles.
+
+`trailDrag` is the imposed pin. On the trailing face, inside a 75° sector about +x, `alpha.metal` is held at 1 and the velocity is held at the feed velocity. The shell is 2 cells thick radially and 3 cells tall, measured down from the highest liquid cell on that face. The pool outside the shell is free. The wetted top is that liquid cell, z0 = 1.577 mm, not the solid wire tip at 2.13 mm. Over 10 ms the imposed line moves to 1.337 mm. That is 0.024 m/s × 10 ms.
+
+The first 2 ms stayed calm, so the run was not stopped. At 2 ms the neck speed is 1.21 m/s, the time step is 1.8 µs, and there is no wide gas column. Through 10 ms the neck speed stays between 0.87 m/s and 1.70 m/s, the step stays near 1.6–1.8 µs, and `Max(alpha.metal)` stays at 1. Every centre-plane sample from 0 to 10 ms, every 0.5 ms, is width 0.000 mm and depth 0.000 mm. Metal remains on the wire face over z = 0.50–1.42 mm. The shell is inside metal that was already there. Releasing the cells above the descending line does not open a gas gap, so no radiograph slit appears. The figure is `results/calibration/taosun03/drag24_slit.png`.

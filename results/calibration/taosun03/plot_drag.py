@@ -85,10 +85,18 @@ def main():
     ax_s.set_xlim(left=0)
     ymax = max(0.30, max(depth + width) * 1.25)
     ax_s.set_ylim(0, ymax)
+    drop_mm = 24.0 * (t_end - args.t0)
     ax_s.set_xlabel("time after the pin starts [ms]", color=INK, fontsize=11)
     ax_s.set_ylabel("millimetres", color=INK, fontsize=11)
-    ax_s.set_title("centre-plane slit", color=INK, fontsize=13, pad=6)
-    ax_s.legend(frameon=False, fontsize=11)
+    ax_s.set_title(
+        f"centre-plane slit\nimposed line moved {drop_mm:.2f} mm",
+        color=INK, fontsize=13, pad=6,
+    )
+    ax_s.legend(frameon=False, fontsize=11, loc="upper right")
+    ax_s.text(
+        0.04, 0.08, "width = 0 and depth = 0\nat every sample",
+        transform=ax_s.transAxes, color=INK, fontsize=11, va="bottom",
+    )
     ax_s.tick_params(colors=INK, labelsize=10)
     for spine in ax_s.spines.values():
         spine.set_color("#5c5346")
