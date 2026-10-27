@@ -392,6 +392,9 @@ boolList inWireZone(mesh.nCells(), false);
 
 #include "createLaserRays.H"
 
+// Trailing-oxide coverage must exist before the first sigma evaluation.
+#include "createOxideAngle.H"
+
 // --- Surface tension (liquid-only CSF, sigma(T), Marangoni, capillary dt)
 #include "createSurfaceTension.H"
 #include "createContactLine.H"

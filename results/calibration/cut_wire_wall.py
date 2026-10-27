@@ -18,6 +18,11 @@ valueFraction to no-slip on the trailing contact line. The lower wall is
 1850 K up to z = 1.6 mm so the meniscus stays liquid. A wireDrag block is
 written into meltProperties.
 
+--oxide-angle implies --pin but does not write wireDrag or linePin. The
+clean window on the patch is 10/40. thetaRox 40 and thetaAox 140 are the
+covered limits. An oxideAngle block is written; coverage, not a painted
+alpha, drives the blend.
+
 An empty wireInlet (every inlet face belonged to a removed cell) is dropped.
 """
 import argparse
@@ -35,6 +40,9 @@ Z_HOT_PIN = 1.6e-3
 T_HOT_PIN = 1850
 T_COLD = 600
 FEED = (0.0, 0.0, -0.02)
+# Covered trailing face. The clean window stays 10/40.
+THETA_R_OX = 40.0
+THETA_A_OX = 140.0
 
 
 def foam_dict(body):
@@ -179,16 +187,23 @@ def drop_empty_inlet(text):
     return text, True
 
 
-def wall_block(field, theta, feed, pin, theta_a, theta_r):
+def wall_block(field, theta, feed, pin, theta_a, theta_r, oxide=False):
     uz = -abs(feed)
     z_hot = Z_HOT_PIN if pin else Z_HOT
     t_hot = T_HOT_PIN if pin else T_HOT
     if field == "alpha.metal":
         if pin:
+            oxide_keys = ""
+            if oxide:
+                oxide_keys = (
+                    f"        thetaAox        {THETA_A_OX:.8g};\n"
+                    f"        thetaRox        {THETA_R_OX:.8g};\n"
+                )
             body = (
                 f"        type            pinnedAlphaContactAngle;\n"
                 f"        thetaA          {theta_a:.8g};\n"
                 f"        thetaR          {theta_r:.8g};\n"
+                f"{oxide_keys}"
                 f"        limit           gradient;\n"
                 f"        gradient        uniform 0;\n"
                 f"        value           uniform 0;"
@@ -229,7 +244,7 @@ def wall_block(field, theta, feed, pin, theta_a, theta_r):
     return f"    wireWall\n    {{\n{body}\n    }}"
 
 
-def replace_field_block(tail, field, theta, feed, pin, theta_a, theta_r):
+def replace_field_block(tail, field, theta, feed, pin, theta_a, theta_r, oxide=False):
     span = find_block(tail, "wireWall")
     if span is None:
         raise SystemExit(f"{field}: no wireWall boundary")
@@ -239,7 +254,9 @@ def replace_field_block(tail, field, theta, feed, pin, theta_a, theta_r):
         raise SystemExit(
             f"{field}: wireWall value is a binary list; not rewriting it"
         )
-    return tail[:start] + wall_block(field, theta, feed, pin, theta_a, theta_r) + tail[end:]
+    return tail[:start] + wall_block(
+        field, theta, feed, pin, theta_a, theta_r, oxide
+    ) + tail[end:]
 
 
 def write_wire_drag(case, theta_a, theta_r):
@@ -267,6 +284,35 @@ def write_wire_drag(case, theta_a, theta_r):
         text = text[:banner] + block + "\n" + text[banner:]
     path.write_text(text)
     print(f"wireDrag thetaR {theta_r:.8g} thetaA {theta_a:.8g}")
+
+
+def write_oxide_angle(case):
+    """Coverage law. wireDrag and linePin stay off."""
+    path = Path(case) / "constant/meltProperties"
+    text = read_text(path)
+    for name in ("wireDrag", "linePin", "oxideAngle"):
+        span = find_block(text, name)
+        if span is not None:
+            text = text[:span[0]] + text[span[1]:]
+    block = (
+        "\noxideAngle\n"
+        "{\n"
+        "    enabled         true;\n"
+        "    nCells          3;\n"
+        "    tau             0.001;\n"
+        "    ppmRef          300;\n"
+        "    sigmaDrop       0.5;\n"
+        "    sigmaFloor      0.1;\n"
+        "    zMin            0.0003;\n"
+        "}\n"
+    )
+    banner = text.rfind("// ************************************************************************* //")
+    if banner < 0:
+        text = text.rstrip() + "\n" + block
+    else:
+        text = text[:banner] + block + "\n" + text[banner:]
+    path.write_text(text)
+    print("oxideAngle enabled, 3 cells, ppmRef 300, sigmaDrop 0.5")
 
 
 def write_line_pin(case):
@@ -310,7 +356,7 @@ def field_files(case):
     return files
 
 
-def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
+def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False, oxide=False):
     case = Path(case)
     boundary = case / "constant/polyMesh/boundary"
     text = read_text(boundary)
@@ -335,7 +381,9 @@ def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
             f"wireWall type wall, {n_wall} faces, "
             f"pinned {theta_r:.8g}/{theta_a:.8g} deg, feed {feed:.8g}"
         )
-        if line_pin:
+        if oxide:
+            write_oxide_angle(case)
+        elif line_pin:
             write_line_pin(case)
         else:
             write_wire_drag(case, theta_a, theta_r)
@@ -346,12 +394,14 @@ def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
         head, tail = split_boundary(load_field(path), path)
         if dropped and "wireInlet" in tail:
             tail, _ = drop_block(tail, "wireInlet")
-        tail = replace_field_block(tail, path.name, theta, feed, pin, theta_a, theta_r)
+        tail = replace_field_block(
+            tail, path.name, theta, feed, pin, theta_a, theta_r, oxide
+        )
         save_field(path, head + tail)
         print(f"  {path.name}: wireWall set")
 
 
-def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
+def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False, oxide=False):
     case = Path(case)
     boundary = read_text(case / "constant/polyMesh/boundary")
     span = find_block(boundary, "wireWall")
@@ -393,7 +443,28 @@ def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
         if "exprFixedValue" not in tb or "1850" not in tb:
             raise SystemExit("T wireWall is not the liquid hot zone")
         props = read_text(case / "constant/meltProperties")
-        if line_pin:
+        if oxide:
+            if not re.search(rf"thetaAox\s+{THETA_A_OX:.8g}\s*;", ab):
+                raise SystemExit("thetaAox is missing from alpha.metal")
+            if not re.search(rf"thetaRox\s+{THETA_R_OX:.8g}\s*;", ab):
+                raise SystemExit("thetaRox is missing from alpha.metal")
+            ox_span = find_block(props, "oxideAngle")
+            if ox_span is None:
+                raise SystemExit("meltProperties has no oxideAngle block")
+            ox_body = props[ox_span[0]:ox_span[1]]
+            if not re.search(r"enabled\s+true;", ox_body):
+                raise SystemExit("oxideAngle is not enabled")
+            if not re.search(r"nCells\s+3\s*;", ox_body):
+                raise SystemExit("oxideAngle nCells is not 3")
+            if not re.search(r"sigmaDrop\s+0\.5\s*;", ox_body):
+                raise SystemExit("oxideAngle sigmaDrop is not 0.5")
+            for name in ("linePin", "wireDrag"):
+                span = find_block(props, name)
+                if span is not None and re.search(
+                    r"enabled\s+true;", props[span[0]:span[1]]
+                ):
+                    raise SystemExit(f"{name} is enabled next to oxideAngle")
+        elif line_pin:
             pin_span = find_block(props, "linePin")
             if pin_span is None:
                 raise SystemExit("meltProperties has no linePin block")
@@ -452,6 +523,8 @@ def main():
                     help="hysteresis angle and partial-slip feed velocity")
     ap.add_argument("--line-pin", action="store_true",
                     help="imposed trailing contact that moves at the feed")
+    ap.add_argument("--oxide-angle", action="store_true",
+                    help="trailing oxide coverage sets angle, sigma and slip")
     ap.add_argument("--theta-a", type=float, default=140.0)
     ap.add_argument("--theta-r", type=float, default=40.0)
     ap.add_argument("--write-dict", action="store_true")
@@ -460,6 +533,12 @@ def main():
     args = ap.parse_args()
     if not (args.write_dict or args.apply or args.check):
         raise SystemExit("pass --write-dict, --apply or --check")
+    if args.oxide_angle and args.line_pin:
+        raise SystemExit("oxide-angle and line-pin are different tests")
+    if args.oxide_angle:
+        args.pin = True
+        args.theta_r = 10.0
+        args.theta_a = 40.0
     if args.line_pin:
         args.pin = True
     if args.pin and args.theta_a < args.theta_r:
@@ -469,12 +548,12 @@ def main():
     if args.apply:
         apply_bcs(
             args.case, args.theta, args.feed, args.pin,
-            args.theta_a, args.theta_r, args.line_pin,
+            args.theta_a, args.theta_r, args.line_pin, args.oxide_angle,
         )
     if args.check or args.apply:
         check(
             args.case, args.theta, args.feed, args.pin,
-            args.theta_a, args.theta_r, args.line_pin,
+            args.theta_a, args.theta_r, args.line_pin, args.oxide_angle,
         )
 
 

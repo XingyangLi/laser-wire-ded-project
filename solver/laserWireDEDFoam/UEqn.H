@@ -2,6 +2,7 @@
 
     #include "marangoni.H"
     #include "oxideSkin.H"
+    #include "oxideAngleForce.H"
 
     fvVectorMatrix UEqn
     (
@@ -25,6 +26,7 @@
       + Kcontact*Ucontact
       + Koxide*Ukeep
       + Fmarangoni
+      + Foxide
       + Fbuoy
       + Fcontact
       + fvOptions(rho, U)

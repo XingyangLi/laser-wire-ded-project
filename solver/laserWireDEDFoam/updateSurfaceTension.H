@@ -37,6 +37,8 @@
         }
     }
 
+    #include "oxideAngleSigma.H"
+
     if
     (
         oxygenDependent

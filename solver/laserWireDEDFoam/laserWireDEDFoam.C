@@ -193,6 +193,8 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // Trailing oxide coverage, once per step. Off does nothing.
+            #include "oxideAngle.H"
             #include "alphaControls.H"
             #include "alphaEqnSubCycle.H"
 

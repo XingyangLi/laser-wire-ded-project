@@ -15,6 +15,10 @@ Description
     the wall velocity carries the line instead of the line sliding along
     the wall.
 
+    Optional thetaAox / thetaRox blend the window with the adjacent-cell
+    oxideCoverage (0 keeps thetaR/thetaA, 1 uses the oxide limits). Absent
+    keys leave the uniform window. A missing coverage field is coverage 0.
+
 SourceFiles
     pinnedAlphaContactAngleFvPatchScalarField.C
 
@@ -41,6 +45,15 @@ class pinnedAlphaContactAngleFvPatchScalarField
 
         //- Receding limit [deg], through the metal
         scalar thetaR_;
+
+        //- Oxide advancing limit [deg]. Equals thetaA_ when the key is absent.
+        scalar thetaAox_;
+
+        //- Oxide receding limit [deg]. Equals thetaR_ when the key is absent.
+        scalar thetaRox_;
+
+        //- True when the dictionary sets an oxide window
+        bool oxideBlend_;
 
 
 public:
