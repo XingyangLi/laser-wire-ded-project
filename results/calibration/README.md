@@ -287,3 +287,20 @@ Neither static angle holds a slit, and the film does not either. There is no min
 On cal48 at the first step, with the painted mouth still open at 0.058 mm: 1350 cells touch the trailing face and 93 of them carry a force. 1238 in-band cells are dropped because they have no liquid-metal neighbour, 209 because they have no unmelted-wire neighbour, and 432 interface cells sit outside the 1.75h band. 69 of the 93 forced cells are at the 2σ/h² cap. pYoung is 1.21×10⁵ Pa and pCap is 4.04×10⁴ Pa, so the force on a triple-line cell is about three times the capillary pressure of that mouth. By 2 ms the mouth is closed, the trailing line is 8 cells, and pYoung has fallen to 2.4×10⁴ Pa. The same pattern is on cal49 and on the film. The cells that actually touch the wire along the groove are mostly gas against solid wire, three cells away from the metal wall, so they never receive the angle.
 
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.
+
+`launch_slit_wall.sh` separates the missing wall from the mesh size. Same slab, same 300 ppm Sahoo–Belton sigma, laser, Marangoni and recoil off, plate window 10°/40°, out to 6 ms, 12 ranks, `nice -n 10`.
+
+(A) The wire is cut out of the mesh (`subsetMesh` on the complement of a 0.5 mm cylinder from z = 0.05 mm upward). The new patch `wireWall` is a wall, 1443 faces. `alpha.metal` is `constantAlphaContactAngle` (theta0 through the metal, limit gradient). `U` is fixedValue `(0 0 -0.02)`, the feed velocity on a static mesh. `T` is 1700 K for z < 1.35 mm and 600 K above that. A 0.05 mm gas film is painted on the trailing face after the cut (center-plane width 0.057 mm from z = 0.70 mm to 1.25 mm). The internal wire pin is off. 3 ranks each. cal51 is 140°. cal52 is 40°.
+
+(B) cal53 keeps the cal48 wire (metal region, static 140°/140°, 0.06 mm groove, internal pin) and refines the neck four times, to 9.4 µm, in the box x 0.40–0.80 mm, y 0–0.18 mm, z 0.65–1.35 mm. 90742 cells, Mesh OK, 6 ranks.
+
+The wall angle does change the neck, and it does not hold a slit. `stability:` is "no steady film" on cal51 and cal52.
+
+| tag | wall angle | what the center plane does |
+| --- | --- | --- |
+| cal51 | 140° | at 2 ms a 0.040 × 0.075 mm open patch at z 0.78–0.85 mm; by 4 ms and at 6 ms no metal in the 0.08 mm band from z = 0.60 mm up (the pool has left the wall) |
+| cal52 | 40° | by 2 ms the 0.50–0.58 mm band is metal from z = 0.60 mm to 1.30 mm, and it is still metal at 6 ms. The mouth gap in the solver log is 0.0007 mm from 0.5 ms through 6 ms |
+
+140° does not keep a 0.05 mm film. The non-wetting wall drives the pool off the face. 40° closes the gap and the metal stays on the wall. The contact angle is being enforced. Neither state is the radiograph slit (0.03–0.08 mm wide, at least 0.25 mm deep, steady for 4 ms), so there is no oxygen-to-angle map and no change to how the lower end melts. Figure: `wall_fine_neck.png`.
+
+cal53 has not reached a side plane. After about 20 min the time is still near 0.15 ms. The step sits between 0.05 µs and 0.3 µs with a maximum Courant number near 0.4, so the neck velocity is tens of metres per second and the 6 ms end is a few hours away. The 9.4 µm groove is not scored yet.

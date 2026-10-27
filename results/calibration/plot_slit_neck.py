@@ -39,10 +39,8 @@ def draw_neck(ax, x, z, alpha, title):
     # next to the radiograph; the VOF contour covers it when the cells exist.
     ax.add_patch(Rectangle((-WIRE_R, 0.40), WIRE_R - 0.05, 1.40,
                            facecolor="#1a1a1a", edgecolor="none", zorder=1))
-    filled = ax.tricontourf(tri, pa, levels=levels, cmap="gray_r", vmin=0, vmax=1)
-    filled.set_zorder(2)
-    lines = ax.tricontour(tri, pa, levels=[0.5], colors=["#d94801"], linewidths=0.9)
-    lines.set_zorder(3)
+    ax.tricontourf(tri, pa, levels=levels, cmap="gray_r", vmin=0, vmax=1, zorder=2)
+    ax.tricontour(tri, pa, levels=[0.5], colors=["#d94801"], linewidths=0.9, zorder=3)
     ax.plot([-WIRE_R, -WIRE_R], [0.40, 1.80], color="#2ca02c", lw=0.8, ls="--", zorder=4)
     ax.plot([0.0, 0.0], [0.40, 1.80], color="#2ca02c", lw=0.6, ls=":", zorder=4)
     # Target slit: 0.05 mm wide, z = 0.75..1.20, on the trailing face.
