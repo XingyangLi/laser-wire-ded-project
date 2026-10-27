@@ -156,14 +156,18 @@ main() {
             break
         fi
         local dt=""
-        dt="$(grep '^deltaT' "$CASE/log.laserWireDEDFoam" | tail -1 | awk '{print $3}' || true)"
+        # "deltaT limited by capillary condition" is a note, not the step size.
+        dt="$(grep '^deltaT = ' "$CASE/log.laserWireDEDFoam" | tail -1 | awk '{print $3}' || true)"
         if [[ -z "$dt" ]]; then
             scored="$latest"
             continue
         fi
         python3 - "$dt" "$latest" "$TGATE" <<'PY' || {
 import sys
-dt = float(sys.argv[1] or "1")
+try:
+    dt = float(sys.argv[1])
+except ValueError:
+    raise SystemExit(0)
 t = float(sys.argv[2])
 gate = float(sys.argv[3])
 if t + 1e-9 >= gate and dt < 1.5e-7:
