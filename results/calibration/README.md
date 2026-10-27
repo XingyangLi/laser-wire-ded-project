@@ -303,4 +303,6 @@ The wall angle does change the neck, and it does not hold a slit. `stability:` i
 
 140° does not keep a 0.05 mm film. The non-wetting wall drives the pool off the face. 40° closes the gap and the metal stays on the wall. The contact angle is being enforced. Neither state is the radiograph slit (0.03–0.08 mm wide, at least 0.25 mm deep, steady for 4 ms), so there is no oxygen-to-angle map and no change to how the lower end melts. Figure: `wall_fine_neck.png`.
 
-cal53 has not reached a side plane. After about 20 min the time is still near 0.15 ms. The step sits between 0.05 µs and 0.3 µs with a maximum Courant number near 0.4, so the neck velocity is tens of metres per second and the 6 ms end is a few hours away. The 9.4 µm groove is not scored yet.
+cal53 does not hold the groove either. The painted mouth is 0.048 mm at the first step and 0.0005 mm from 0.25 ms onward. At 2 ms the center plane is metal on the wire from z = 0.60 mm to 1.20 mm, with a capped 0.020 × 0.050 mm wisp at z 1.25–1.30 mm. That sample already fails the film test, so later times could not accumulate 4 ms of a good film. The run was stopped at 2.3 ms. The step had stayed between 0.05 µs and 0.3 µs with a maximum Courant number near 0.4. Finer cells close the same groove faster than the 19 µm mesh. `stability:` is "no steady film".
+
+The wall boundary condition does enforce the angle: 40° wets and stays wet, and 140° drives the pool off the wall onto a bare face. The 9.4 µm neck still fills the groove. No case holds a thin slit, and no full-domain demo was started.
