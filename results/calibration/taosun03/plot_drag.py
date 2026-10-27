@@ -39,6 +39,18 @@ def main():
     ap.add_argument("--case", default="cases/wire_cavity_drag24")
     ap.add_argument("--t0", type=float, default=0.7047)
     ap.add_argument("--out", default=str(HERE / "drag24_slit.png"))
+    ap.add_argument(
+        "--suptitle",
+        default=(
+            "Pinned trailing face, feed 24 mm/s. Laser, recoil and Marangoni off.\n"
+            "The pin is imposed; the pool behind the shell is free."
+        ),
+    )
+    ap.add_argument(
+        "--series-title",
+        default="",
+        help="Right-hand panel title. Default names the imposed-line travel.",
+    )
     args = ap.parse_args()
     case = Path(args.case)
     rows = series(case, args.t0)
@@ -86,26 +98,23 @@ def main():
     ymax = max(0.30, max(depth + width) * 1.25)
     ax_s.set_ylim(0, ymax)
     drop_mm = 24.0 * (t_end - args.t0)
-    ax_s.set_xlabel("time after the pin starts [ms]", color=INK, fontsize=11)
+    series_title = args.series_title or (
+        f"centre-plane slit\nimposed line moved {drop_mm:.2f} mm"
+    )
+    ax_s.set_xlabel("time after the start [ms]", color=INK, fontsize=11)
     ax_s.set_ylabel("millimetres", color=INK, fontsize=11)
-    ax_s.set_title(
-        f"centre-plane slit\nimposed line moved {drop_mm:.2f} mm",
-        color=INK, fontsize=13, pad=6,
-    )
+    ax_s.set_title(series_title, color=INK, fontsize=13, pad=6)
     ax_s.legend(frameon=False, fontsize=11, loc="upper right")
-    ax_s.text(
-        0.04, 0.08, "width = 0 and depth = 0\nat every sample",
-        transform=ax_s.transAxes, color=INK, fontsize=11, va="bottom",
-    )
+    if max(depth) < 1e-6 and max(width) < 1e-6:
+        ax_s.text(
+            0.04, 0.08, "width = 0 and depth = 0\nat every sample",
+            transform=ax_s.transAxes, color=INK, fontsize=11, va="bottom",
+        )
     ax_s.tick_params(colors=INK, labelsize=10)
     for spine in ax_s.spines.values():
         spine.set_color("#5c5346")
 
-    fig.suptitle(
-        "Pinned trailing face, feed 24 mm/s. Laser, recoil and Marangoni off.\n"
-        "The pin is imposed; the pool behind the shell is free.",
-        color=INK, fontsize=13, y=1.02,
-    )
+    fig.suptitle(args.suptitle, color=INK, fontsize=13, y=1.02)
     out = Path(args.out)
     fig.savefig(out, bbox_inches="tight", facecolor=PAPER)
     print(f"wrote {out}")
