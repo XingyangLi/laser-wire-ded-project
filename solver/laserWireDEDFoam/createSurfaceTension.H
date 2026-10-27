@@ -55,6 +55,9 @@ const scalar sigmaMin = stDict.getOrDefault<scalar>("sigmaMin", 0.1*sigma0);
 const scalar sigmaMaxInit = max(subP.sigma, wireP.sigma);
 const bool marangoniOn = stDict.getOrDefault<bool>("marangoni", mgOld);
 const bool stLiquidOnly = stDict.getOrDefault<bool>("liquidOnly", true);
+// Same factor as marangoni.H. Off by default so existing cases keep the
+// historical CSF. On: the light gas does not take the whole capillary jump.
+const bool stDensityScaled = stDict.getOrDefault<bool>("densityScaled", false);
 const scalar stAlphaMin = stDict.getOrDefault<scalar>("alphaMin", 1e-3);
 const scalar capDtFactor = stDict.getOrDefault<scalar>("capillaryDtFactor", 0.8);
 
@@ -147,6 +150,7 @@ Info<< "Surface tension (CSF)\n"
     << "  dSigma/dT = " << dSigmadTval << " N/m/K, Tref = " << sigmaTref
     << " K, sigmaMin = " << sigmaMin << " N/m" << nl
     << "    liquid metal only   : " << Switch(stLiquidOnly) << nl
+    << "    density-scaled CSF  : " << Switch(stDensityScaled) << nl
     << "    Marangoni stress    : " << Switch(marangoniOn) << nl;
 if (oxygenDependent)
 {

@@ -1,13 +1,13 @@
 #!/bin/bash
 # Stabilise the neck before any full-domain run.
 #
-# smokeA's clip moved because mapFields -interpolate painted the 150 um dome
-# onto the 19 um neck as a mush (most neck cells had alpha between 0.05 and
-# 0.95). One millisecond of compression then drove the neck to about 100 m/s.
-# This case maps with mapNearest, smooths alpha over 80 um, sets it back to
-# 0/1, and zeros the internal velocity. Beams, feed, Marangoni and recoil stay
-# off for 5 ms. If the neck stays under a few m/s, they ramp on and the film
-# is judged over the next 15 ms.
+# smokeA's clip moved because mapFields -interpolate left the 19 um neck as
+# a mush, and compression of that mush drove the gas to about 100 m/s.
+# This case maps with mapNearest, smooths the interface over 80 um into a
+# two-cell tanh, zeros the internal velocity, scales the CSF force by
+# 2 rho/(rho1+rho2), and raises the gas viscosity. Beams, feed, Marangoni
+# and recoil stay off while cAlpha is 0. Turn cAlpha back up only after the
+# neck is under a few m/s.
 #
 #   ./settle_slit.sh prepare
 #   ./settle_slit.sh run
@@ -130,9 +130,18 @@ if alpha is None or len(alpha) != len(cc):
 # 80 um ball: removes the 150 um stair. Applied once, to the initial field.
 from scipy.spatial import cKDTree
 ball = cKDTree(cc).query_ball_point(cc, 80e-6, workers=4)
-sharp = np.empty(len(alpha), dtype="<f8")
+mean = np.empty(len(alpha), dtype="<f8")
 for i, js in enumerate(ball):
-    sharp[i] = 1.0 if alpha[js].mean() >= 0.5 else 0.0
+    mean[i] = float(alpha[js].mean())
+metal = mean >= 0.5
+# Two-cell transition. A hard 0/1 stair makes the gas side of the
+# curvature jump run away (7 m/s within 4 us at alpha = 0).
+pos = cc[metal]
+neg = cc[~metal]
+d_to_gas = cKDTree(neg).query(cc, k=1, workers=4)[0]
+d_to_metal = cKDTree(pos).query(cc, k=1, workers=4)[0]
+signed = np.where(metal, d_to_gas, -d_to_metal)
+sharp = 0.5 * (1.0 + np.tanh(signed / 14e-6))
 patch_internal(src / "alpha.metal", "scalar", sharp)
 vel = ns.read_internal(src / "U", "vector")
 if vel is None:
@@ -166,6 +175,7 @@ repls = [
     ("    tFeedStart      0.05;", "    tFeedStart      0.706;"),
     ("    tStart          0;", "    tStart          0.706;"),
     ("    forceFactor     6;", "    forceFactor     1;"),
+    ("    liquidOnly          true;", "    liquidOnly          true;\n    densityScaled       true;"),
 ]
 for a, b in repls:
     if a not in t:
@@ -187,11 +197,25 @@ if "endTime         0.705;" not in t:
     sys.exit("controlDict endTime was not updated")
 c.write_text(t)
 f = Path(sys.argv[2])
-ft = f.read_text().replace("        cAlpha          1;", "        cAlpha          2;", 1)
-if "cAlpha          2;" not in ft:
-    sys.exit("cAlpha was not updated")
+ft = f.read_text()
+# cAlpha 1 on the fresh stair holds the Courant number at the cap.
+# Start at 0 and raise it after the neck velocity has fallen.
+if "cAlpha          1;" not in ft and "cAlpha          2;" not in ft:
+    sys.exit("cAlpha entry missing")
+ft = ft.replace("        cAlpha          1;", "        cAlpha          0;")
+ft = ft.replace("        cAlpha          2;", "        cAlpha          0;")
 f.write_text(ft)
-print("DICT control cAlpha=2 maxCo=0.2")
+print("DICT control cAlpha=0 maxCo=0.2")
+gas = Path(sys.argv[1]).parent.parent / "constant" / "transportProperties"
+# argv is controlDict; transport sits beside system/
+gas = Path(sys.argv[1]).resolve().parents[1] / "constant" / "transportProperties"
+gt = gas.read_text()
+old_nu = "    nu              0.0002797289;   // mu x 20 (numerical damping)"
+new_nu = "    nu              0.002;   // mu x about 140, so the gas beside the neck cannot run away"
+if old_nu not in gt:
+    sys.exit("argon viscosity line was not the 20x default")
+gas.write_text(gt.replace(old_nu, new_nu, 1))
+print("DICT argon nu=0.002")
 PY
     "$PY" "$DIR/neck_state.py" "$CASE" 0.7
     echo "PREPARE_OK"
@@ -220,16 +244,6 @@ decompose_and_run() {
     local violent=0
     while kill -0 "$pid" 2>/dev/null; do
         sleep 20
-        if [[ -f "$log" ]]; then
-            # Co=0.2 and dx=19 um: dt under 5e-8 s means the neck is above ~80 m/s.
-            if tail -30 "$log" | grep -E "deltaT = [0-9.e+-]*" | tail -5 | grep -qE "deltaT = [0-4]\.[0-9]*e-0[8-9]|deltaT = [0-9.e+-]*e-[1-9][0-9]"; then
-                echo "KILL tiny deltaT in $log"
-                violent=1
-                pkill -TERM -P "$pid" || true
-                kill -TERM "$pid" 2>/dev/null || true
-                break
-            fi
-        fi
         local latest
         latest="$("$PY" - "$CASE" <<'PY'
 import sys

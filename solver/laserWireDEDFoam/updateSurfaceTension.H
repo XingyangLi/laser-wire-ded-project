@@ -145,4 +145,10 @@
     }
 
     stForcef = sigmaKf*fvc::snGrad(alpha1);
+    if (stDensityScaled)
+    {
+        // a = F/rho becomes sigma*kappa*grad(alpha)*2/(rho1+rho2) in both
+        // phases. Without this the pressure jump accelerates the gas.
+        stForcef *= fvc::interpolate((2.0*rho)/(rho1 + rho2));
+    }
 }
