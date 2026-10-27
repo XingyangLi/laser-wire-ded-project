@@ -1,0 +1,1 @@
+skinfull t=0.0040 depth_mm=0.700 width_mm=0.060
