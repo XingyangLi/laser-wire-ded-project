@@ -60,6 +60,7 @@ case "$MODE" in
               --oxide-skin-gap 0.10e-3 --oxide-skin-ppm-ref 300)
         ;;
     travel)
+        SETTLE=(--settle 0.020 --settle-ramp 0.002)
         ;;
     *)
         echo "BARE_MODE must be surface, flow, or travel" >&2
