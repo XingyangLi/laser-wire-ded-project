@@ -711,6 +711,10 @@ Off unless `wireDrag { enabled true; }` and the cut-out wire wall carries `pinne
 
 `wireWallDrag` then runs after the internal contact-line pass. The contact is the free-surface line, not the whole wetted wall: the highest trailing face that is still metal, and the 0.20 mm band under it. Inside the window a face in that band is no-slip (`valueFraction` 1) and `Kcontact` (default `1e12` kg/m³/s) holds the interface cell on the feed velocity. Viscous diffusion from the wall does not cross a cell in a capillary step, so the sink is what carries the line down with the wire. Outside the window `valueFraction = Δ/(Δ+slipNear)` (`slipNear` default 50 µm) and `Kcontact` stays 0, so the clamped angle can slide the line. Every other wall face uses `slipFar` (default 1 mm), so the moving wire does not pump the pool. The log line is `WireDrag:` with the pinned-face count, `zWet` and the z range of the pinned band. Oxygen enters by widening that window and, when Sahoo–Belton is on, by lowering `sigma`. The internal `pinWire` model is a different mechanism and stays off for this wall.
 
+### Imposed line pin (`linePin`)
+
+Off unless `linePin { enabled true; }`. This is a prescribed material point, separate from `wireDrag`. On the first step the solver records the highest metal on the trailing face within `nCells` (default 2) of the wire. After that the contact height is `z0 + feed_z * t`. Inside that shell, from just below the moving line up to `z0`, alpha is restored toward gas above the line and metal below it, and the cell velocity is restored toward the feed. `s = min(ppm/ppmRef, 1)` is the fraction of that error removed after every alpha solve, and the fraction of `Kpin`. At `ppmRef` (default 300) the shell is overwritten. Cells outside the shell, including the pool and the plate, are not constrained. The log line is `LinePin:`. Sahoo–Belton `sigma` still depends on ppm when that model is on. The shell is the imposed pin. Depth and taper past the shell are the free surface.
+
 ## Local GUI (Windows)
 
 A tkinter control panel lives in `gui/`. On the PC open:

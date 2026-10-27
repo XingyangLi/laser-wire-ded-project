@@ -207,6 +207,7 @@ int main(int argc, char *argv[])
             #include "gasCavity.H"
             #include "contactLine.H"
             #include "wireWallDrag.H"
+            #include "linePin.H"
             #include "porosity.H"
 
             if (pimple.frozenFlow())

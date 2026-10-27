@@ -64,6 +64,7 @@ def main():
     ap.add_argument("--time", action="append", required=True,
                     help="one time directory name per case, same order")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--suptitle", default=None)
     args = ap.parse_args()
     tags = list(args.tag)
     while len(tags) < len(args.case):
@@ -93,8 +94,11 @@ def main():
             f"{row['width_mm']:.3f} mm wide",
         )
     fig.suptitle(
-        "Center plane at the neck. Dark is metal, white is gas.\n"
-        "Green dash: trailing wire face. Blue dots: 0.05 mm × z 0.75–1.20 mm.",
+        args.suptitle
+        or (
+            "Center plane at the neck. Dark is metal, white is gas.\n"
+            "Green dash: trailing wire face. Blue dots: 0.05 mm × z 0.75–1.20 mm."
+        ),
         fontsize=10,
     )
     fig.tight_layout()

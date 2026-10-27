@@ -269,6 +269,33 @@ def write_wire_drag(case, theta_a, theta_r):
     print(f"wireDrag thetaR {theta_r:.8g} thetaA {theta_a:.8g}")
 
 
+def write_line_pin(case):
+    """Imposed material point. wireDrag stays off so it does not fight the shell."""
+    path = Path(case) / "constant/meltProperties"
+    text = read_text(path)
+    for name in ("wireDrag", "linePin"):
+        span = find_block(text, name)
+        if span is not None:
+            text = text[:span[0]] + text[span[1]:]
+    block = (
+        "\nlinePin\n"
+        "{\n"
+        "    enabled         true;\n"
+        "    nCells          2;\n"
+        "    ppmRef          300;\n"
+        "    Kpin            1e12;\n"
+        "    tau             0.0005;\n"
+        "}\n"
+    )
+    banner = text.rfind("// ************************************************************************* //")
+    if banner < 0:
+        text = text.rstrip() + "\n" + block
+    else:
+        text = text[:banner] + block + "\n" + text[banner:]
+    path.write_text(text)
+    print("linePin enabled, 2 cells, ppmRef 300")
+
+
 def field_files(case):
     root = Path(case) / "0"
     files = []
@@ -283,7 +310,7 @@ def field_files(case):
     return files
 
 
-def apply_bcs(case, theta, feed, pin, theta_a, theta_r):
+def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
     case = Path(case)
     boundary = case / "constant/polyMesh/boundary"
     text = read_text(boundary)
@@ -308,7 +335,10 @@ def apply_bcs(case, theta, feed, pin, theta_a, theta_r):
             f"wireWall type wall, {n_wall} faces, "
             f"pinned {theta_r:.8g}/{theta_a:.8g} deg, feed {feed:.8g}"
         )
-        write_wire_drag(case, theta_a, theta_r)
+        if line_pin:
+            write_line_pin(case)
+        else:
+            write_wire_drag(case, theta_a, theta_r)
     else:
         print(f"wireWall type wall, {n_wall} faces, theta0 {theta:g} deg")
 
@@ -321,7 +351,7 @@ def apply_bcs(case, theta, feed, pin, theta_a, theta_r):
         print(f"  {path.name}: wireWall set")
 
 
-def check(case, theta, feed, pin, theta_a, theta_r):
+def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False):
     case = Path(case)
     boundary = read_text(case / "constant/polyMesh/boundary")
     span = find_block(boundary, "wireWall")
@@ -362,17 +392,32 @@ def check(case, theta, feed, pin, theta_a, theta_r):
             raise SystemExit(f"U wireWall is not partialSlip at the feed: {ub}")
         if "exprFixedValue" not in tb or "1850" not in tb:
             raise SystemExit("T wireWall is not the liquid hot zone")
-        drag = read_text(case / "constant/meltProperties")
-        drag_span = find_block(drag, "wireDrag")
-        if drag_span is None:
-            raise SystemExit("meltProperties has no wireDrag block")
-        drag_body = drag[drag_span[0]:drag_span[1]]
-        if not re.search(r"enabled\s+true;", drag_body):
-            raise SystemExit("wireDrag is not enabled")
-        if not re.search(rf"thetaReceding\s+{theta_r:.8g}\s*;", drag_body):
-            raise SystemExit("wireDrag thetaReceding does not match the wall")
-        if not re.search(rf"thetaAdvancing\s+{theta_a:.8g}\s*;", drag_body):
-            raise SystemExit("wireDrag thetaAdvancing does not match the wall")
+        props = read_text(case / "constant/meltProperties")
+        if line_pin:
+            pin_span = find_block(props, "linePin")
+            if pin_span is None:
+                raise SystemExit("meltProperties has no linePin block")
+            pin_body = props[pin_span[0]:pin_span[1]]
+            if not re.search(r"enabled\s+true;", pin_body):
+                raise SystemExit("linePin is not enabled")
+            if not re.search(r"nCells\s+2\s*;", pin_body):
+                raise SystemExit("linePin nCells is not 2")
+            drag_span = find_block(props, "wireDrag")
+            if drag_span is not None and re.search(
+                r"enabled\s+true;", props[drag_span[0]:drag_span[1]]
+            ):
+                raise SystemExit("wireDrag is enabled next to linePin")
+        else:
+            drag_span = find_block(props, "wireDrag")
+            if drag_span is None:
+                raise SystemExit("meltProperties has no wireDrag block")
+            drag_body = props[drag_span[0]:drag_span[1]]
+            if not re.search(r"enabled\s+true;", drag_body):
+                raise SystemExit("wireDrag is not enabled")
+            if not re.search(rf"thetaReceding\s+{theta_r:.8g}\s*;", drag_body):
+                raise SystemExit("wireDrag thetaReceding does not match the wall")
+            if not re.search(rf"thetaAdvancing\s+{theta_a:.8g}\s*;", drag_body):
+                raise SystemExit("wireDrag thetaAdvancing does not match the wall")
     else:
         if "constantAlphaContactAngle" not in ab:
             raise SystemExit("alpha.metal wireWall is not constantAlphaContactAngle")
@@ -405,6 +450,8 @@ def main():
                     help="wire feed speed [m/s], downward")
     ap.add_argument("--pin", action="store_true",
                     help="hysteresis angle and partial-slip feed velocity")
+    ap.add_argument("--line-pin", action="store_true",
+                    help="imposed trailing contact that moves at the feed")
     ap.add_argument("--theta-a", type=float, default=140.0)
     ap.add_argument("--theta-r", type=float, default=40.0)
     ap.add_argument("--write-dict", action="store_true")
@@ -413,6 +460,8 @@ def main():
     args = ap.parse_args()
     if not (args.write_dict or args.apply or args.check):
         raise SystemExit("pass --write-dict, --apply or --check")
+    if args.line_pin:
+        args.pin = True
     if args.pin and args.theta_a < args.theta_r:
         raise SystemExit("thetaA is below thetaR")
     if args.write_dict:
@@ -420,12 +469,12 @@ def main():
     if args.apply:
         apply_bcs(
             args.case, args.theta, args.feed, args.pin,
-            args.theta_a, args.theta_r,
+            args.theta_a, args.theta_r, args.line_pin,
         )
     if args.check or args.apply:
         check(
             args.case, args.theta, args.feed, args.pin,
-            args.theta_a, args.theta_r,
+            args.theta_a, args.theta_r, args.line_pin,
         )
 
 
