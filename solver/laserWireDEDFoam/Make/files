@@ -1,3 +1,4 @@
 laserWireDEDFoam.C
+pinnedAlphaContactAngleFvPatchScalarField.C
 
 EXE = $(FOAM_USER_APPBIN)/laserWireDEDFoam

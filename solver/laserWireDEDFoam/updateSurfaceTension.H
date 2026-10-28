@@ -124,6 +124,19 @@
         }
     }
 
+    // sigmaScale multiplies the coefficient that enters the CSF force.
+    // It is an imposed numerical enhancement, not a change of the alloy.
+    // The branches above write the physical sigma; this applies the factor once.
+    if (!oxygenDependent && !sigmaTdep)
+    {
+        sigmaT.primitiveFieldRef() = sigmaScale*matSigma.primitiveField();
+        sigmaT.correctBoundaryConditions();
+    }
+    else if (mag(sigmaScale - 1.0) > 1e-8)
+    {
+        sigmaT *= sigmaScale;
+    }
+
     surfaceScalarField sigmaKf(fvc::interpolate(sigmaT*(-fvc::div(mixture.nHatf()))));
 
     if (stLiquidOnly)

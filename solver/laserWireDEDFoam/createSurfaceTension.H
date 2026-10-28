@@ -47,6 +47,10 @@ const dictionary mgDict(meltProperties.subOrEmptyDict("marangoni"));
 
 const bool mgOld = mgDict.getOrDefault<bool>("enabled", false);
 const scalar sigma0 = stDict.getOrDefault<scalar>("sigma", 1.8);
+// Imposed numerical enhancement. 1 leaves the alloy value. It is not a
+// measured surface tension. The CSF force and the capillary time-step
+// limit both see sigmaScale * sigma(T).
+const scalar sigmaScale = stDict.getOrDefault<scalar>("sigmaScale", 1.0);
 const scalar dSigmadTval =
     stDict.getOrDefault<scalar>("dSigmadT", mgDict.getOrDefault<scalar>("dSigmadT", 0.0));
 const bool sigmaTdep = stDict.getOrDefault<bool>("temperatureDependent", mgOld);
@@ -146,6 +150,8 @@ Info<< "Surface tension (CSF)\n"
     << (oxygenDependent ? "Sahoo-Belton sigma(T, a_O)" : "linear sigma(T)")
     << nl
     << "    sigma0              : " << sigma0 << " N/m" << nl
+    << "    sigmaScale          : " << sigmaScale
+    << "  (imposed numerical enhancement, not a physical alloy value)" << nl
     << "    sigma(T)            : " << Switch(sigmaTdep)
     << "  dSigma/dT = " << dSigmadTval << " N/m/K, Tref = " << sigmaTref
     << " K, sigmaMin = " << sigmaMin << " N/m" << nl

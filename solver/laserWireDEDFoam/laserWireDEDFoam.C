@@ -204,9 +204,11 @@ int main(int argc, char *argv[])
 
             // --- Energy equation with melting / solidification
             #include "TEqn.H"
+            #include "wireTipMelt.H"
             #include "updateSurfaceTension.H"
             #include "recoilPressure.H"
             #include "contactLine.H"
+            #include "linePin.H"
             #include "porosity.H"
 
             if (pimple.frozenFlow())

@@ -238,17 +238,14 @@ def main():
                   interpolation="nearest", aspect="equal")
     ax.add_patch(Circle((0, 0), WIRE_R * 1e3, fill=False, ec="k", lw=1.2))
     for b, c in zip(beams, colors):
+        # The half mesh is what was solved. A beam stored at y < 0 is the
+        # symmetry fold, not a second spot in this run.
+        if b["plate"][1] < -1e-6:
+            continue
         ellipse_on_plate(b, ax, c)
-        # mirror of a front beam across y = 0, drawn because the mesh is the y >= 0 half
-        if abs(b["plate"][1]) > 1e-6:
-            twin = dict(b)
-            twin["plate"] = (b["plate"][0], -b["plate"][1], b["plate"][2])
-            twin["focus"] = (b["focus"][0], -b["focus"][1], b["focus"][2])
-            twin["d"] = (b["d"][0], -b["d"][1], b["d"][2])
-            ellipse_on_plate(twin, ax, c, ls="--")
         labels.append(f"{b['name']}  {b['power']:.0f} W")
     ax.set_xlim(-3.2, 3.2)
-    ax.set_ylim(-2.4, 2.4)
+    ax.set_ylim(-0.4, 2.6)
     ax.set_aspect("equal")
     ax.set_xlabel("x [mm]   +x is behind the wire (trailing)")
     ax.set_ylabel("y [mm]")
