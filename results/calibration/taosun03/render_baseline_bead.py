@@ -271,7 +271,8 @@ def main():
     if vol is not None and vol["liq"] is not None:
         cc, liq, temp, al = vol["cc"], vol["liq"], vol["temp"], vol["alpha"]
         r = np.hypot(cc[:, 0], cc[:, 1])
-        wire = (r < 0.55e-3) & (cc[:, 2] > 0) & (al > 0.5)
+        # Core of the wire, not the one-cell skin the spot grazes.
+        wire = (r < 0.35e-3) & (cc[:, 2] > 0) & (cc[:, 2] < 1.2e-3) & (al > 0.5)
         molten = wire & (liq > 0.5)
         solid = wire & (liq < 0.5)
         lines.append("")
@@ -285,7 +286,7 @@ def main():
         if solid.any():
             lines.append(f"solid wire above z {cc[solid, 2].min()*1e3:.2f} mm")
         sub = (cc[:, 2] < 0) & (cc[:, 2] > -0.6e-3) & (liq > 0.5)
-        bead = (cc[:, 2] > 0.05e-3) & (al > 0.5) & (r > 0.55e-3)
+        bead = (cc[:, 2] > 0.05e-3) & (al > 0.5) & (r > 0.75e-3)
         trail = bead & (cc[:, 0] > WIRE_R)
         lead = bead & (cc[:, 0] < -WIRE_R)
         lines.append(f"molten substrate cells {int(sub.sum())}")
