@@ -31,6 +31,9 @@ tao_acquire "$NP"
 trap 'tao_release '"$NP" EXIT
 tao_build
 
+if [[ "${RESUME:-0}" == 1 ]]; then
+    echo "RESUME from the existing neck mesh in $CASE"
+else
 echo "GENERATE neck mesh from the cal95b recipe"
 python3 "$ROOT/generate_case.py" --case "$CASE" --laser-config triple \
     --wire-type solid --material 316L --resolution coarse --domain-y half \
@@ -93,8 +96,32 @@ if ! grep -q "Mesh OK" "$CASE/log.checkMesh"; then
     echo "checkMesh did not report Mesh OK" >&2
     exit 1
 fi
+fi
 
 echo "MAP from cal95b t=$MAP_TIME"
+cat > "$CASE/system/mapFieldsDict" <<'EOF'
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      mapFieldsDict;
+}
+patchMap
+(
+    inletSubstrate inletSubstrate
+    inletGas       inletGas
+    outlet         outlet
+    bottom         bottom
+    top            top
+    symmetry       symmetry
+    side           side
+    wireInlet      wireInlet
+);
+cuttingPatches
+(
+);
+EOF
 tao_source_foam
 mapFields -case "$CASE" -sourceTime "$MAP_TIME" \
     -mapMethod interpolate "$SRC" > "$CASE/log.mapFields" 2>&1 \
