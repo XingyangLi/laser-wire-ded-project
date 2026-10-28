@@ -12,9 +12,12 @@
 exec > >(tee -a /home/xingyang/laser-wire-ded-project/results/calibration/pin_on_track_launch.log) 2>&1
 set -euo pipefail
 ROOT=/home/xingyang/laser-wire-ded-project
-SRC=${PIN_SRC:-$ROOT/cases/wire_cavity_cal90}
-TAG=${PIN_TAG:-cal91}
-EXTRA=${PIN_EXTRA:-0.02}
+SRC=${PIN_SRC:-$ROOT/cases/wire_cavity_cal95b}
+TAG=${PIN_TAG:-cal96}
+EXTRA=${PIN_EXTRA:-0.01}
+FEED=${PIN_FEED:-0.024}
+PPM=${PIN_PPM:-300}
+NP=${PIN_NP:-12}
 if [ "${PIN_PARALLEL:-0}" != 1 ] && ps -u xingyang -o cmd | grep -q '[l]aserWireDEDFoam'; then
     echo "a solver is already running" >&2
     exit 1
@@ -73,7 +76,7 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
     topoSet -dict system/topoSetDict.wireCut > log.topoSet.wireCut 2>&1
     subsetMesh -overwrite -patch wireWall keepCells > log.subsetMesh 2>&1
     python3 "$ROOT/results/calibration/cut_wire_wall.py" \
-        --case "$case" --apply --line-pin --feed 0.024 \
+        --case "$case" --apply --line-pin --feed "$FEED" \
         --theta-a 140 --theta-r 40
     python3 - << 'PY'
 from pathlib import Path
@@ -91,15 +94,24 @@ PY
     # Fields live in 0/, so the pin window starts at t = 0 on the formed bead.
     # Feed starts immediately. The listed extra time is that window.
     foamDictionary constant/meltProperties -entry wire/tFeedStart -set 0 > /dev/null
+    foamDictionary constant/meltProperties -entry wire/feedVelocity -set "(0 0 -$FEED)" > /dev/null
+    foamDictionary constant/meltProperties -entry surfaceTension/oxygenDependent -set true > /dev/null
+    foamDictionary constant/meltProperties -entry surfaceTension/chamberOxygenPpm -set "$PPM" > /dev/null
     foamDictionary system/controlDict -entry startFrom -set startTime > /dev/null
     foamDictionary system/controlDict -entry startTime -set 0 > /dev/null
     foamDictionary system/controlDict -entry endTime -set "$EXTRA" > /dev/null
-    foamDictionary system/controlDict -entry writeInterval -set 0.005 > /dev/null
-    foamDictionary -entry numberOfSubdomains -set 12 system/decomposeParDict > /dev/null
-    foamDictionary -entry coeffs.n -set "(6 2 1)" system/decomposeParDict > /dev/null
+    foamDictionary system/controlDict -entry writeInterval -set 0.002 > /dev/null
+    # simple decomposition, no z cut. Prefer (nx 2 1) when np is even and >= 4.
+    if [ "$NP" -ge 4 ] && [ $((NP % 2)) -eq 0 ]; then
+        N="($((NP / 2)) 2 1)"
+    else
+        N="($NP 1 1)"
+    fi
+    foamDictionary -entry numberOfSubdomains -set "$NP" system/decomposeParDict > /dev/null
+    foamDictionary -entry coeffs.n -set "$N" system/decomposeParDict > /dev/null
     decomposePar -force > log.decomposePar 2>&1
     touch case.foam
-    nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np 12 laserWireDEDFoam -parallel \
+    nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" laserWireDEDFoam -parallel \
         > log.laserWireDEDFoam 2>&1
     echo "PIN_ON_TRACK_DONE ${TAG}"
 } > "$log" 2>&1

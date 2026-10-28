@@ -482,3 +482,9 @@ cal93 moves every spot to 0.55 mm and sets every inclination to 26°. About 70% 
 cal95 keeps those fixed aims and tilts every beam to 15° from vertical, so the inner wing meets the wire near 0.8 mm instead of at the foot. The substrate starts at 1100 K and the plate window is 10°/40°. The wire inlet stays at 300 K. Scan 4 mm/s, feed 24 mm/s, coarse mesh, 12 ranks. No line pin.
 
 At 0.80 s the wire is liquid from about z = 0.6 mm to 1.4 mm (liquid fraction 0.7–1) and solid above that, where the cold feed is still coming in. The trailing crest is 1.61 mm at x = 0.58 mm and is liquid. The leading crest is 0.69 mm. The trailing foot reaches x = 4.47 mm. There is no gas film under the bead. The plate under the pool reached 1706 K at 0.40 s and is 1616 K at 0.80 s, just under the 1658 K solidus. The trailing beam’s mean hit height is 1.35 mm, with every ray above 0.3 mm. Figure: `cal95_t080_views.png`. The pinned slit is not started on this bead yet.
+
+## Equal-power checkpoint
+
+The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beams are equal: 740 W divided by three (246.6667, 246.6667, 246.6666 W). cal95b is that rerun, same aims and 0.80 s. The wire is liquid from 0.2 mm to 0.6 mm. The trailing crest is 1.76 mm and liquid. The leading crest is 0.69 mm. The plate under the pool is 1671 K. There is no gas film under the bead. Figure: `cal95b_t080_views.png`.
+
+Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
