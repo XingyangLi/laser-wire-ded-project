@@ -504,6 +504,8 @@ cal109 moves the 19 µm band onto the crest (z 1.25–1.98 mm) and sets an impos
 
 Width stays 0.047 mm from 2 ms through 14 ms. Depth passes 0.25 mm at 10 ms and the gap stays open. Over 10–14 ms the depth moves 0.08 mm, which is the imposed feed, and the width does not move. The bead is still against the wall below the line. No gas film on the plate. deltaT ends at 9.6×10⁻⁷ s. zLine at 14 ms is 1.490 mm, equal to 1.826 mm minus 0.336 mm of feed. Figure: `cal109_neck.png`.
 
+cal110 keeps that mesh and alloy sigma, and replaces the constant shell with a graded bias: 0.040 mm at the line, opening quadratically to 0.090 mm at the crest. That bias is imposed. The cell outside it is not forced to metal, and gas is imposed only where metal still lies further from the wire. The run was stopped at 14.8 ms. At 4 ms the center plane does show a short flare (about 0.047 mm at z = 1.72 mm, 0.10 mm at z = 1.80 mm) with metal still outside it, but the depth is only 0.10 mm. By 10–14 ms the crest above the line has no metal on the center plane over a long stretch. The fragment that the gap metric still finds is 0.10 mm wide at both ends and 0.06 mm deep. Metal cells fall from 22431 to 16268. There is no gas film on the plate and deltaT stays near 10⁻⁶ s. Figure: `cal110_neck.png`. This is not the radiograph wedge.
+
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
 ## Hard pin on the equal-power bead
