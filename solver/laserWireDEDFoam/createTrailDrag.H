@@ -1,10 +1,13 @@
 // Hard-coded trailing-face contact line.
 //
 // The wire is a metal region, so a wall contact angle never acts on the gap.
-// trailDrag (default off) holds alpha.metal = 1 and the feed velocity in a
-// 1-3 cell shell on the trailing (+x) wire surface, from the wetted top
-// downward a few cells. That shell moves down at the feed velocity. Cells
-// outside it, including the pool, are left free.
+// trailDrag (default off) moves a pinned line down the trailing (+x) face at
+// the feed velocity. Below the line, a 1-3 cell shell is held at
+// alpha.metal = 1 and at the feed velocity. Above the line, up to the
+// wetted top the line started from, that same shell is held dry so the line
+// cannot climb back. Faces of those dry cells are blocked, so the pool is
+// not drained into them. Cells outside the shell, including the pool, are
+// left free: the outer wall of the gap is generated.
 // ---------------------------------------------------------------------------
 
 const dictionary trailDragDict(meltProperties.subOrEmptyDict("trailDrag"));
@@ -28,6 +31,7 @@ if (trailDragEnabled)
         << "  axialCells " << trailDragAxial
         << "  sector " << trailDragSectorDeg
         << " deg from +x"
-        << "  (alpha and U held, pool outside the shell is free)" << nl
+        << "  (wet shell below the line, dry face above it,"
+        << " pool outside the shell is free)" << nl
         << endl;
 }

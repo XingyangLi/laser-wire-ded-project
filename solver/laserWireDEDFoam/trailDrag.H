@@ -58,8 +58,11 @@ if (trailDragEnabled)
         trailDragZ0 + (wireFeedVelocity & vector(0, 0, 1))*fed;
 
     label nHold = 0;
+    label nDry = 0;
     scalarField& aHold = alpha1.primitiveFieldRef();
     vectorField& uHold = U.primitiveFieldRef();
+    scalarField& phiHold = phi.primitiveFieldRef();
+    const cellList& cells = mesh.cells();
     forAll(Ctd, celli)
     {
         const scalar h = Foam::cbrt(max(Vtd[celli], SMALL));
@@ -71,19 +74,54 @@ if (trailDragEnabled)
         if (r > wireRadius + trailDragRadial*h) continue;
         if (r > SMALL && (rad & trail) < cosCut*r) continue;
         const scalar z = Ctd[celli].z();
-        if (z > zTop || z < zTop - trailDragAxial*h) continue;
         if (z < 0.05e-3) continue;
-        aHold[celli] = 1;
-        uHold[celli] = Ufeed;
-        ++nHold;
+        // Pinned wet line: a few cells under the moving top.
+        if (z <= zTop && z >= zTop - trailDragAxial*h)
+        {
+            aHold[celli] = 1;
+            uHold[celli] = Ufeed;
+            ++nHold;
+            continue;
+        }
+        // Face the line has swept. Held dry so the line cannot climb
+        // back. Blocking these faces stops the pool being drained in.
+        // The pool outside this shell is not written.
+        if (z > zTop && z <= trailDragZ0 + 0.25*h)
+        {
+            aHold[celli] = 0;
+            const cell& cFaces = cells[celli];
+            forAll(cFaces, fi)
+            {
+                const label facei = cFaces[fi];
+                if (mesh.isInternalFace(facei))
+                {
+                    phiHold[facei] = 0;
+                }
+                else
+                {
+                    // Processor faces are not internal. Zero them too,
+                    // or the pool on the neighbour rank drains in.
+                    const label patchi = mesh.boundaryMesh().whichPatch(facei);
+                    if (patchi >= 0)
+                    {
+                        const label local =
+                            facei - mesh.boundaryMesh()[patchi].start();
+                        phi.boundaryFieldRef()[patchi][local] = 0;
+                    }
+                }
+            }
+            ++nDry;
+        }
     }
     alpha1.correctBoundaryConditions();
     U.correctBoundaryConditions();
     reduce(nHold, sumOp<label>());
+    reduce(nDry, sumOp<label>());
 
     if (trailDragDoLog && pimple.finalIter())
     {
-        Info<< "TrailDrag: zTop " << zTop << " m  cells " << nHold
+        Info<< "TrailDrag: zTop " << zTop << " m  wet " << nHold
+            << "  dry " << nDry
             << "  Ufeed " << Ufeed << nl;
     }
 }
