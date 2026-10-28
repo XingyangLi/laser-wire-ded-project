@@ -148,6 +148,12 @@ if (trailDragEnabled)
             phiHold[facei] *= s;
         }
     }
+    // The scaled flux can leave alpha a few percent over 1. Clip it
+    // so the next step does not ratchet.
+    forAll(aHold, celli)
+    {
+        aHold[celli] = min(max(aHold[celli], scalar(0)), scalar(1));
+    }
     alpha1.correctBoundaryConditions();
     U.correctBoundaryConditions();
     reduce(nHold, sumOp<label>());

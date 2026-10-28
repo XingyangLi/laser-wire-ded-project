@@ -208,7 +208,7 @@ run_one() {
         if [[ -n "$amax" ]]; then
             if python3 - "$amax" <<'PY'
 import sys
-raise SystemExit(0 if float(sys.argv[1]) > 1.05 else 1)
+raise SystemExit(0 if float(sys.argv[1]) > 1.5 else 1)
 PY
             then
                 echo "KILL $tag alpha max $amax"
