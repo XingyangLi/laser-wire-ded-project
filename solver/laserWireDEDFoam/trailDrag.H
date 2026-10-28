@@ -62,12 +62,11 @@ if (trailDragEnabled)
     scalarField& aHold = alpha1.primitiveFieldRef();
     vectorField& uHold = U.primitiveFieldRef();
     boolList isDry(mesh.nCells(), false);
-    boolList isShell(mesh.nCells(), false);
     const labelListList& cellCells = mesh.cellCells();
     // Metal that flows back into a dry cell is returned to neighbouring
-    // metal that has room. Shell faces are then set to the feed flux so
-    // the pressure flux cannot grow a jet. Zeroing those faces (instead
-    // of the feed flux) made alpha unbounded.
+    // metal that has room. Speeds above 3 m/s are capped and the existing
+    // flux is scaled with them. Replacing the flux outright made alpha
+    // unbounded.
     forAll(Ctd, celli)
     {
         const scalar h = Foam::cbrt(max(Vtd[celli], SMALL));
@@ -85,7 +84,6 @@ if (trailDragEnabled)
         {
             aHold[celli] = 1;
             uHold[celli] = Ufeed;
-            isShell[celli] = true;
             ++nHold;
             continue;
         }
@@ -93,9 +91,7 @@ if (trailDragEnabled)
         if (z > zTop && z <= trailDragZ0 + 0.25*h)
         {
             isDry[celli] = true;
-            isShell[celli] = true;
-            // Same feed velocity as the wet line. A free velocity here
-            // ran away as 1/dt once the line entered bulk metal.
+            // Same feed velocity as the wet line.
             uHold[celli] = Ufeed;
         }
     }
@@ -127,19 +123,29 @@ if (trailDragEnabled)
             aHold[n] += give*(room/roomSum)/Vtd[n];
         }
     }
-    // Shell faces carry the feed flux. Leaving the pressure flux there
-    // kept a jet that collapsed the time step.
+    // A jet beside the shell grew as 1/dt and collapsed the step.
+    // Cap the speed and scale the existing flux by the same factor.
+    // Replacing the flux outright made alpha unbounded.
+    const scalar Ucap = 3;
+    scalarField scale(mesh.nCells(), 1);
+    forAll(uHold, celli)
+    {
+        const scalar m = mag(uHold[celli]);
+        if (m > Ucap)
+        {
+            scale[celli] = Ucap/m;
+            uHold[celli] *= scale[celli];
+        }
+    }
     scalarField& phiHold = phi.primitiveFieldRef();
-    const vectorField& Sf = mesh.Sf().primitiveField();
     const labelUList& owner = mesh.owner();
     const labelUList& neighbour = mesh.neighbour();
     forAll(owner, facei)
     {
-        const label own = owner[facei];
-        const label nei = neighbour[facei];
-        if (isShell[own] || isShell[nei])
+        const scalar s = min(scale[owner[facei]], scale[neighbour[facei]]);
+        if (s < 1)
         {
-            phiHold[facei] = Sf[facei] & Ufeed;
+            phiHold[facei] *= s;
         }
     }
     alpha1.correctBoundaryConditions();
