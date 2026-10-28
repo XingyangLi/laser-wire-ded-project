@@ -197,7 +197,7 @@ run_one() {
             kill -TERM "$pid" 2>/dev/null || true
             break
         fi
-        if [[ -f "$CASE/log.laserWireDEDFoam" ]] && grep -q "FOAM FATAL" "$CASE/log.laserWireDEDFoam"; then
+        if [[ -f "$CASE/log.laserWireDEDFoam" ]] && grep -qE "FOAM FATAL|Floating point exception" "$CASE/log.laserWireDEDFoam"; then
             echo "KILL $tag foam fatal"
             echo "$tag foam fatal" > "$ABORT"
             kill -TERM "$pid" 2>/dev/null || true
@@ -216,6 +216,18 @@ PY
                 kill -TERM "$pid" 2>/dev/null || true
                 break
             fi
+        fi
+        local dt_now=""
+        dt_now="$(grep '^deltaT = ' "$CASE/log.laserWireDEDFoam" | tail -1 | awk '{print $3}' || true)"
+        if [[ -n "$dt_now" ]] && python3 - "$dt_now" <<'PY'
+import sys
+raise SystemExit(0 if float(sys.argv[1]) < 1e-7 else 1)
+PY
+        then
+            echo "KILL $tag timestep collapse dt=$dt_now"
+            echo "$tag timestep collapse dt=$dt_now" > "$ABORT"
+            kill -TERM "$pid" 2>/dev/null || true
+            break
         fi
         local latest=""
         latest="$(latest_time "$CASE")" || latest=""

@@ -62,10 +62,12 @@ if (trailDragEnabled)
     scalarField& aHold = alpha1.primitiveFieldRef();
     vectorField& uHold = U.primitiveFieldRef();
     boolList isDry(mesh.nCells(), false);
+    boolList isShell(mesh.nCells(), false);
     const labelListList& cellCells = mesh.cellCells();
-    // Do not write phi. Zeroing faces made alpha unbounded, and deleting
-    // the inflow every step ate the pool. Metal that has flowed back
-    // into a dry cell is returned to metal neighbours that have room.
+    // Metal that flows back into a dry cell is returned to neighbouring
+    // metal that has room. Shell faces are then set to the feed flux so
+    // the pressure flux cannot grow a jet. Zeroing those faces (instead
+    // of the feed flux) made alpha unbounded.
     forAll(Ctd, celli)
     {
         const scalar h = Foam::cbrt(max(Vtd[celli], SMALL));
@@ -83,6 +85,7 @@ if (trailDragEnabled)
         {
             aHold[celli] = 1;
             uHold[celli] = Ufeed;
+            isShell[celli] = true;
             ++nHold;
             continue;
         }
@@ -90,6 +93,10 @@ if (trailDragEnabled)
         if (z > zTop && z <= trailDragZ0 + 0.25*h)
         {
             isDry[celli] = true;
+            isShell[celli] = true;
+            // Same feed velocity as the wet line. A free velocity here
+            // ran away as 1/dt once the line entered bulk metal.
+            uHold[celli] = Ufeed;
         }
     }
     forAll(isDry, celli)
@@ -118,6 +125,21 @@ if (trailDragEnabled)
             const scalar room = max(scalar(1) - aHold[n], scalar(0))*Vtd[n];
             if (room < SMALL) continue;
             aHold[n] += give*(room/roomSum)/Vtd[n];
+        }
+    }
+    // Shell faces carry the feed flux. Leaving the pressure flux there
+    // kept a jet that collapsed the time step.
+    scalarField& phiHold = phi.primitiveFieldRef();
+    const vectorField& Sf = mesh.Sf().primitiveField();
+    const labelUList& owner = mesh.owner();
+    const labelUList& neighbour = mesh.neighbour();
+    forAll(owner, facei)
+    {
+        const label own = owner[facei];
+        const label nei = neighbour[facei];
+        if (isShell[own] || isShell[nei])
+        {
+            phiHold[facei] = Sf[facei] & Ufeed;
         }
     }
     alpha1.correctBoundaryConditions();
