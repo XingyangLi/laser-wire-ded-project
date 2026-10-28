@@ -6,15 +6,8 @@
 // Metal behind that point (along the ray) is shadowed: the wire shadows the
 // pool and vice versa, and each beam can hit the wire side.
 // The same routine also computes the column surface height zSurface.
-// trackLaserFoci() (trackLaserSurface.H) may move each focus onto the free
-// surface at its aim and rebuild the rays before this deposition.
 // ---------------------------------------------------------------------------
 {
-    if (trackLaserFoci())
-    {
-        retraceLaser();
-    }
-
     const dictionary& lDict = meltProperties.subDict("laser");
     const bool   lOn     = lDict.getOrDefault<bool>("enabled", true);
     const scalar lStart  = lDict.getOrDefault<scalar>("tStart", 0.0);

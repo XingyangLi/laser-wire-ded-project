@@ -14,18 +14,13 @@
 // (w = 1/e^2 radius), truncated at 2w and renormalised; top-hat: r <= w.
 // Optional rayleighLength zR: the sampling radius is expanded to
 //   w_eff = w0 * sqrt(1 + (z_plate/zR)^2)
-// where z_plate is the distance along the beam from the focus to the plane
-// the spot is evaluated on. Without trackSurface that plane is the substrate
-// top (z = 0), so a waist below the plate illuminates a larger spot (paraxial
-// / collimated-ray approximation of a caustic). With trackSurface the focus
-// sits on the free surface and z_plate is zero, so the waist is the spot.
+// where z_plate is the distance along the beam from the focus to the substrate
+// top (z = 0). That makes a defocused waist below the plate illuminate a larger
+// spot on the plate (paraxial / collimated-ray approximation of a caustic).
 // Each ray carries a fixed power. The cells crossed (in order) are stored per
 // processor. A weave rebuilds the rays when the head has moved sideways by
 // about a quarter of a fine cell (retraceLaser, called from updateWeave.H).
-// trackSurface (see trackLaserSurface.H) rebuilds them when the free-surface
-// height at an aim moves by about the same amount. The dictionary focus is
-// the starting value; its (x, y) stays the aim and its z is the fallback if
-// the aim is off the mesh. The focus (x, y) is shifted by weaveY.
+// The focus read from the dictionary is shifted by weaveY.
 // ---------------------------------------------------------------------------
 DynamicList<scalar> rayPower;          // W (full ray power, before ramp/absorption)
 DynamicList<label>  rayBeam;
@@ -34,18 +29,6 @@ List<DynamicList<label>> raySampDyn;   // global sample index of each local cell
 wordList beamNames;
 scalarList beamPower;
 List<labelList> rayCells, raySamp;
-List<point> beamFocus;          // runtime focus; z tracks the free surface
-bool trackLaserSurface = false;
-scalar laserTrackDz = 0;
-{
-    const dictionary& ld0 = meltProperties.subDict("laser");
-    trackLaserSurface = ld0.getOrDefault<bool>("trackSurface", false);
-    if (trackLaserSurface)
-    {
-        Info<< "Laser trackSurface: each focus height follows the free surface"
-            << " at that beam's aim" << nl << endl;
-    }
-}
 retraceLaser = [&]()
 {
     const dictionary& ld = meltProperties.subDict("laser");
@@ -72,16 +55,6 @@ retraceLaser = [&]()
     beamPower.setSize(beamEntries.size());
     rayPower.clear();
     rayBeam.clear();
-    // Keep a focus z written by trackLaserSurface. The dictionary value is
-    // only the initial height.
-    if (beamFocus.size() != beamEntries.size())
-    {
-        beamFocus.setSize(beamEntries.size());
-        forAll(beamEntries, bi)
-        {
-            beamFocus[bi] = beamEntries[bi].dict().get<point>("focus");
-        }
-    }
 
     DynamicList<List<label>> cellsAll, sampAll;
     label nSamplesTot = 0;
@@ -91,25 +64,22 @@ retraceLaser = [&]()
         beamNames[bi] = beamEntries[bi].keyword();
         const scalar P = bd.get<scalar>("power");
         beamPower[bi] = P;
-        point F = beamFocus[bi];
+        point F(bd.get<point>("focus"));
         F.y() += weaveY;   // head zigzag (0 when the weave is off)
         vector d(bd.get<vector>("direction"));
         if (planar) { d.y() = 0; F.y() = yMid; }
         d /= mag(d) + VSMALL;
         const scalar w0 = bd.get<scalar>("radius");   // 1/e^2 waist at focus
         const scalar zR = bd.getOrDefault<scalar>("rayleighLength", -1.0);
-        // Distance along the beam from the focus to the plane the spot is
-        // sized on. trackSurface puts the focus on the free surface, so the
-        // waist is the spot there. Otherwise the plane is the substrate top.
-        const scalar zRef = trackLaserSurface ? F.z() : 0.0;
+        // Distance along the beam from focus to the substrate top plane z = 0.
+        // F + t d has z = 0 => t = -F.z()/d.z(); z_plate = |t|.
         scalar zPlate = 0;
         if (mag(d.z()) > SMALL)
         {
-            zPlate = mag((zRef - F.z())/d.z());
+            zPlate = mag(-F.z()/d.z());
         }
-        // Sampling radius of the parallel-ray bundle. Expands when the waist
-        // is defocused away from the sizing plane (z = 0, or the free surface
-        // when trackSurface holds the focus there).
+        // Effective sampling radius at the plate (and used for the parallel-ray
+        // cylinder): expands when the waist is defocused away from z = 0.
         scalar w = w0;
         if (zR > SMALL)
         {
@@ -207,12 +177,5 @@ retraceLaser = [&]()
         << " m, focus shifted in y by " << weaveY << " m" << nl << endl;
     weaveRetraceDy = 0.25*dxMin;
     weaveYTraced = weaveY;
-    if (laserTrackDz <= SMALL) laserTrackDz = 0.25*dxMin;
 };
 retraceLaser();
-
-#include "trackLaserSurface.H"
-if (trackLaserFoci())
-{
-    retraceLaser();
-}

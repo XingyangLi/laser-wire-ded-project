@@ -224,17 +224,17 @@ A local Cursor agent opened in this repo should follow `AGENTS.md` (and `.cursor
 
 Laboratory frame: the substrate moves in +x, the head is fixed, so the travel direction of the head is −x. Azimuth 0° is in front of the wire, 180° is behind it.
 
-| beam | azimuth | inclination from vertical | aim from the wire axis | power | 1/e² radius |
-|---|---|---|---|---|---|
-| front-left | +60° | 32° inward | 1.05 mm | 700 W | 0.70 mm |
-| front-right | −60° | 32° inward | 1.05 mm | 700 W | 0.70 mm |
-| rear | 180° | 22° inward | 0.90 mm | 450 W | 0.55 mm |
+| beam | azimuth | inclination from vertical | aim from the wire axis | aim height | power | 1/e² radius |
+|---|---|---|---|---|---|---|
+| front-left | +55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| front-right | −55° | 32° | 1.4 mm | 0.4 mm | 700 W | 0.70 mm |
+| rear | 180° | 22° | 0.9 mm | 0.3 mm | 450 W | 0.55 mm |
 
-The three beams are 120° apart. A negative inclination in the case (the triple default) points each ray toward the wire as it descends, so the beam arrives from outside and the aim is the spot centre. The aims sit outside the 0.50 mm wire (1.05 mm in front, 0.90 mm behind). The inner 1/e² ray meets the wire about 0.5 mm above the plate, so the bright core lands on the substrate and the inner shoulder meets the wire tip. `trackSurface` is on: every focus height is the free-surface height at that aim (the first metal the vertical column meets), and the rays are rebuilt when that height moves by more than about a quarter of a cell. The trailing spot stays on the free surface behind the wire as the bead rises. Total power 1850 W. Wire: solid 316L, diameter 1.0 mm, vertical, feed 30 mm/s, initial gap 0.15 mm. Scan speed 6 mm/s over 4 mm. The wire cross-section times WFS/scan speed is about 3.9 mm², the area of a dome a few millimetres wide and roughly 1.5–2 mm tall. 316L is a stand-in; the radiograph does not name the alloy.
+The beam axis is aimed at that point and continues down to the plate, so the plate spot sits a little further out (`aim height × tan(inclination)`): about 1.65 mm in front of the wire for the front pair and about 1.0 mm behind it for the rear beam. Total power 1850 W. Wire: solid 316L, diameter 1.0 mm, vertical, feed 30 mm/s, initial gap 0.15 mm. Scan speed 6 mm/s over 4 mm. The wire cross-section times WFS/scan speed is about 3.9 mm², the area of a dome a few millimetres wide and roughly 1.5–2 mm tall. 316L is a stand-in; the radiograph does not name the alloy.
 
 Substrate contact angles stay 20° / 90°. The wire line uses 25° / 70° (`--theta-receding-wire`, `--theta-advancing-wire`). Inside that window the line is held still in the head frame (`--wire-pin-frame head`) so a kink can stay part-way up the wire while the wire feeds through it. `--wire-pin-frame wire` sticks the line to the feed velocity instead. These angles are a starting hysteresis band, not a measured pair. `--wire-sector` adds a wider window on the trailing side of the wire only (defaults 60° / 140° within 90° of +x, cosine blend 30°). It is off unless you pass it, so the production track keeps one window around the wire.
 
-Lists accepted by `generate_case.py`: `--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`. One value is copied to every beam. `--power` rescales the default 700/700/450 split. `--laser-config normal|lof|transitional_r` is unchanged unless you pass one of those lists. `--beam-aim-heights` is the starting focus height; `--no-track-surface` keeps the beams on that fixed plane. Triple turns `trackSurface` on unless that flag is set.
+Lists accepted by `generate_case.py`: `--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`. One value is copied to every beam. `--power` rescales the default 700/700/450 split. `--laser-config normal|lof|transitional_r` is unchanged unless you pass one of those lists.
 
 ### While it runs, and afterwards
 
@@ -254,7 +254,7 @@ python3 scripts/quantify_pores.py --case cases/wire_cavity
 
 `cases/single_wire` and `cases/single_wire_demo` do not set `pinWire` or `wireCavity`. Re-running them uses the previous substrate-only pin and the enclosed-pore counter.
 
-The full track is a half-domain mesh (y ≥ 0, symmetry plane): about 30 000 cells at 0.15 mm, end time 0.67 s. The capillary time-step ceiling is about 2.7×10⁻⁵ s, so the run is on the order of 25 000 steps. That is hours on a workstation (use the `ExecutionTime` printed each step to scale it); memory stays well under the size of a desktop. The −60° beam is the mirror of the +60° beam and is folded onto the meshed half by the solver's `symmetryY` (the same rule as the paper configs). Reported laser power is doubled back by `statistics/powerFactor`. Pass `--domain-y full` to mesh both sides explicitly.
+The full track is a half-domain mesh (y ≥ 0, symmetry plane): about 30 000 cells at 0.15 mm, end time 0.67 s. The capillary time-step ceiling is about 2.7×10⁻⁵ s, so the run is on the order of 25 000 steps. That is hours on a workstation (use the `ExecutionTime` printed each step to scale it); memory stays well under the size of a desktop. The −55° beam is the mirror of the +55° beam and is folded onto the meshed half by the solver's `symmetryY` (the same rule as the paper configs). Reported laser power is doubled back by `statistics/powerFactor`. Pass `--domain-y full` to mesh both sides explicitly.
 
 ### Dissolved oxygen
 
