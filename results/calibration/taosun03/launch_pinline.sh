@@ -57,7 +57,10 @@ prepare_case() {
     local marker="pinline feed ${feed} ppm ${ppm}"
     if [[ -d "$CASE/processor0/$T0" && -f "$CASE/constant/meltProperties" ]]; then
         if grep -q "$marker" "$CASE/constant/meltProperties"; then
-            echo "CASE exists td${feed}_p${ppm}"
+            echo "CASE exists td${feed}_p${ppm}; resetting times after $T0"
+            find "$CASE" -mindepth 2 -maxdepth 2 -type d -regextype posix-extended \
+                -regex '.*/[0-9].*' ! -name "$T0" -exec rm -rf {} +
+            rm -f "$CASE/log.laserWireDEDFoam"
             return 0
         fi
     fi
@@ -197,6 +200,20 @@ run_one() {
             echo "$tag foam fatal" > "$ABORT"
             kill -TERM "$pid" 2>/dev/null || true
             break
+        fi
+        local amax=""
+        amax="$(grep 'Max(alpha.metal)' "$CASE/log.laserWireDEDFoam" | tail -1 | sed -n 's/.*Max(alpha.metal) = //p' || true)"
+        if [[ -n "$amax" ]]; then
+            if python3 - "$amax" <<'PY'
+import sys
+raise SystemExit(0 if float(sys.argv[1]) > 1.05 else 1)
+PY
+            then
+                echo "KILL $tag alpha max $amax"
+                echo "$tag alpha max $amax" > "$ABORT"
+                kill -TERM "$pid" 2>/dev/null || true
+                break
+            fi
         fi
         local latest=""
         latest="$(latest_time "$CASE")" || latest=""

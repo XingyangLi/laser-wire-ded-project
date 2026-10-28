@@ -5,9 +5,9 @@
 // the feed velocity. Below the line, a 1-3 cell shell is held at
 // alpha.metal = 1 and at the feed velocity. Above the line, up to the
 // wetted top the line started from, that same shell is held dry so the line
-// cannot climb back. Faces of those dry cells are blocked, so the pool is
-// not drained into them. Cells outside the shell, including the pool, are
-// left free: the outer wall of the gap is generated.
+// cannot climb back. The flux is left alone: zeroing those faces made
+// alpha unbounded. Cells outside the shell, including the pool, are left
+// free: the outer wall of the gap is generated.
 // ---------------------------------------------------------------------------
 
 const dictionary trailDragDict(meltProperties.subOrEmptyDict("trailDrag"));

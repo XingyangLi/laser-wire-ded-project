@@ -61,8 +61,9 @@ if (trailDragEnabled)
     label nDry = 0;
     scalarField& aHold = alpha1.primitiveFieldRef();
     vectorField& uHold = U.primitiveFieldRef();
-    scalarField& phiHold = phi.primitiveFieldRef();
-    const cellList& cells = mesh.cells();
+    // Do not write phi. Zeroing faces made the next alpha equation
+    // unbounded (alpha above 2). The dry cells are reset after each
+    // alpha solve instead.
     forAll(Ctd, celli)
     {
         const scalar h = Foam::cbrt(max(Vtd[celli], SMALL));
@@ -84,32 +85,10 @@ if (trailDragEnabled)
             continue;
         }
         // Face the line has swept. Held dry so the line cannot climb
-        // back. Blocking these faces stops the pool being drained in.
-        // The pool outside this shell is not written.
+        // back. The pool outside this shell is not written.
         if (z > zTop && z <= trailDragZ0 + 0.25*h)
         {
             aHold[celli] = 0;
-            const cell& cFaces = cells[celli];
-            forAll(cFaces, fi)
-            {
-                const label facei = cFaces[fi];
-                if (mesh.isInternalFace(facei))
-                {
-                    phiHold[facei] = 0;
-                }
-                else
-                {
-                    // Processor faces are not internal. Zero them too,
-                    // or the pool on the neighbour rank drains in.
-                    const label patchi = mesh.boundaryMesh().whichPatch(facei);
-                    if (patchi >= 0)
-                    {
-                        const label local =
-                            facei - mesh.boundaryMesh()[patchi].start();
-                        phi.boundaryFieldRef()[patchi][local] = 0;
-                    }
-                }
-            }
             ++nDry;
         }
     }
