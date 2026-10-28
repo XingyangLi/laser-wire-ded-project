@@ -61,8 +61,12 @@
                 const bool sideWall = mag(nf[fi].z()) < 0.5;
                 const bool trailing = sideWall && (Cf[fi].x() > 0);
                 if (!trailing) continue;
-                // The solid wire above the pool is alpha 1. The contact is
-                // the liquid interface, not that column.
+                // Top of the liquid metal on the wall. The solid wire above
+                // the pool is cold (liquid fraction 0) and is not the contact.
+                if (a[owner] > 0.5 && liquidFraction[owner] > 0.5)
+                {
+                    zWet = max(zWet, Cf[fi].z());
+                }
 
                 label gCell = owner;
                 scalar best = mag(gA[owner])*h;
@@ -92,10 +96,6 @@
                 );
                 onLine[fi] = true;
                 thetaFace[fi] = ::acos(c)*radToDeg;
-                if (liquidFraction[gCell] > 0.5)
-                {
-                    zWet = max(zWet, Cf[fi].z());
-                }
                 const scalar hOwn = Foam::cbrt(max(V[owner], SMALL));
                 const bool ownerOnLine =
                     mag(gA[owner])*hOwn > wireDragGradMin
