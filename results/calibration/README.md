@@ -487,6 +487,8 @@ At 0.80 s the wire is liquid from about z = 0.6 mm to 1.4 mm (liquid fraction 0.
 
 The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beams are equal: 740 W divided by three (246.6667, 246.6667, 246.6666 W). cal95b is that rerun, same aims and 0.80 s. The wire is liquid from 0.2 mm to 0.6 mm. The trailing crest is 1.76 mm and liquid. The leading crest is 0.69 mm. The plate under the pool is 1671 K. There is no gas film under the bead. Figure: `cal95b_t080_views.png`.
 
+The half-domain geometry is the mesh that was solved. It is not mirrored across y = 0. Temperature on the metal surface, the cold wire, the substrate and the bead are in `cal95b_3d_trailing.png`, `cal95b_3d_front.png` and `cal95b_3d_top.png`. The cyan rings are the 60° and 180° spots (247 W each); the −60° beam is folded onto the 60° spot by the symmetry plane, which is labelled. `cal95b_3d.mp4` is the same trailing view from 0 to 0.8 s (1280×720, 12.5 s).
+
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
 ## Hard pin on the equal-power bead
