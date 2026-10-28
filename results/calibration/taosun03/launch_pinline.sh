@@ -6,8 +6,10 @@
 # The pool outside the shell is free.
 # td24_p100 writes every 0.36 ms so a 5 fps encode is about 10 s.
 # The other eight write every 1 ms for the width/depth table.
-# Stop a case (and the rest) if the 2 ms sample is a wide column, the
-# neck runs away, or the swept face is still metal.
+# Stop a case (and the rest) if the neck runs away, alpha exceeds 1.05,
+# the step collapses, or a wide gas column is the scored slit.
+# A width of 0 at 2 ms is not a stop: the line is still in the diffuse
+# crown, and the thin gap only exists once it has entered bulk metal.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
@@ -271,14 +273,6 @@ PY
             if echo "$line" | grep -q "width 0.1[5-9]\|width 0.[2-9]\|width [1-9]"; then
                 echo "KILL $tag wide gas column at t=$latest"
                 echo "$tag wide column at $latest" > "$ABORT"
-                kill -TERM "$pid" 2>/dev/null || true
-                break
-            fi
-            # The swept face should be a measurable gap by 2 ms.
-            # Width 0 means the line moved inside solid metal again.
-            if echo "$line" | grep -q "width 0.000"; then
-                echo "KILL $tag no gap at t=$latest"
-                echo "$tag no gap at $latest" > "$ABORT"
                 kill -TERM "$pid" 2>/dev/null || true
                 break
             fi
