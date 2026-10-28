@@ -594,3 +594,39 @@ The bare-neck hard pin was a water drop because that mesh is only the neck. cal1
 `cases/wire_cavity_pin24` is the full mesh (70 528 cells, `symmetryY false`), with the cal117 field mirrored across y = 0. The three beams are at 0°, 120° and −120°. Each is inclined 32° inward, aimed 0.90 mm off the axis at 0.25 mm height, radius 0.50 mm. On the bead (z = 0.8 mm) the axes hit (−1.24, 0), (0.62, 1.08) and (0.62, −1.08) mm. That triangle is equilateral and centred on the wire. Powers are 100 W in front and 400 W on each rear flank (900 W total). An aim through the wire axis shadowed the plate, so the axes stay outside the 0.5 mm wire and come inward. The startup log is three beams at those foci, each at its full power, incident 900 W.
 
 The contact line is the metal-region pin: `wireVelocity wire`, `wireBand` 0.30 mm, `wireDragK` 1e9. Nothing is painted. Feed 24 mm/s, laser on, Marangoni on, 100 ppm with the scalar angles kept. Six ranks. The first 2 ms stayed a bead: outside-wire metal still spans 4.65 mm, neck speed under 1 m/s, no fatal error. At 8 ms the centre-plane trail crest is 1.61 mm and the lead crest is 0.99 mm. Width and depth of a trailing slit are both 0. The feed travels 0.19 mm in that time, about one 150 µm cell, so this mesh cannot show a 0.05 mm slit. `zWire` stays at 1.76 mm. The figure is `results/calibration/taosun03/pin24_bead.png`: radiograph, centre plane, and the three heat spots.
+
+## Imposed trailing line, generated slit
+
+`trailDrag` is the hard-coded pin on the metal region. It is off unless `meltProperties` turns it on. The start is the unpainted settled neck, `cases/wire_cavity_smokeS` at 0.7047 s. At that instant the centre plane has no gap. The wetted top on the trailing face is found once, from liquid cells (`alpha.metal` and liquid fraction both at least 0.5) inside the shell, and that height is `z0`. The top then moves at the feed velocity, `z(t) = z0 - v_feed (t - t0)`, with no ramp. Below that top, a shell 3 cells thick and 3 cells tall, inside a 75° sector about +x, is held at `alpha.metal = 1` and at the feed velocity. Above the top, up to `z0`, the same shell is held dry and at the feed velocity. Metal that flows back into a dry cell is returned to a neighbouring metal cell that still has room under `alpha = 1`. Speeds in the shell above 3 m/s are capped and the existing flux is scaled with them. Cells outside the shell are not written, so the pool behind the line is free. Nothing is painted.
+
+Laser off, recoil off, Marangoni on. Nine cases, `cases/wire_cavity_td{18,24,28}_p{50,100,300}`, four ranks each, from 0.7047 s to 0.7227 s (18 ms). All nine finished.
+
+`chamberOxygenPpm` is a uniform melt oxygen (`a_O` in wt% is ppm × 10⁻⁴). It changes three things, and it does not move the imposed shell:
+
+- Sahoo–Belton surface tension `σ(T, a_O)`, with the Fe–O adsorption constants in `surfaceTension` (Sahoo, DebRoy, McNallan, Metall. Trans. B 19B (1988) 483).
+- The Marangoni stress on the free pool, which uses the analytic `dσ/dT` of that expression. The slope can change sign when adsorption dominates.
+- The oxygen contact-angle table on the free line. At 50 / 100 / 300 ppm the plate window is 24°/95°, 28°/100°, 36°/112°; the wire window is 22°/85°, 20°/95°, 18°/115°; the trailing window is 18°/110°, 12°/140°, 8°/160° (receding/advancing). That table is the placeholder in `generate_case.py`, not a sessile-drop measurement.
+
+With the laser and recoil off, ppm does not change heating or recoil pressure. The pool is the settled neck.
+
+Centre-plane scores (`slit_metric.py`, |y| < 0.04 mm). Depth is the open thin gap. `v t` is the distance the imposed line has travelled.
+
+| feed | ppm | 6 ms | 12 ms | 18 ms | `v t` at 18 ms |
+| --- | --- | --- | --- | --- | --- |
+| 18 mm/s | 50 | 0.060 × 0.125 mm | 0.095 × 0.250 mm | 0.080 × 0.350 mm | 0.324 mm |
+| 18 mm/s | 100 | 0.100 × 0.125 mm | 0.080 × 0.100 mm | 0.080 × 0.200 mm | 0.324 mm |
+| 18 mm/s | 300 | 0.060 × 0.125 mm | 0.080 × 0.250 mm | 0.080 × 0.350 mm | 0.324 mm |
+| 24 mm/s | 50 | 0.060 × 0.175 mm | 0.080 × 0.325 mm | 0.080 × 0.450 mm | 0.432 mm |
+| 24 mm/s | 100 | 0.060 × 0.175 mm | 0.080 × 0.325 mm | 0.080 × 0.450 mm | 0.432 mm |
+| 24 mm/s | 300 | 0.060 × 0.175 mm | 0.080 × 0.325 mm | 0.080 × 0.450 mm | 0.432 mm |
+| 28 mm/s | 50 | 0.060 × 0.175 mm | 0.080 × 0.350 mm | 0.080 × 0.525 mm | 0.504 mm |
+| 28 mm/s | 100 | 0.060 × 0.175 mm | 0.080 × 0.350 mm | 0.080 × 0.525 mm | 0.504 mm |
+| 28 mm/s | 300 | 0.060 × 0.175 mm | 0.080 × 0.350 mm | 0.080 × 0.525 mm | 0.504 mm |
+
+Each cell is width × depth. Every sample after the first millisecond is an open mouth. At 0 ms every case is width 0 and depth 0.
+
+Eight of the nine keep a thin open gap whose depth grows with the feed. At 18 ms those depths sit 0.018–0.026 mm past `v t`, about one scoring slice. Once the depth is at least 0.15 mm the width stays in 0.060–0.095 mm. The fixed-length test in `slit_metric.stability` (depth change at most 0.08 mm over 4 ms) does not pass, because the line is still descending and the gap is still lengthening. The mouth does not close and the width does not run away.
+
+The ninth case is 18 mm/s at 100 ppm. The gap opens with the others through 6 ms (0.125 mm deep). Around 7–10 ms the deeper part closes: at 9 ms the only open slice is 0.025 mm at the top (z 1.58–1.60 mm). It reopens and at 18 ms is 0.080 mm wide and 0.200 mm deep, against 0.324 mm of wire travel. The width holds. The free pool took back the lower part of the slit. 50 ppm and 300 ppm at the same feed do not do that, so this is not a monotone oxygen trend.
+
+`results/calibration/taosun03/td24_p100_slit_demo.mp4` is the 24 mm/s, 100 ppm run. Fifty-one frames, one volume write every 0.36 ms, played at 5 fps: 10.2 s, 1920×1080. The three reference panels sit on a short upper band. The metal surface fills the lower band. The title labels the pin as imposed and the slit as generated by the free pool behind that line. At 18 ms that frame is an open gap, 0.080 mm wide and 0.450 mm deep, z 1.15–1.60 mm.
