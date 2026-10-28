@@ -259,7 +259,11 @@ def main():
 
     ax = fig.add_subplot(gs[1, 2])
     ax.axis("off")
-    lines = ["Baseline, fixed aims", "no slit, no oxygen", ""]
+    text_mp = (case / "constant/meltProperties").read_text()
+    if "trailDrag" in text_mp and "enabled         true" in text_mp.split("trailDrag", 1)[-1][:400]:
+        lines = ["cal95b bead", "unpainted metal-region pin", "feed 24 mm/s, 6 ms", ""]
+    else:
+        lines = ["Fixed beam aims", ""]
     for b in beams:
         lines.append(
             f"{b['name']}: {b['power']:.0f} W"
