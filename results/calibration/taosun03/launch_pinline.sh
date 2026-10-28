@@ -81,7 +81,7 @@ prepare_case() {
     done
     local iv uz
     iv="$(write_iv "$feed" "$ppm")"
-    uz="$(python3 -c "print(f'{-float('$feed')/1000:.6f}')")"
+    uz="$(python3 -c 'import sys; print(f"{-float(sys.argv[1])/1000:.6f}")' "$feed")"
     python3 - "$CASE" "$T0" "$TEND" "$ppm" "$uz" "$iv" "$marker" <<'PY'
 import re, sys
 from pathlib import Path
