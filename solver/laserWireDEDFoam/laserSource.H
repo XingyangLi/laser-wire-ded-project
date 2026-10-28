@@ -5,9 +5,11 @@
 // the processor owning that cell deposits A(cWire) * P_ray there.
 // Metal behind that point (along the ray) is shadowed: the wire shadows the
 // pool and vice versa, and each beam can hit the wire side.
-// The march starts at the top of the domain and goes along the beam, so the
-// hit is the free surface on that ray. A bead that rises into the ray takes
-// the power; the original plate is reached only where the ray is still clear.
+// The march starts at the top of the domain and goes along the beam. The
+// focus and direction stay the dictionary values for the whole run; they are
+// not moved up with the bead. The first metal cell on the ray absorbs the
+// power. Cells further along the ray, including the original plate under a
+// raised bead, get none.
 // The same routine also computes the column surface height zSurface.
 // ---------------------------------------------------------------------------
 {
