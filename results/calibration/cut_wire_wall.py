@@ -333,6 +333,8 @@ def write_line_pin(case):
         "{\n"
         "    enabled         true;\n"
         "    nCells          2;\n"
+        "    // Imposed shell width: two 18.75 um cells. Not a physical film.\n"
+        "    thickness       3.75e-5;\n"
         "    ppmRef          300;\n"
         "    Kpin            1e12;\n"
         "    tau             0.0005;\n"

@@ -18,6 +18,9 @@ const bool linePinEnabled = linePinDict.getOrDefault<bool>("enabled", false);
 const scalar linePinTau = linePinDict.getOrDefault<scalar>("tau", 5e-4);
 const scalar linePinPpmRef = linePinDict.getOrDefault<scalar>("ppmRef", 300);
 const scalar linePinNCells = linePinDict.getOrDefault<scalar>("nCells", 2);
+// Fixed radial thickness of the imposed gas shell. Negative means nCells
+// times the local cell size, which on a coarse cell is a thick shell.
+const scalar linePinThickness = linePinDict.getOrDefault<scalar>("thickness", -1);
 const scalar linePinK = linePinDict.getOrDefault<scalar>("Kpin", 1e12);
 // Negative until the first step measures the wetted top.
 scalar linePinZ0 = -1;
@@ -26,5 +29,10 @@ if (linePinEnabled)
     Info<< "Line pin: imposed trailing contact, "
         << linePinNCells << " cells, tau " << linePinTau
         << " s, ppmRef " << linePinPpmRef
-        << ", Kpin " << linePinK << nl;
+        << ", Kpin " << linePinK;
+    if (linePinThickness > 0)
+    {
+        Info<< ", thickness " << linePinThickness*1e3 << " mm (imposed)";
+    }
+    Info<< nl;
 }

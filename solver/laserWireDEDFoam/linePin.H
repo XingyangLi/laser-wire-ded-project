@@ -19,6 +19,12 @@
         const scalarField& Vc = mesh.V();
         scalarField& alpha = alpha1.primitiveFieldRef();
         vectorField& Uc = U.primitiveFieldRef();
+        // Radial width of the imposed shell. A fixed thickness keeps a coarse
+        // cell, whose own size would claim a thick shell, out of the gap.
+        auto shellThick = [&](const scalar hCell) -> scalar
+        {
+            return (linePinThickness > 0) ? linePinThickness : linePinNCells*hCell;
+        };
 
         if (linePinZ0 < 0)
         {
@@ -31,7 +37,7 @@
                 const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
                 if (rad.x() <= 0) continue;
                 const scalar r = mag(rad);
-                if (r <= wireRadius || r > wireRadius + linePinNCells*h) continue;
+                if (r <= wireRadius || r > wireRadius + shellThick(h)) continue;
                 if (alpha[celli] > 0.5) zMax = max(zMax, C[celli].z());
             }
             reduce(zMax, maxOp<scalar>());
@@ -82,7 +88,7 @@
             if (rad.x() <= 0) continue;
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
-            if (r <= wireRadius || r > wireRadius + linePinNCells*h) continue;
+            if (r <= wireRadius || r > wireRadius + shellThick(h)) continue;
             const scalar z = C[celli].z();
             if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;
             if (z < 0.15e-3) continue;
@@ -162,7 +168,7 @@
                 if (rad.x() <= 0) continue;
                 const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
                 const scalar r = mag(rad);
-                const scalar rShell = wireRadius + linePinNCells*h;
+                const scalar rShell = wireRadius + shellThick(h);
                 if (r <= rShell || r > rShell + h) continue;
                 const scalar z = C[celli].z();
                 if (z <= zLine || z > linePinZ0 + 0.5*h) continue;

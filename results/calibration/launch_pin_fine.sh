@@ -9,7 +9,8 @@
 #   FINE_NP     ranks (default 12)
 #   FINE_PARALLEL / FINE_SKIP_BUILD
 #
-# Inner band: x 0.42-0.85 mm, y 0-0.30 mm, z 0.45-1.55 mm.
+# The slit opens between the descending line and the crest (z0 ~ 1.80 mm),
+# not on the lower neck. Core: x 0.42-0.85 mm, y 0-0.30 mm, z 1.25-1.98 mm.
 # Three halving passes, each padded so the jump is 2:1.
 set -euo pipefail
 ROOT=/home/xingyang/laser-wire-ded-project
@@ -90,9 +91,9 @@ geometricCut    no;
 writeMesh       no;
 EOF
 # level 0 is the outer 2:1 shell (pad 0.225 mm), then 0.075 mm, then the core.
-write_topo 0  1.95e-4  1.075e-3   -3.25e-4  5.25e-4   2.25e-4  1.775e-3
-write_topo 1  3.45e-4  9.25e-4    -1.75e-4  3.75e-4   3.75e-4  1.625e-3
-write_topo 2  4.20e-4  8.50e-4    -1.00e-4  3.00e-4   4.50e-4  1.550e-3
+write_topo 0  1.95e-4  1.075e-3   -3.25e-4  5.25e-4   1.025e-3  2.205e-3
+write_topo 1  3.45e-4  9.25e-4    -1.75e-4  3.75e-4   1.175e-3  2.055e-3
+write_topo 2  4.20e-4  8.50e-4    -1.00e-4  3.00e-4   1.250e-3  1.980e-3
 
 for i in 0 1 2; do
     topoSet -dict "system/topoSetDict.neck${i}" > "log.topoSet.neck${i}" 2>&1
