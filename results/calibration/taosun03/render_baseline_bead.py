@@ -97,7 +97,7 @@ def bin_plane(samples, x0, x1, z0, z1, step):
     return acc
 
 
-def ellipse_on_plate(beam, ax, **kw):
+def ellipse_on_plate(beam, ax, color, ls="-"):
     """Footprint of the 1/e^2 cylinder on z = 0."""
     d = beam["d"]
     # Major axis stretches by 1/|d.z| along the horizontal projection of d.
@@ -109,10 +109,10 @@ def ellipse_on_plate(beam, ax, **kw):
     ang = math.degrees(math.atan2(uy, ux))
     cx, cy = beam["plate"][0] * 1e3, beam["plate"][1] * 1e3
     ax.add_patch(Ellipse((cx, cy), major * 1e3, minor * 1e3, angle=ang,
-                         fill=False, lw=1.4, **kw))
+                         fill=False, lw=1.4, ec=color, ls=ls))
     ax.plot([beam["focus"][0] * 1e3, cx], [beam["focus"][1] * 1e3, cy],
-            lw=0.8, **kw)
-    ax.plot(cx, cy, "o", ms=3, **kw)
+            lw=0.8, color=color, ls=ls)
+    ax.plot(cx, cy, "o", ms=3, color=color)
 
 
 def volume_stats(case, t_target):
@@ -238,14 +238,14 @@ def main():
                   interpolation="nearest", aspect="equal")
     ax.add_patch(Circle((0, 0), WIRE_R * 1e3, fill=False, ec="k", lw=1.2))
     for b, c in zip(beams, colors):
-        ellipse_on_plate(b, ax, ec=c)
+        ellipse_on_plate(b, ax, c)
         # mirror of a front beam across y = 0, drawn because the mesh is the y >= 0 half
         if abs(b["plate"][1]) > 1e-6:
             twin = dict(b)
             twin["plate"] = (b["plate"][0], -b["plate"][1], b["plate"][2])
             twin["focus"] = (b["focus"][0], -b["focus"][1], b["focus"][2])
             twin["d"] = (b["d"][0], -b["d"][1], b["d"][2])
-            ellipse_on_plate(twin, ax, ec=c, ls="--")
+            ellipse_on_plate(twin, ax, c, ls="--")
         labels.append(f"{b['name']}  {b['power']:.0f} W")
     ax.set_xlim(-3.2, 3.2)
     ax.set_ylim(-2.4, 2.4)
