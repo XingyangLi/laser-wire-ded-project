@@ -61,9 +61,11 @@ if (trailDragEnabled)
     label nDry = 0;
     scalarField& aHold = alpha1.primitiveFieldRef();
     vectorField& uHold = U.primitiveFieldRef();
-    // Do not write phi. Zeroing faces made the next alpha equation
-    // unbounded (alpha above 2). The dry cells are reset after each
-    // alpha solve instead.
+    boolList isDry(mesh.nCells(), false);
+    const labelListList& cellCells = mesh.cellCells();
+    // Do not write phi. Zeroing faces made alpha unbounded, and deleting
+    // the inflow every step ate the pool. Metal that has flowed back
+    // into a dry cell is returned to metal neighbours that have room.
     forAll(Ctd, celli)
     {
         const scalar h = Foam::cbrt(max(Vtd[celli], SMALL));
@@ -84,12 +86,38 @@ if (trailDragEnabled)
             ++nHold;
             continue;
         }
-        // Face the line has swept. Held dry so the line cannot climb
-        // back. The pool outside this shell is not written.
+        // Face the line has swept.
         if (z > zTop && z <= trailDragZ0 + 0.25*h)
         {
-            aHold[celli] = 0;
-            ++nDry;
+            isDry[celli] = true;
+        }
+    }
+    forAll(isDry, celli)
+    {
+        if (!isDry[celli]) continue;
+        const scalar metal = max(aHold[celli], scalar(0))*Vtd[celli];
+        aHold[celli] = 0;
+        ++nDry;
+        if (metal < SMALL) continue;
+        // Room under alpha = 1 in neighbouring metal that is not dry.
+        // A full neighbour (the first dewet of a bulk cell) takes nothing.
+        scalar roomSum = 0;
+        const labelList& nei = cellCells[celli];
+        forAll(nei, ni)
+        {
+            const label n = nei[ni];
+            if (isDry[n] || aHold[n] < 0.5) continue;
+            roomSum += max(scalar(1) - aHold[n], scalar(0))*Vtd[n];
+        }
+        if (roomSum < SMALL) continue;
+        const scalar give = min(metal, roomSum);
+        forAll(nei, ni)
+        {
+            const label n = nei[ni];
+            if (isDry[n] || aHold[n] < 0.5) continue;
+            const scalar room = max(scalar(1) - aHold[n], scalar(0))*Vtd[n];
+            if (room < SMALL) continue;
+            aHold[n] += give*(room/roomSum)/Vtd[n];
         }
     }
     alpha1.correctBoundaryConditions();

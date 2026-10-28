@@ -5,9 +5,9 @@
 // the feed velocity. Below the line, a 1-3 cell shell is held at
 // alpha.metal = 1 and at the feed velocity. Above the line, up to the
 // wetted top the line started from, that same shell is held dry so the line
-// cannot climb back. The flux is left alone: zeroing those faces made
-// alpha unbounded. Cells outside the shell, including the pool, are left
-// free: the outer wall of the gap is generated.
+// cannot climb back. Metal that flows back in is returned to neighbouring
+// metal that has room under alpha = 1, so the pool wall is not eaten and
+// the flux is not rewritten. Cells outside the shell stay free.
 // ---------------------------------------------------------------------------
 
 const dictionary trailDragDict(meltProperties.subOrEmptyDict("trailDrag"));
