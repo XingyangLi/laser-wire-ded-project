@@ -17,8 +17,8 @@ from pathlib import Path
 def parse_beams(text):
     beams = []
     for m in re.finditer(
-        r"([\w-]+)\s*\{\s*power\s+([-\d.eE+]+);\s*focus\s+\(([^)]+)\);\s*"
-        r"direction\s+\(([^)]+)\);\s*radius\s+([-\d.eE+]+);",
+        r"([\w-]+)\s*\{\s*power\s+([-\d.eE+]+)\s*;\s*focus\s+\(([^)]+)\)\s*;\s*"
+        r"direction\s+\(([^)]+)\)\s*;\s*radius\s+([-\d.eE+]+)\s*;",
         text,
     ):
         focus = tuple(float(v) for v in m.group(3).split())

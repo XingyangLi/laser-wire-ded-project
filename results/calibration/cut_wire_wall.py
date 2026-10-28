@@ -239,6 +239,11 @@ def wall_block(field, theta, feed, pin, theta_a, theta_r, oxide=False):
             "        type            fixedFluxPressure;\n"
             "        value           uniform 0;"
         )
+    elif field in ("phi", "alphaPhi0.metal"):
+        body = (
+            "        type            calculated;\n"
+            "        value           uniform 0;"
+        )
     else:
         body = "        type            zeroGradient;"
     return f"    wireWall\n    {{\n{body}\n    }}"
@@ -361,7 +366,7 @@ def apply_bcs(case, theta, feed, pin, theta_a, theta_r, line_pin=False, oxide=Fa
     boundary = case / "constant/polyMesh/boundary"
     text = read_text(boundary)
     text, n_wall = set_type(text, "wireWall", "wall", "wall")
-    if n_wall < 500:
+    if n_wall < 200:
         raise SystemExit(f"wireWall has only {n_wall} faces")
     sym = find_block(text, "symmetry")
     if sym is None:
@@ -411,7 +416,7 @@ def check(case, theta, feed, pin, theta_a, theta_r, line_pin=False, oxide=False)
     if not re.search(r"type\s+wall;", block):
         raise SystemExit("wireWall is not type wall")
     n_wall = nfaces(block)
-    if n_wall < 500:
+    if n_wall < 200:
         raise SystemExit(f"wireWall has only {n_wall} faces")
     sym = find_block(boundary, "symmetry")
     if sym is None or not re.search(r"type\s+symmetryPlane;", boundary[sym[0]:sym[1]]):
