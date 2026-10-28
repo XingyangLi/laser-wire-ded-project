@@ -5,6 +5,8 @@
 #
 # Azimuths 60, -60, 180. Half-domain symmetryY folds y < 0 and halves each
 # beam's power, so the negative beam has to stay in the dictionary.
+# Powers are equal: 740 W split three ways. cal95 used 160/160/420, the
+# old trailing-heavy split, and is not the equal-power baseline.
 # Each axis meets the plate 0.55 mm from the wire. The 0.26 mm spot is
 # mostly on the substrate and the inner wing meets the wire. Inclination is
 # 15 deg, so that wing strikes the wire near 0.8 mm rather than at the foot.
@@ -52,7 +54,7 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
         --scan-speed 0.004 --wire-feed-speed 0.024 \
         --beam-azimuths 60,-60,180 \
         --beam-inclinations=-15,-15,-15 \
-        --beam-powers 160,160,420 \
+        --beam-powers 246.6667,246.6667,246.6666 \
         --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
         --beam-aim-radii 0.604e-3,0.604e-3,0.604e-3 \
         --beam-aim-heights 0.20e-3,0.20e-3,0.20e-3 \
