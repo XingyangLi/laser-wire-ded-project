@@ -59,9 +59,10 @@ new = """linePin
     // Narrow shell at the line: imposed. thicknessTop is a fading bias
     // toward the crest, not a painted outer wall. sigma stays 1.75 N/m.
     thickness       4e-5;
-    thicknessTop    1.4e-4;
+    thicknessTop    9e-5;
     lineBand        8e-5;
-    holdFade        0.75;
+    // 0: the graded bias is held. The cell outside it is still free.
+    holdFade        0;
     ppmRef          300;
     Kpin            1e12;
     tau             0.0005;
@@ -69,7 +70,7 @@ new = """linePin
 if old not in text:
     raise SystemExit("cal109 linePin block not found")
 path.write_text(text.replace(old, new, 1))
-print("linePin taper: 0.040 mm at the line, 0.140 mm fading bias at the crest")
+print("linePin taper: 0.040 mm at the line, 0.090 mm at the crest, hold does not fade")
 PY
 cd "$case"
 foamDictionary system/controlDict -entry endTime -set "$END" > /dev/null

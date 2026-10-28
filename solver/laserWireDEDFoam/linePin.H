@@ -66,7 +66,8 @@
             const scalar base = shellThick(hCell);
             if (linePinThicknessTop <= base || z <= zLine) return base;
             const scalar s = min(max((z - zLine)/spanZ, scalar(0)), scalar(1));
-            return base + s*(linePinThicknessTop - base);
+            // Opens toward the crest. The lower part of the slit stays narrow.
+            return base + s*s*(linePinThicknessTop - base);
         };
         auto fadeAt = [&](const scalar z) -> scalar
         {
@@ -129,6 +130,26 @@
             // so the attachment stays on the wire. Outside this z window the
             // pool is untouched.
             const scalar target = (z > zLine) ? scalar(0) : scalar(1);
+            // Do not clear the last metal at this height. That is the bead
+            // tip; cutting it opens a hole instead of a slit.
+            if (target < 0.5 && linePinThicknessTop > 0)
+            {
+                bool beadOutside = false;
+                label cur = celli;
+                scalar rCur = r;
+                const scalar rNeed = wireRadius + thickAt(z, h) + 0.5*h;
+                for (label step = 0; step < 8 && !beadOutside; ++step)
+                {
+                    const label nei = outerCell(cur, rCur, z, h);
+                    if (nei < 0) break;
+                    const vector dn = C[nei] - wireOrigin;
+                    const vector rn = dn - (dn & wireUp)*wireUp;
+                    cur = nei;
+                    rCur = mag(rn);
+                    if (rCur > rNeed && alpha[nei] > 0.5) beadOutside = true;
+                }
+                if (!beadOutside) continue;
+            }
             const scalar facLocal = fac*fadeAt(z);
             if (facLocal > 0)
             {
