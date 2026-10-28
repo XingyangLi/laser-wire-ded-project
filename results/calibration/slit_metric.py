@@ -94,12 +94,19 @@ def measure(x, z, alpha):
     edges = np.arange(Z_LO, Z_HI + DZ_MM, DZ_MM)
     mids = 0.5 * (edges[:-1] + edges[1:])
     widths = np.zeros(mids.size)
+    present = np.zeros(mids.size, dtype=bool)
     for i, (z0, z1) in enumerate(zip(edges[:-1], edges[1:])):
         m = (z >= z0) & (z < z1) & (x > 0.40) & (x < 1.30)
         if np.any(m):
             widths[i] = _gap_width(x[m], alpha[m])
+            present[i] = True
     # A thin slit, not the bare face (those slices are near the 0.40 mm cap).
-    thin = (widths >= GAP_MIN_MM) & (widths <= 0.15)
+    thin = present & (widths >= GAP_MIN_MM) & (widths <= 0.15)
+    # One empty z bin between two thin slices is a centre-plane miss, not a cap.
+    for i in range(1, thin.size - 1):
+        if (not present[i]) and thin[i - 1] and thin[i + 1]:
+            widths[i] = 0.5 * (widths[i - 1] + widths[i + 1])
+            thin[i] = True
     best = None
     i = 0
     n = thin.size
@@ -132,6 +139,12 @@ def measure(x, z, alpha):
     # missing slice above the run is the mouth opening into the gas.
     if j >= n:
         is_open = True
+    elif not present[j]:
+        # A missing slice is the mouth, unless a later measured slice is metal.
+        k = j + 1
+        while k < n and not present[k]:
+            k += 1
+        is_open = True if k >= n else not (widths[k] < GAP_MIN_MM)
     else:
         is_open = not (widths[j] < GAP_MIN_MM)
     persists = bool(
