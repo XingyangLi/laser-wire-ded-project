@@ -64,6 +64,7 @@ mkdir -p "$case"
 cp -a "$SRC/constant" "$SRC/system" "$SRC/0" "$case/"
 rm -rf "$case/processor"*
 python3 - "$case" "$PPM" "$FEED" "$THETAR" "$THETAA" "$KPIN" << 'PY'
+import re
 import sys
 from pathlib import Path
 case, ppm, feed, theta_r, theta_a, kpin = sys.argv[1:]
@@ -120,42 +121,41 @@ if f"feedVelocity   {feed_v};" not in props2 and abs(feed - 0.024) > 1e-9:
     props2 = props3
 (root / "constant/meltProperties").write_text(props2)
 
-alpha = (root / "0/alpha.metal").read_text(errors="replace")
-def sub_key(text, key, val):
-    import re
-    new, n = re.subn(
-        rf"({key}\s+)[0-9.eE+-]+;",
-        rf"\g<1>{val};",
-        text,
-        count=1,
-    )
+def patch_ascii_tail(path, needle, pattern, repl, what):
+    """Edit an ascii boundary block. The internal field may be binary."""
+    raw = path.read_bytes()
+    i = raw.find(needle)
+    if i < 0:
+        raise SystemExit(f"{path.name}: no {needle!r}")
+    head, tail = raw[:i], raw[i:]
+    # The wireWall block is ascii and short.
+    tail_txt = tail[:800].decode("ascii")
+    new_txt, n = re.subn(pattern, repl, tail_txt, count=1)
     if n != 1:
-        raise SystemExit(f"could not set {key} on alpha.metal")
-    return new
-# Only the wireWall block. Split so the plate angles are left alone.
-i = alpha.find("wireWall")
-if i < 0 or "pinnedAlphaContactAngle" not in alpha[i:i+400]:
-    raise SystemExit("wireWall is not pinnedAlphaContactAngle")
-head, tail = alpha[:i], alpha[i:]
-tail = sub_key(tail, "thetaA", f"{theta_a:.8g}")
-tail = sub_key(tail, "thetaR", f"{theta_r:.8g}")
-(root / "0/alpha.metal").write_text(head + tail)
+        raise SystemExit(f"{path.name}: could not set {what}")
+    path.write_bytes(head + new_txt.encode("ascii") + tail[len(tail_txt):])
 
-u = (root / "0/U").read_text(errors="replace")
-j = u.find("wireWall")
-if j < 0 or "partialSlip" not in u[j:j+300]:
-    raise SystemExit("wireWall U is not partialSlip")
-uh, ut = u[:j], u[j:]
-import re
-ut2, n = re.subn(
+patch_ascii_tail(
+    root / "0/alpha.metal",
+    b"wireWall",
+    r"(thetaA\s+)[0-9.eE+-]+;",
+    rf"\g<1>{theta_a:.8g};",
+    "thetaA",
+)
+patch_ascii_tail(
+    root / "0/alpha.metal",
+    b"wireWall",
+    r"(thetaR\s+)[0-9.eE+-]+;",
+    rf"\g<1>{theta_r:.8g};",
+    "thetaR",
+)
+patch_ascii_tail(
+    root / "0/U",
+    b"wireWall",
     r"refValue\s+uniform\s+\([^)]*\)\s*;",
     f"refValue        uniform (0 0 -{abs(feed):.8g});",
-    ut,
-    count=1,
+    "feed",
 )
-if n != 1:
-    raise SystemExit("could not set the wire feed on U")
-(root / "0/U").write_text(uh + ut2)
 print(f"hysteresis {ppm:.0f} ppm  thetaR {theta_r:.8g}  thetaA {theta_a:.8g}  K {kpin:.8g}  feed {feed}")
 PY
 cd "$case"
@@ -167,7 +167,7 @@ else
     N="($NP 1 1)"
 fi
 foamDictionary system/decomposeParDict -entry coeffs.n -set "$N" > /dev/null
-foamDictionary constant/meltProperties -entry linePin/enabled | head -n 2
+foamDictionary constant/meltProperties -entry linePin/enabled > log.linePinEnabled
 decomposePar -force > log.decomposePar 2>&1
 touch case.foam
 nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" laserWireDEDFoam -parallel \
