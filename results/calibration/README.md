@@ -489,6 +489,8 @@ The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beam
 
 The half-domain geometry is the mesh that was solved. It is not mirrored across y = 0. Temperature on the metal surface, the cold wire, the substrate and the bead are in `cal95b_3d_trailing.png`, `cal95b_3d_front.png` and `cal95b_3d_top.png`. The cyan rings are the 60° and 180° spots (247 W each); the −60° beam is folded onto the 60° spot by the symmetry plane, which is labelled. `cal95b_3d.mp4` is the same trailing view from 0 to 0.8 s (1280×720, 12.5 s).
 
+Centre-plane movies, symmetry plane y = 0, wire at x = 0, crop x = ±3 mm and z = 0 to 2.5 mm, 1920×1080, 240 frames at 30 fps: `cal95b_center_temperature.mp4` (fixed colour bar, solidus 1658 K, free surface) and `cal95b_center_flow.mp4` (melt velocity). The case writes every 0.2 s, so frames between those five times are linear blends of alpha, T and U. Melt speed on that plane is 0 to 0.335 m/s (99th percentile 0.186 m/s).
+
 `cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
 
 cal105 finished 6 ms with the 19 µm band on the lower neck (z 0.45–1.55 mm). The line itself sits at the crest, z0 = 1.80 mm, and in 6 ms it only falls to 1.65 mm, so that band never contains the shell. The crest gap there is one coarse cell. Figure: `cal105_neck.png`.
