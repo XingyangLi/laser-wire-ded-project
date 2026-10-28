@@ -134,8 +134,7 @@ def figure(path, x, z, alpha, title):
     draw_neck(axes[1], x, z, alpha, title)
     axes[1].set_ylim(0.90, 2.05)
     fig.suptitle(
-        "Center plane. Dark is metal, white is gas.\n"
-        "Green dash: trailing face. The shell on the wall is imposed; the bead outside it is free.",
+        "Center plane. Dark is metal, white is gas. Green dash: trailing face.",
         fontsize=10,
     )
     fig.tight_layout()
