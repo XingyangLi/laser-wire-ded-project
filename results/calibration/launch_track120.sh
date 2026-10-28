@@ -58,13 +58,28 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
         --beam-aim-heights 0.20e-3,0.20e-3,0.20e-3 \
         --end-time "$END" --write-interval 0.20 --np 12 --laser-ramp 2e-3 \
         --contact-pinning --pin-wire --porosity --wire-cavity \
-        --theta-receding 110 --theta-advancing 150 \
+        --theta-receding 10 --theta-advancing 40 \
         --theta-receding-wire 30 --theta-advancing-wire 90 \
         --contact-force-factor 6 \
         --no-marangoni \
         --wire-pin-frame head \
         --rigid-substrate 100
     python3 "$ROOT/results/calibration/check_beam_azimuths.py" "$case"
+    # Substrate starts at 1100 K so the bead can fuse into the plate.
+    # The wire inlet stays at 300 K.
+    python3 - << PY
+from pathlib import Path
+p = Path("$case/system/setFieldsDict")
+s = p.read_text()
+old = "            volScalarFieldValue alpha.metal 1\\n        );"
+new = "            volScalarFieldValue alpha.metal 1\\n            volScalarFieldValue T 1100\\n        );"
+n = s.count(old)
+if n != 1:
+    raise SystemExit(f"substrate block count {n}")
+p.write_text(s.replace(old, new, 1))
+print("substrate T set to 1100")
+PY
+    foamDictionary "$case/0.orig/T" -entry boundaryField/inletSubstrate/value -set "uniform 1100" > /dev/null
     if grep -q "linePin" "$case/constant/meltProperties"; then
         echo "track case must not carry a line pin" >&2
         exit 1
