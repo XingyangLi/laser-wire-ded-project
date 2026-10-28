@@ -99,12 +99,12 @@ def check(case):
         if hit is None:
             raise SystemExit(f"{b['name']} does not meet the plate")
         r = math.hypot(hit[0], hit[1])
-        # 0.26 mm spot centred inside 0.62 mm sits on the wire. 0.70 mm
-        # leaves the core on the substrate and the inner wing on the wire.
-        if r < 0.62e-3:
+        # Wire radius 0.50 mm, spot radius 0.26 mm. A centre near 0.55 mm
+        # puts most of the power on the substrate and the inner wing on the wire.
+        if r < 0.52e-3 or r > 0.85e-3:
             raise SystemExit(
                 f"{b['name']} plate hit is {r*1e3:.2f} mm from the axis; "
-                "the spot would land on the wire"
+                "the spot should sit just outside the wire"
             )
         print(f"  {b['name']} plate radius {r*1e3:.2f} mm")
     print("equilateral: three axes, negative-y beam kept, spots outside the wire")

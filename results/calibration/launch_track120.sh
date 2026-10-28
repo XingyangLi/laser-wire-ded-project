@@ -5,9 +5,10 @@
 #
 # Azimuths 60, -60, 180. Half-domain symmetryY folds y < 0 and halves each
 # beam's power, so the negative beam has to stay in the dictionary.
-# Each axis meets the plate 0.70 mm from the wire, so the 0.26 mm spot is
-# mostly on the substrate and the inner wing still meets the wire. The hit
-# is the first metal along the ray, so a rising bead takes the trailing beam.
+# Each axis meets the plate 0.55 mm from the wire. The 0.26 mm spot is
+# mostly on the substrate (about 70% of the power) and the inner wing meets
+# the wire. Inclination is 26 deg for every beam, so a higher free surface
+# stays under the same ray. The hit is the first metal along the ray.
 #
 #   TRACK_TAG   case tag (default cal90)
 #   TRACK_END   end time [s] (default 0.60)
@@ -50,10 +51,10 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
         --wire-diameter 1e-3 --feed-angle 90 --wire-gap 0.08e-3 --feed-start 0.05 \
         --scan-speed 0.004 --wire-feed-speed 0.024 \
         --beam-azimuths 60,-60,180 \
-        --beam-inclinations=-26,-26,-38 \
+        --beam-inclinations=-26,-26,-26 \
         --beam-powers 160,160,420 \
         --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
-        --beam-aim-radii 0.798e-3,0.798e-3,0.856e-3 \
+        --beam-aim-radii 0.648e-3,0.648e-3,0.648e-3 \
         --beam-aim-heights 0.20e-3,0.20e-3,0.20e-3 \
         --end-time "$END" --write-interval 0.20 --np 12 --laser-ramp 2e-3 \
         --contact-pinning --pin-wire --porosity --wire-cavity \
