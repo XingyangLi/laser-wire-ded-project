@@ -489,7 +489,9 @@ The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beam
 
 The half-domain geometry is the mesh that was solved. It is not mirrored across y = 0. Temperature on the metal surface, the cold wire, the substrate and the bead are in `cal95b_3d_trailing.png`, `cal95b_3d_front.png` and `cal95b_3d_top.png`. The cyan rings are the 60° and 180° spots (247 W each); the −60° beam is folded onto the 60° spot by the symmetry plane, which is labelled. `cal95b_3d.mp4` is the same trailing view from 0 to 0.8 s (1280×720, 12.5 s).
 
-`cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall. Through the 4 ms field the fine neck (z 0.45–1.55 mm) still has metal on the wall: width 0, depth 0. A few coarse gas cells sit at the crest, above the refined band. The solver was still running when the video was made.
+`cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
+
+cal105 finished 6 ms. The fine neck stays metal on the wall at 0, 2, 4 and 6 ms: width 0, depth 0. The first metal cell centre is 0.009 mm outside the 0.50 mm face. Nine coarse gas cells sit at the crest from 4 ms through 6 ms. Metal-cell count goes from 32711 to 32610. There is no gas film on the plate. deltaT ends at 1.14×10⁻⁶ s (the minimum, 1.2×10⁻⁷ s, is the first step). zLine is 1.653 mm, which is z0 1.797 mm minus the 0.144 mm of feed. Figure: `cal105_neck.png`, beside the radiograph. The target film (0.03–0.08 mm wide, at least 0.25 mm deep, open, steady for 4 ms) does not appear.
 
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
