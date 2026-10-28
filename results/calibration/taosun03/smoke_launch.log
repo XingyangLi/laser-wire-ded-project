@@ -1,0 +1,159 @@
+Using OpenFOAM already on the environment: /usr/lib/openfoam/openfoam2406
+laserWireDEDFoam -> /home/asb6102/OpenFOAM/asb6102-v2406/platforms/linux64GccDPInt32Opt/bin
+wmake laserWireDEDFoam
+Making dependencies: laserWireDEDFoam.C
+g++ -std=c++17 -m64 -pthread -DOPENFOAM=2406 -DWM_DP -DWM_LABEL_SIZE=32 -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -Wno-unknown-pragmas -O3  -DNoRepository -ftemplate-depth-100  -I. -I/usr/lib/openfoam/openfoam2406/src/phaseSystemModels/twoPhaseInter/incompressibleInterPhaseTransportModel/lnInclude -I/usr/lib/openfoam/openfoam2406/src/phaseSystemModels/twoPhaseInter/VoFphaseIncompressibleTurbulenceModels/lnInclude -I/usr/lib/openfoam/openfoam2406/src/finiteVolume/lnInclude -I/usr/lib/openfoam/openfoam2406/src/meshTools/lnInclude -I/usr/lib/openfoam/openfoam2406/src/sampling/lnInclude -I/usr/lib/openfoam/openfoam2406/src/dynamicFvMesh/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels -I/usr/lib/openfoam/openfoam2406/src/transportModels/incompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/interfaceProperties/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/twoPhaseMixture/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/turbulenceModels/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/incompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/phaseIncompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude -iquote. -IlnInclude -I/usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude -I/usr/lib/openfoam/openfoam2406/src/OSspecific/POSIX/lnInclude   -fPIC -c laserWireDEDFoam.C -o Make/linux64GccDPInt32Opt/laserWireDEDFoam.o
+In file included from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createMeltFields.H: In function ‘int main(int, char**)’:
+./createMeltFields.H:41:13: warning: unused variable ‘nTCorr’ [-Wunused-variable]
+   41 | const label nTCorr = solDict.getOrDefault<label>("nTCorr", 3);
+      |             ^~~~~~
+./createMeltFields.H:42:14: warning: unused variable ‘flRelax’ [-Wunused-variable]
+   42 | const scalar flRelax = solDict.getOrDefault<scalar>("flRelax", 0.9);
+      |              ^~~~~~~
+./createMeltFields.H:43:14: warning: unused variable ‘TminClip’ [-Wunused-variable]
+   43 | const scalar TminClip = solDict.getOrDefault<scalar>("Tmin", 200.0);
+      |              ^~~~~~~~
+./createMeltFields.H:44:14: warning: unused variable ‘TmaxClip’ [-Wunused-variable]
+   44 | const scalar TmaxClip = solDict.getOrDefault<scalar>("Tmax", 5000.0);
+      |              ^~~~~~~~
+./createMeltFields.H:45:14: warning: unused variable ‘alphaMinFl’ [-Wunused-variable]
+   45 | const scalar alphaMinFl = solDict.getOrDefault<scalar>("alphaMin", 1e-3);
+      |              ^~~~~~~~~~
+In file included from ./createMeltFields.H:178,
+                 from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createComponents.H:24:14: warning: unused variable ‘uMeltFl’ [-Wunused-variable]
+   24 | const scalar uMeltFl = compDict.getOrDefault<scalar>("unmeltedResetFl", 0.5);
+      |              ^~~~~~~
+./createComponents.H:59:6: warning: unused variable ‘trBudgetInit’ [-Wunused-variable]
+   59 | bool trBudgetInit = false;
+      |      ^~~~~~~~~~~~
+./createComponents.H:62:8: warning: unused variable ‘trMetal0’ [-Wunused-variable]
+   62 | scalar trMetal0 = 0;
+      |        ^~~~~~~~
+./createComponents.H:63:6: warning: unused variable ‘trHeaderDone’ [-Wunused-variable]
+   63 | bool trHeaderDone = false;   // (re)write the column header once per solver run (restart = new segment)
+      |      ^~~~~~~~~~~~
+In file included from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createMeltFields.H:282:8: warning: unused variable ‘laserAbsorbedPower’ [-Wunused-variable]
+  282 | scalar laserAbsorbedPower = 0;     // W in the meshed domain
+      |        ^~~~~~~~~~~~~~~~~~
+./createMeltFields.H:283:8: warning: unused variable ‘laserIncidentPower’ [-Wunused-variable]
+  283 | scalar laserIncidentPower = 0;     // W in the meshed domain (before absorptivity)
+      |        ^~~~~~~~~~~~~~~~~~
+./createMeltFields.H:284:8: warning: unused variable ‘surfaceLossPower’ [-Wunused-variable]
+  284 | scalar surfaceLossPower = 0;       // W (evaporation + radiation + convection)
+      |        ^~~~~~~~~~~~~~~~
+In file included from ./createMeltFields.H:370,
+                 from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createStubbing.H:85:12: warning: unused variable ‘stubStats’ [-Wunused-variable]
+   85 | const bool stubStats = stubDict.getOrDefault<bool>("writeStats", stubDictFound);
+      |            ^~~~~~~~~
+./createStubbing.H:155:13: warning: unused variable ‘bkNBins’ [-Wunused-variable]
+  155 | const label bkNBins = max(bkDict.getOrDefault<label>("nBins", 24), label(4));
+      |             ^~~~~~~
+In file included from ./createMeltFields.H:378,
+                 from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createContactLine.H:45:14: warning: unused variable ‘contactFlSolid’ [-Wunused-variable]
+   45 | const scalar contactFlSolid = contactDict.getOrDefault<scalar>("flSolid", 0.20);
+      |              ^~~~~~~~~~~~~~
+./createContactLine.H:47:14: warning: unused variable ‘contactGradMin’ [-Wunused-variable]
+   47 | const scalar contactGradMin = contactDict.getOrDefault<scalar>("gradMin", 0.25);
+      |              ^~~~~~~~~~~~~~
+./createContactLine.H:48:14: warning: unused variable ‘contactForceFactor’ [-Wunused-variable]
+   48 | const scalar contactForceFactor = contactDict.getOrDefault<scalar>("forceFactor", 1.0);
+      |              ^~~~~~~~~~~~~~~~~~
+./createContactLine.H:49:14: warning: unused variable ‘contactZSub’ [-Wunused-variable]
+   49 | const scalar contactZSub = contactDict.getOrDefault<scalar>("zSubstrate", 0.0);
+      |              ^~~~~~~~~~~
+./createContactLine.H:149:8: warning: unused variable ‘contactWireZMax’ [-Wunused-variable]
+  149 | scalar contactWireZMax = -GREAT;
+      |        ^~~~~~~~~~~~~~~
+./createContactLine.H:150:8: warning: unused variable ‘contactWireZMin’ [-Wunused-variable]
+  150 | scalar contactWireZMin = GREAT;
+      |        ^~~~~~~~~~~~~~~
+./createContactLine.H:151:13: warning: unused variable ‘contactInterval’ [-Wunused-variable]
+  151 | const label contactInterval = contactDict.getOrDefault<label>
+      |             ^~~~~~~~~~~~~~~
+In file included from ./createMeltFields.H:379,
+                 from ./createFields.H:59,
+                 from /usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude/postProcess.H:147,
+                 from laserWireDEDFoam.C:107:
+./createPorosity.H:36:14: warning: unused variable ‘porKeyholeDepth’ [-Wunused-variable]
+   36 | const scalar porKeyholeDepth = porosityDict.getOrDefault<scalar>("keyholeDepth", 2e-4);
+      |              ^~~~~~~~~~~~~~~
+./createPorosity.H:38:13: warning: unused variable ‘porMinCells’ [-Wunused-variable]
+   38 | const label porMinCells = porosityDict.getOrDefault<label>("minCells", 1);
+      |             ^~~~~~~~~~~
+./createPorosity.H:39:14: warning: unused variable ‘porZSub’ [-Wunused-variable]
+   39 | const scalar porZSub = porosityDict.getOrDefault<scalar>("zSubstrate", 0.0);
+      |              ^~~~~~~
+./createPorosity.H:40:14: warning: unused variable ‘porTboil’ [-Wunused-variable]
+   40 | const scalar porTboil = porosityDict.getOrDefault<scalar>
+      |              ^~~~~~~~
+./createPorosity.H:45:13: warning: unused variable ‘porInterval’ [-Wunused-variable]
+   45 | const label porInterval = porosityDict.getOrDefault<label>
+      |             ^~~~~~~~~~~
+./createPorosity.H:58:14: warning: unused variable ‘porCavityCos’ [-Wunused-variable]
+   58 | const scalar porCavityCos = std::cos(porCavityHalfAngle);
+      |              ^~~~~~~~~~~~
+g++ -std=c++17 -m64 -pthread -DOPENFOAM=2406 -DWM_DP -DWM_LABEL_SIZE=32 -Wall -Wextra -Wold-style-cast -Wnon-virtual-dtor -Wno-unused-parameter -Wno-invalid-offsetof -Wno-attributes -Wno-unknown-pragmas -O3  -DNoRepository -ftemplate-depth-100  -I. -I/usr/lib/openfoam/openfoam2406/src/phaseSystemModels/twoPhaseInter/incompressibleInterPhaseTransportModel/lnInclude -I/usr/lib/openfoam/openfoam2406/src/phaseSystemModels/twoPhaseInter/VoFphaseIncompressibleTurbulenceModels/lnInclude -I/usr/lib/openfoam/openfoam2406/src/finiteVolume/lnInclude -I/usr/lib/openfoam/openfoam2406/src/meshTools/lnInclude -I/usr/lib/openfoam/openfoam2406/src/sampling/lnInclude -I/usr/lib/openfoam/openfoam2406/src/dynamicFvMesh/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels -I/usr/lib/openfoam/openfoam2406/src/transportModels/incompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/interfaceProperties/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/twoPhaseMixture/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/turbulenceModels/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/incompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/TurbulenceModels/phaseIncompressible/lnInclude -I/usr/lib/openfoam/openfoam2406/src/transportModels/immiscibleIncompressibleTwoPhaseMixture/lnInclude -iquote. -IlnInclude -I/usr/lib/openfoam/openfoam2406/src/OpenFOAM/lnInclude -I/usr/lib/openfoam/openfoam2406/src/OSspecific/POSIX/lnInclude   -fPIC -Xlinker --add-needed -Xlinker --no-as-needed  Make/linux64GccDPInt32Opt/laserWireDEDFoam.o -L/usr/lib/openfoam/openfoam2406/platforms/linux64GccDPInt32Opt/lib \
+    -lfiniteVolume -lfvOptions -lmeshTools -lsampling -ldynamicFvMesh -lincompressibleTransportModels -linterfaceProperties -limmiscibleIncompressibleTwoPhaseMixture -ltwoPhaseProperties -lturbulenceModels -lincompressibleTurbulenceModels -lwaveModels -lVoFphaseTurbulentTransportModels -lincompressibleInterPhaseTransportModels -lOpenFOAM -ldl  \
+     -lm -o /home/asb6102/OpenFOAM/asb6102-v2406/platforms/linux64GccDPInt32Opt/bin/laserWireDEDFoam
+Solver: /home/asb6102/OpenFOAM/asb6102-v2406/platforms/linux64GccDPInt32Opt/bin/laserWireDEDFoam
+Smoke case: coarse 3D, end time 8 ms, 2 rank(s). Not the production track.
+[generate] 3d config=triple wire=316L substrate=316L: P=1850 W in 3 beam(s), A=0.35/0.35, end=0.008 s, v_scan=6.0 mm/s, WFS=30.0 mm/s, d_wire=1.00 mm @ 90 deg (front feed)
+[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):
+    beam1_az55: 700 W, 1/e^2 0.70 mm, aim (-0.80, 1.15, 0.40) mm, plate hit (-0.95, 1.35) mm
+    beam2_az-55: 700 W, 1/e^2 0.70 mm, aim (-0.80, -1.15, 0.40) mm, plate hit (-0.95, -1.35) mm
+    beam3_az180: 450 W, 1/e^2 0.55 mm, aim (0.90, 0.00, 0.30) mm, plate hit (1.02, 0.00) mm
+[generate] mesh 12 x 4 x (3+5) = 384 block cells -> 384 cells, dx=400 um; capillary dt ~ 1.46e-04 s; expected bead area 3.93 mm^2; E_L = 308 J/mm
+[generate] single-track extras: contact-line pinning ON (thetaR 20 / thetaA 90 deg), wire pin ON (thetaR 25 / thetaA 70 deg, frame head), porosity ON, wire cavity ON, wire-cavity seed ON
+[generate] wrote /home/asb6102/laser-wire-ded-project/cases/wire_cavity_smoke
+Log (once the solve starts): tail -f /home/asb6102/laser-wire-ded-project/cases/wire_cavity_smoke/log.laserWireDEDFoam
+Progress lines: grep -E 'Time =|ContactLine:|WireCavity:|Porosity:|PinchOff:|CavityClosure:|OxygenSigma:|End' /home/asb6102/laser-wire-ded-project/cases/wire_cavity_smoke/log.laserWireDEDFoam
+numberOfSubdomains 2;
+n               ( 2 1 1 );
+case: /home/asb6102/laser-wire-ded-project/cases/wire_cavity_smoke
+porosity (last sample):
+  time_s: 8.00000000e-03
+  nPores: 0
+  nLocked: 0
+  nEntrapment: 0
+  nLackOfFusion: 0
+  nKeyhole: 0
+  poreVolume_m3: 0.00000000e+00
+  lockedVolume_m3: 0.00000000e+00
+  metalVolume_m3: 1.42397760e-08
+  volumeFraction: 0.00000000e+00
+  eqDiameterMean_m: 0.00000000e+00
+  eqDiameterMax_m: 0.00000000e+00
+pores at t = None: 0
+contact line (last sample):
+  time_s: 8.00000000e-03
+  nMolten: 14  nPinnedHysteresis: 11  nAdvancing: 0  nReceding: 3  nFrozenSolidification: 0
+  thetaMean_deg: 2.88281349e+01  thetaMin_deg: 1.18411174e+01  thetaMax_deg: 4.21880257e+01
+  lengthPinned_m: 6.48768214e-03  lengthMobile_m: 1.21644040e-03
+  nWire: 5  nWirePinned: 5  nWireAdvancing: 0  nWireReceding: 0
+  zWireMax_m: 1.00000001e-03  zWireMin_m: 6.00000003e-04  thetaMeanWire_deg: 4.72164326e+01
+wire cavity (last sample):
+  time_s: 8.00000000e-03  status: open
+  zContactMax_m: 1.00000001e-03  zContactMin_m: 6.00000003e-04
+  cavityVolume_m3: 1.26282681e-09  open_m3: 1.26282681e-09  closed_m3: 0.00000000e+00
+  depthBelowContact_m: 4.00000002e-04  lengthDownstream_m: 1.45833333e-03
+  centre_m: (7.79400304e-04, 8.56700681e-04, 9.33092782e-04)  nOpenCells: 22  nClosedCells: 0
+ParaView: colour by contactState (1-4 substrate, 5-8 wire), contactSupport (1 substrate, 2 wire), poreMarker, poreType, cavityMarker (1 open, 2 closed).
+wire-smoke check passed (history has a wire contact line and a wire cavity)
+ParaView: open /home/asb6102/laser-wire-ded-project/cases/wire_cavity_smoke/case.foam as a Decomposed Case if NP>1.
+Colour contactState (5-8 = wire line), contactSupport, cavityMarker (1 open, 2 closed).
+SMOKE_EXIT:0

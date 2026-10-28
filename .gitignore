@@ -16,6 +16,7 @@ cases/*/dynamicCode/
 log.*
 *.log
 !validation/*.log
+!results/calibration/taosun03/*.log
 nohup*.out
 *.status
 # --- wmake build output --------------------------------------------------
@@ -42,6 +43,7 @@ local/
 gui/jobs/*
 !gui/jobs/.gitkeep
 *.mp4
+!results/calibration/taosun03/*.mp4
 *.zip
 *.tgz
 *.tar.gz

@@ -43,7 +43,9 @@ Description
       - ray-traced (vertical beam, column march) laser surface heat flux
         deposited at the first metal/gas interface along the beam, with
         natural shadowing by the wire; Gaussian or top-hat profile,
-      - liquid-only CSF surface tension with sigma(T), Marangoni stress,
+      - liquid-only CSF surface tension with sigma(T), or optional
+        Sahoo-Belton sigma(T, a_O) from chamberOxygenPpm, Marangoni stress
+        using the matching dSigma/dT (sign can reverse at high oxygen),
         Clausius-Clapeyron recoil pressure, evaporative / radiative /
         convective free-surface heat loss, optional Boussinesq buoyancy,
       - an advected melt-history marker (fusion zone) and melt-pool / bead
@@ -51,7 +53,17 @@ Description
       - optional rigid-wire stubbing model (meltProperties/stubbing): the
         feed of the solid wire and of the wireInlet stalls while solid,
         never-molten wire rests on solid support; contact / stalled feed /
-        ball / bridge diagnostics in postProcessing/wireTransfer.
+        ball / bridge diagnostics in postProcessing/wireTransfer,
+      - optional contact-line pinning (meltProperties/contactLine, default
+        off): contact-angle hysteresis where the free surface meets solid
+        substrate or, if pinWire is set, the unmelted wire. The window
+        opens to a full pin once the metal at the line solidifies,
+      - optional porosity (meltProperties/porosity, default off): enclosed
+        gas is classified as entrapment, lack-of-fusion or keyhole and,
+        once the metal shell freezes, locked against numerical filling.
+        Counts, sizes and locations go to postProcessing/porosity.
+        wireCavity also reports the open or closed gas cavity behind the
+        wire (volume, depth, contact-line height),
 
     Modifications (C) 2026 laser_wire_ded project, GPL-3.0-or-later.
 
@@ -59,6 +71,8 @@ Description
 
 #include "fvCFD.H"
 #include "dynamicFvMesh.H"
+#include "syncTools.H"
+#include "processorPolyPatch.H"
 #include "CMULES.H"
 #include "EulerDdtScheme.H"
 #include "localEulerDdtScheme.H"
@@ -182,12 +196,18 @@ int main(int argc, char *argv[])
 
             mixture.correct();
 
+            bool trailDragDoLog = false;
+            #include "trailDrag.H"
+            mixture.correct();
+
             #include "cWireEqn.H"
 
             // --- Energy equation with melting / solidification
             #include "TEqn.H"
             #include "updateSurfaceTension.H"
             #include "recoilPressure.H"
+            #include "contactLine.H"
+            #include "porosity.H"
 
             if (pimple.frozenFlow())
             {
@@ -206,6 +226,9 @@ int main(int argc, char *argv[])
             {
                 turbulence->correct();
             }
+
+            trailDragDoLog = true;
+            #include "trailDrag.H"
         }
 
         #include "meltHistory.H"

@@ -375,5 +375,8 @@ boolList inWireZone(mesh.nCells(), false);
 
 // --- Surface tension (liquid-only CSF, sigma(T), Marangoni, capillary dt)
 #include "createSurfaceTension.H"
+#include "createContactLine.H"
+#include "createPorosity.H"
+#include "createOxideSkin.H"
 
 mesh.setFluxRequired(T.name());

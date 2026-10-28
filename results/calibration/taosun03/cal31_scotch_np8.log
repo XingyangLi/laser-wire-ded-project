@@ -1,0 +1,6 @@
+acquired 8 MPI slots (cap 32)
+endTime         0.00025;
+startFrom       startTime;
+writeInterval   0.00025;
+SCOTCH_DONE np=8
+released 8 MPI slots; 19 still held

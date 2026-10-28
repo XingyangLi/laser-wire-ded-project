@@ -1,0 +1,2 @@
+skincold_slit_demo.mp4  201 frames  20 fps  10.05 s  laser off, recoil off  depth 0.825 mm  width 0.060 mm at 20 ms
+skinfull_slit_demo.mp4  201 frames  20 fps  10.05 s  laser on, recoil on  depth 0.625 mm  width 0.060 mm at 20 ms
