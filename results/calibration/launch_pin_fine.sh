@@ -41,8 +41,9 @@ case="$ROOT/cases/wire_cavity_${TAG}"
 echo "=== fine-neck pin ${TAG}: feed ${FEED}, end ${END}, np ${NP} ==="
 rm -rf "$case"
 mkdir -p "$case"
-cp -a "$SRC/constant" "$SRC/system" "$case/"
-# Mesh only for the refine passes. Fields are mapped afterwards.
+cp -a "$SRC/constant" "$SRC/system" "$SRC/0.8" "$case/"
+# Surface fluxes are rebuilt from U. refineMesh maps the volume fields.
+rm -f "$case/0.8/phi" "$case/0.8/alphaPhi0.metal"
 cd "$case"
 
 write_topo() {
@@ -96,14 +97,11 @@ write_topo 2  4.20e-4  8.50e-4    -1.00e-4  3.00e-4   4.50e-4  1.550e-3
 for i in 0 1 2; do
     topoSet -dict "system/topoSetDict.neck${i}" > "log.topoSet.neck${i}" 2>&1
     refineMesh -overwrite -dict system/refineMeshDict.neck > "log.refineMesh.neck${i}" 2>&1
+    python3 "$ROOT/results/calibration/remap_refined_fields.py" 0.8
     echo "refine pass ${i} done"
 done
 checkMesh > log.checkMesh 2>&1 || true
-grep -E "cells:|Mesh OK|Failed" log.checkMesh || true
-
-mapFields -sourceTime 0.8 -mapMethod cellPointInterpolate "$SRC" \
-    > log.mapFields 2>&1
-echo "mapFields done"
+grep -E "cells:|Mesh OK|Failed|Min volume" log.checkMesh || true
 ls 0.8 | head
 
 python3 "$ROOT/results/calibration/cut_wire_wall.py" --case "$case" --write-dict
