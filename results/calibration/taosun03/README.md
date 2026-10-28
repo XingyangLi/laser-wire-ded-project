@@ -17,6 +17,8 @@ Half of the CPU is already taken by another simulation. This work uses at most *
 
 RAM and the GPU are not capped. Launch scripts take slots through `results/calibration/taosun03/lib.sh` and refuse a rank count above 32. Nothing was already running over that limit, so nothing was restarted.
 
+A feed-by-ppm matrix is separate jobs of 4 ranks, not one wide job and not one case after another. Each `mpirun` is pinned to its own physical cores in 0–31 (`nice -n 10`). Eight jobs fill the 32 cores; a ninth waits for a free set. One case that is already wrong in the first millisecond (fatal, `alpha` above 1.05, a collapsed step, a violent neck, or a gas column wider than 0.15 mm) is stopped on its own. The others keep running. A centre-plane width of 0 is not that stop.
+
 OpenFOAM.com v2406 is installed (`openfoam2406-dev` 2406.260127-2). `laserWireDEDFoam` is built with `WM_NCOMPPROCS=32`. The solver is one translation unit, so that build is a single `g++`.
 
 Smoke (`./scripts/run_wire_cavity.sh --smoke --np 2`, `nice -n 10`) passed. The 8 ms planted-wake case finished in about 1 s of solver clock time. At the end the wire line had 5 cells, all pinned, and the cavity report was open. `quantify_pores.py --expect-wire-smoke` passed.
