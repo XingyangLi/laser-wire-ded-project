@@ -178,6 +178,22 @@
                     (1 - wTrail)*contactThetaAwire + wTrail*contactThetaAtrail;
                 if (thetaAwire < thetaRwire) thetaAwire = thetaRwire;
             }
+            // Oxide coverage blends the wire window toward the trailing
+            // (oxide) window. Coverage 0 leaves the clean-wire angles.
+            // The Young force and the hysteresis sink are unchanged.
+            if (oxideSurface && useWire)
+            {
+                const scalar ox =
+                    max(min(oxideCoverage[celli], scalar(1)), scalar(0));
+                if (ox > 1e-4)
+                {
+                    thetaRwire =
+                        (1 - ox)*thetaRwire + ox*contactThetaRtrail;
+                    thetaAwire =
+                        (1 - ox)*thetaAwire + ox*contactThetaAtrail;
+                    if (thetaAwire < thetaRwire) thetaAwire = thetaRwire;
+                }
+            }
             const scalar thetaR0 = useWire ? thetaRwire : contactThetaR0;
             const scalar thetaA0 = useWire ? thetaAwire : contactThetaA0;
             const scalar thetaR = (1.0 - sPin)*thetaR0;
