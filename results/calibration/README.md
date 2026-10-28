@@ -489,6 +489,8 @@ The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beam
 
 The half-domain geometry is the mesh that was solved. It is not mirrored across y = 0. Temperature on the metal surface, the cold wire, the substrate and the bead are in `cal95b_3d_trailing.png`, `cal95b_3d_front.png` and `cal95b_3d_top.png`. The cyan rings are the 60° and 180° spots (247 W each); the −60° beam is folded onto the 60° spot by the symmetry plane, which is labelled. `cal95b_3d.mp4` is the same trailing view from 0 to 0.8 s (1280×720, 12.5 s).
 
+`cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall. Through the 4 ms field the fine neck (z 0.45–1.55 mm) still has metal on the wall: width 0, depth 0. A few coarse gas cells sit at the crest, above the refined band. The solver was still running when the video was made.
+
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
 ## Hard pin on the equal-power bead
