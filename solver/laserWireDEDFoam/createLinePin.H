@@ -1,14 +1,13 @@
 // Imposed trailing contact line. Off unless linePin { enabled true; }.
 //
 // The line is a material point of the wire: its height is the initial
-// wetted top plus the feed displacement. In a shell one to three cells
-// thick on the trailing face, alpha is restored toward gas above that
-// height and metal below it, and the velocity is restored toward the feed.
-// Liquid moved out of a shell cell is given to the next cell outward, so
-// the coating is displaced rather than deleted. That neighbouring cell is
-// then restored toward metal beside the gas shell. Cells beyond it are
-// left alone, so the pool surface past the gap is free.
-// The shell is the imposed pin. The gap outside it is the free surface.
+// wetted top plus the feed displacement. At the line the shell is narrow
+// and fully imposed. If thicknessTop is set, the gas bias widens toward
+// the crest and the hold fades, and the cell outside the bias is not
+// forced back to metal. That outer meniscus is free: the wedge past the
+// bias is generated, not painted. Liquid moved out of a shell cell is
+// given to the next cell outward, so the coating is displaced rather
+// than deleted.
 //
 // ppm sets the hold. s = min(ppm/ppmRef, 1) is the fraction of the error
 // removed after every alpha solve, and the fraction of Kpin. At ppmRef the
@@ -21,6 +20,11 @@ const scalar linePinNCells = linePinDict.getOrDefault<scalar>("nCells", 2);
 // Fixed radial thickness of the imposed gas shell. Negative means nCells
 // times the local cell size, which on a coarse cell is a thick shell.
 const scalar linePinThickness = linePinDict.getOrDefault<scalar>("thickness", -1);
+// Wider gas bias at the crest. Negative keeps a constant thickness.
+const scalar linePinThicknessTop = linePinDict.getOrDefault<scalar>("thicknessTop", -1);
+// Full hold within this height above the line. Above it the hold fades.
+const scalar linePinBand = linePinDict.getOrDefault<scalar>("lineBand", 8e-5);
+const scalar linePinFade = linePinDict.getOrDefault<scalar>("holdFade", 0.75);
 const scalar linePinK = linePinDict.getOrDefault<scalar>("Kpin", 1e12);
 // Negative until the first step measures the wetted top.
 scalar linePinZ0 = -1;
@@ -33,6 +37,11 @@ if (linePinEnabled)
     if (linePinThickness > 0)
     {
         Info<< ", thickness " << linePinThickness*1e3 << " mm (imposed)";
+    }
+    if (linePinThicknessTop > linePinThickness && linePinThickness > 0)
+    {
+        Info<< ", thicknessTop " << linePinThicknessTop*1e3
+            << " mm (fading bias, meniscus free outside)";
     }
     Info<< nl;
 }

@@ -58,6 +58,22 @@
         );
         const scalar Khold = sHold*linePinK;
         scalar nGas = 0, nMet = 0;
+        const scalar spanZ = max(linePinZ0 - zLine, scalar(1e-4));
+        // Graded bias: narrow and fully held at the line, wider and softer
+        // toward the crest. Cells outside the bias are not painted.
+        auto thickAt = [&](const scalar z, const scalar hCell) -> scalar
+        {
+            const scalar base = shellThick(hCell);
+            if (linePinThicknessTop <= base || z <= zLine) return base;
+            const scalar s = min(max((z - zLine)/spanZ, scalar(0)), scalar(1));
+            return base + s*(linePinThicknessTop - base);
+        };
+        auto fadeAt = [&](const scalar z) -> scalar
+        {
+            if (linePinThicknessTop <= 0 || z <= zLine + linePinBand) return scalar(1);
+            const scalar s = min(max((z - zLine)/spanZ, scalar(0)), scalar(1));
+            return max(scalar(1) - linePinFade*s, scalar(0.2));
+        };
         const labelListList& cellCells = mesh.cellCells();
 
         // Radial neighbour, further from the wire, on the trailing side.
@@ -93,8 +109,8 @@
             if (rad.x() <= 0) continue;
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
-            if (r <= wireRadius || r > wireRadius + shellThick(h)) continue;
             const scalar z = C[celli].z();
+            if (r <= wireRadius || r > wireRadius + thickAt(z, h)) continue;
             if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;
             if (z < 0.15e-3) continue;
             inShell[celli] = true;
@@ -113,9 +129,10 @@
             // so the attachment stays on the wire. Outside this z window the
             // pool is untouched.
             const scalar target = (z > zLine) ? scalar(0) : scalar(1);
-            if (fac > 0)
+            const scalar facLocal = fac*fadeAt(z);
+            if (facLocal > 0)
             {
-                const scalar dAlpha = fac*(target - alpha[celli]);
+                const scalar dAlpha = facLocal*(target - alpha[celli]);
                 alpha[celli] = min(max(alpha[celli] + dAlpha, scalar(0)), scalar(1));
                 // give > 0: liquid left the shell and must land outside it.
                 scalar give = -dAlpha*Vc[celli];
@@ -147,9 +164,11 @@
                         break;
                     }
                 }
-                Uc[celli] += fac*(wireFeedVelocity - Uc[celli]);
+                Uc[celli] += facLocal*(wireFeedVelocity - Uc[celli]);
             }
-            if (Khold > 0)
+            // The stiff hold is the line itself. Above the band the meniscus
+            // is only biased, so it can open wider than the imposed taper.
+            if (Khold > 0 && z <= zLine + linePinBand)
             {
                 Kcontact[celli] = max(Kcontact[celli], Khold);
                 Ucontact[celli] = wireFeedVelocity;
@@ -162,7 +181,10 @@
         // displaced off the wire. Selected by radius, not by cellCells,
         // because the neck is split across processors. Cells beyond this
         // one cell are free. ppm uses the same hold.
-        if (fac > 0)
+        // A graded shell does not clamp the outer cell to metal. That clamp
+        // is what kept cal109 a rectangle. The free surface sits where the
+        // meniscus relaxes.
+        if (fac > 0 && linePinThicknessTop <= 0)
         {
             forAll(alpha, celli)
             {

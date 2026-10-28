@@ -65,13 +65,29 @@ def crest_gap(x, y, z, alpha):
             widths.append(w)
             j += 1
         depth = edges[j - 1] + 0.02 - edges[i]
-        spans.append((depth, float(np.median(widths)), float(edges[i]), float(edges[j - 1] + 0.02)))
+        zlo = float(edges[i])
+        zhi = float(edges[j - 1] + 0.02)
+        # Lowest and highest 0.06 mm of this run: the wedge, not one median.
+        lo = [w for w, zz in zip(widths, edges[i:j]) if zz < zlo + 0.06]
+        hi = [w for w, zz in zip(widths, edges[i:j]) if zz >= zhi - 0.06]
+        spans.append((
+            depth,
+            float(np.median(widths)),
+            float(np.median(lo or widths)),
+            float(np.median(hi or widths)),
+            zlo,
+            zhi,
+        ))
         i = j
     if not spans:
         return None
     spans.sort(reverse=True)
-    depth, width, zlo, zhi = spans[0]
-    return dict(depth_mm=depth, width_mm=width, z_lo_mm=zlo, z_hi_mm=zhi, open=zhi > 1.70)
+    depth, width, width_lo, width_hi, zlo, zhi = spans[0]
+    return dict(
+        depth_mm=depth, width_mm=width,
+        width_bottom_mm=width_lo, width_top_mm=width_hi,
+        z_lo_mm=zlo, z_hi_mm=zhi, open=True,
+    )
 
 
 def neck_row(x, y, z, alpha):
@@ -116,6 +132,7 @@ def figure(path, x, z, alpha, title):
     axes[0].set_title("Radiograph, neck", fontsize=9)
     axes[0].axis("off")
     draw_neck(axes[1], x, z, alpha, title)
+    axes[1].set_ylim(0.90, 2.05)
     fig.suptitle(
         "Center plane. Dark is metal, white is gas.\n"
         "Green dash: trailing face. The shell on the wall is imposed; the bead outside it is free.",
@@ -167,8 +184,9 @@ def main():
         gap_s = "no crest gap"
         if gap is not None:
             gap_s = (
-                f"crest gap width {gap['width_mm']:.3f} mm "
-                f"depth {gap['depth_mm']:.3f} mm "
+                f"bottom {gap['width_bottom_mm']:.3f} mm, "
+                f"top {gap['width_top_mm']:.3f} mm, "
+                f"depth {gap['depth_mm']:.3f} mm, "
                 f"z {gap['z_lo_mm']:.2f}–{gap['z_hi_mm']:.2f}"
             )
         print(
@@ -184,7 +202,8 @@ def main():
         else:
             title = (
                 f"{args.tag}  t={want} s\n"
-                f"imposed shell: width {gap['width_mm']:.3f} mm, "
+                f"bottom {gap['width_bottom_mm']:.3f} mm, "
+                f"top {gap['width_top_mm']:.3f} mm, "
                 f"depth {gap['depth_mm']:.3f} mm"
             )
         # The neck plot wants the symmetry-plane sample, trailing +x.
