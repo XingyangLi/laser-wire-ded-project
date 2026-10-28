@@ -161,10 +161,10 @@
     {
         // Numerical cap. A one-cell interface on the 19 um neck can make
         // snGrad(alpha)*kappa large enough to throw the velocity solver.
-        // 10 m/s per 1 us is well above the capillary speed of a sane film
-        // and does not follow the current time step, so the cap does not
-        // loosen when deltaT shrinks. Alloy sigma is unchanged.
-        const scalar fMax = rho1.value()*10.0/1.0e-6;
+        // 2 m/s per 1 us is above the capillary speed of a sane film and
+        // does not follow the current time step, so the cap does not loosen
+        // when deltaT shrinks. Alloy sigma is unchanged.
+        const scalar fMax = rho1.value()*2.0/1.0e-6;
         const dimensionedScalar fMaxD("fCap", stForcef.dimensions(), fMax);
         const dimensionedScalar fMinD("fCap", stForcef.dimensions(), -fMax);
         stForcef = min(max(stForcef, fMinD), fMaxD);

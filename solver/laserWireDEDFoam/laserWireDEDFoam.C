@@ -224,6 +224,8 @@ int main(int argc, char *argv[])
                 #include "pEqn.H"
             }
 
+            #include "neckVelocity.H"
+
             if (pimple.turbCorr())
             {
                 turbulence->correct();

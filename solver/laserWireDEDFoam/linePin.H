@@ -28,6 +28,15 @@
 
         if (linePinZ0 < 0)
         {
+            if (linePinZ0User > 0)
+            {
+                linePinZ0 = linePinZ0User;
+                Info<< "LinePin: imposed mouth height " << linePinZ0*1e3
+                    << " mm" << nl;
+            }
+        }
+        if (linePinZ0 < 0)
+        {
             scalar zMax = -GREAT;
             forAll(alpha, celli)
             {
@@ -78,7 +87,17 @@
             return best;
         };
 
+        // Wedge: throat of width wBottom down to the moving line, opening
+        // to wTop at the original wetted surface. The slope is imposed.
+        // Cells outside it, and cells under the slope, stay free so the
+        // pool surface can sit on that slope. The old rectangular shell
+        // is used when wTop is not set.
+        const bool wedgeOn =
+            linePinWTop > linePinWBottom && linePinWBottom > 0;
+        const scalar wedgeDepth = max(linePinZ0 - zLine, SMALL);
+
         boolList inShell(mesh.nCells(), false);
+        boolList inThroat(mesh.nCells(), false);
         DynamicList<label> shellCells(64);
         forAll(alpha, celli)
         {
@@ -88,11 +107,29 @@
             if (rad.x() <= 0) continue;
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
-            if (r <= wireRadius || r > wireRadius + linePinNCells*h) continue;
+            const scalar gap = r - wireRadius;
+            const scalar rMax = wedgeOn ? linePinWTop : linePinNCells*h;
+            if (gap <= 0 || gap > rMax) continue;
             const scalar z = C[celli].z();
             if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;
             if (z < 0.15e-3) continue;
+
+            scalar zCut = zLine;
+            bool underIsFree = false;
+            if (wedgeOn && gap > linePinWBottom)
+            {
+                const scalar f =
+                    (gap - linePinWBottom)
+                   /max(linePinWTop - linePinWBottom, SMALL);
+                zCut = zLine + wedgeDepth*min(max(f, scalar(0)), scalar(1));
+                underIsFree = true;
+            }
+            // Under the slope the metal is not painted back on. That paint
+            // was a one-cell film, and it is what drove the speed up.
+            if (underIsFree && z <= zCut) continue;
+
             inShell[celli] = true;
+            inThroat[celli] = !underIsFree;
             shellCells.append(celli);
         }
 
@@ -104,10 +141,17 @@
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
             const scalar z = C[celli].z();
-            // Above the line the target is gas. Below it the target is metal,
-            // so the attachment stays on the wire. Outside this z window the
-            // pool is untouched.
-            const scalar target = (z > zLine) ? scalar(0) : scalar(1);
+            // Throat: gas above the moving line, metal below it so the
+            // attachment stays on the wire. Mouth: gas only, above the slope.
+            scalar zCut = zLine;
+            if (wedgeOn && !inThroat[celli])
+            {
+                const scalar f =
+                    (r - wireRadius - linePinWBottom)
+                   /max(linePinWTop - linePinWBottom, SMALL);
+                zCut = zLine + wedgeDepth*min(max(f, scalar(0)), scalar(1));
+            }
+            const scalar target = (z > zCut) ? scalar(0) : scalar(1);
             if (fac > 0)
             {
                 scalar dAlpha = fac*(target - alpha[celli]);
@@ -145,9 +189,13 @@
                         break;
                     }
                 }
-                Uc[celli] += fac*(wireFeedVelocity - Uc[celli]);
+                // Velocity lock only in the throat. The mouth is free.
+                if (inThroat[celli])
+                {
+                    Uc[celli] += fac*(wireFeedVelocity - Uc[celli]);
+                }
             }
-            if (Khold > 0)
+            if (Khold > 0 && inThroat[celli])
             {
                 Kcontact[celli] = max(Kcontact[celli], Khold);
                 Ucontact[celli] = wireFeedVelocity;
@@ -156,27 +204,25 @@
             else nMet += 1;
         }
 
-        // The cell just outside the gas shell keeps the liquid that was
-        // displaced off the wire. Selected by radius, not by cellCells,
-        // because the neck is split across processors. Cells beyond this
-        // one cell are free. ppm uses the same hold.
+        // The cell just outside the slope is held toward metal. That keeps
+        // the bead beside the gap so the free surface cannot fall onto the
+        // wire. The old vertical one-cell film did this and then ran the
+        // Courant number away; the speed ceiling now stops that, and the
+        // neighbour follows the slope instead of a constant-width channel.
         if (fac > 0)
         {
-            forAll(alpha, celli)
+            for (const label celli : shellCells)
             {
-                if (inShell[celli]) continue;
+                if (alpha[celli] > 0.5) continue;
                 const vector d = C[celli] - wireOrigin;
-                const scalar sAx = d & wireUp;
-                const vector rad = d - sAx*wireUp;
-                if (rad.x() <= 0) continue;
-                const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
+                const vector rad = d - (d & wireUp)*wireUp;
                 const scalar r = mag(rad);
-                const scalar rShell = wireRadius + linePinNCells*h;
-                if (r <= rShell || r > rShell + h) continue;
+                const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
                 const scalar z = C[celli].z();
-                if (z <= zLine || z > linePinZ0 + 0.5*h) continue;
-                const scalar dOut = min(fac*(scalar(1) - alpha[celli]), scalar(0.2));
-                alpha[celli] = min(max(alpha[celli] + dOut, scalar(0)), scalar(1));
+                const label nei = outerCell(celli, r, z, h);
+                if (nei < 0 || inShell[nei]) continue;
+                const scalar dOut = min(fac*(scalar(1) - alpha[nei]), scalar(0.2));
+                alpha[nei] = min(max(alpha[nei] + dOut, scalar(0)), scalar(1));
             }
         }
 
@@ -199,7 +245,8 @@
                 << "  gas " << nGas
                 << "  metal " << nMet
                 << "  feed " << wireFeedVelocity.z()
-                << "  (pin imposed, pool outside the shell is free)"
+                << "  wedge " << (wedgeOn ? 1 : 0)
+                << "  (throat and slope imposed, pool under the slope is free)"
                 << nl;
         }
     }
