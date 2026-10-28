@@ -491,7 +491,18 @@ The half-domain geometry is the mesh that was solved. It is not mirrored across 
 
 `cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
 
-cal105 finished 6 ms. The fine neck stays metal on the wall at 0, 2, 4 and 6 ms: width 0, depth 0. The first metal cell centre is 0.009 mm outside the 0.50 mm face. Nine coarse gas cells sit at the crest from 4 ms through 6 ms. Metal-cell count goes from 32711 to 32610. There is no gas film on the plate. deltaT ends at 1.14×10⁻⁶ s (the minimum, 1.2×10⁻⁷ s, is the first step). zLine is 1.653 mm, which is z0 1.797 mm minus the 0.144 mm of feed. Figure: `cal105_neck.png`, beside the radiograph. The target film (0.03–0.08 mm wide, at least 0.25 mm deep, open, steady for 4 ms) does not appear.
+cal105 finished 6 ms with the 19 µm band on the lower neck (z 0.45–1.55 mm). The line itself sits at the crest, z0 = 1.80 mm, and in 6 ms it only falls to 1.65 mm, so that band never contains the shell. The crest gap there is one coarse cell. Figure: `cal105_neck.png`.
+
+cal109 moves the 19 µm band onto the crest (z 1.25–1.98 mm) and sets an imposed shell thickness of 0.0375 mm (two fine cells). sigma stays the alloy value, 1.75 N/m. The shell is imposed: above the feed-following line, alpha in that thickness is restored to gas and the liquid is passed outward. The bead outside the shell is free. z0 is the highest liquid cell in the shell, 1.826 mm, not the cold wire.
+
+| t | width | depth | z |
+| --- | --- | --- | --- |
+| 2 ms | 0.047 mm | 0.060 mm | 1.78–1.84 |
+| 6 ms | 0.047 mm | 0.200 mm | 1.68–1.88 |
+| 10 ms | 0.047 mm | 0.260 mm | 1.58–1.84 |
+| 14 ms | 0.047 mm | 0.340 mm | 1.50–1.84 |
+
+Width stays 0.047 mm from 2 ms through 14 ms. Depth passes 0.25 mm at 10 ms and the gap stays open. Over 10–14 ms the depth moves 0.08 mm, which is the imposed feed, and the width does not move. The bead is still against the wall below the line. No gas film on the plate. deltaT ends at 9.6×10⁻⁷ s. zLine at 14 ms is 1.490 mm, equal to 1.826 mm minus 0.336 mm of feed. Figure: `cal109_neck.png`.
 
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
