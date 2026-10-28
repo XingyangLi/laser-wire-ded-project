@@ -516,6 +516,12 @@ cal111–cal113 use the same cal109 mesh and a linear imposed offset: narrow at 
 
 At 16 ms the measured fragment is about 0.10 mm wide at both ends and under 0.1 mm deep. The crest is not intact. deltaT stays near 10⁻⁶ s and there is no gas film on the plate. Figure: `cal112_neck.png`.
 
+## Hysteresis on the wire wall
+
+cal114 turns the gas shell off. The wire wall uses contact-angle hysteresis, and the feed velocity is the partial-slip reference. While the local angle is inside the window the line is pinned to the wire; outside it, the line can slide. The window is a model assumption in `wire_hysteresis.cfg`, not a measured isotherm. At 300 ppm the row is receding 20°, advancing 155°, Kpin 1e12. Sigma stays 1.75 N/m. The 19 µm crest mesh and the cal95b bead are the cal109 restart. Nothing is painted into alpha.
+
+The run was stopped at 6.7 ms. The liquid contact started at 1.826 mm, dropped to 1.577 mm, and stayed there. Over the same time the wire feed is 0.16 mm, so the line did not travel with the wire. The angle stayed near 55–72°, inside the window, and almost every contact face was classified as pinned rather than sliding. On the centre plane the wall cell is still metal. The crest free surface is a short round-off, about 0.08 mm wide and 0.06 mm deep, the same at the top and the bottom. Metal cells go from 22431 to 21314. There is no gas film on the plate. deltaT stays near 10⁻⁶ s. Figure: `cal114_neck.png`. No slit formed, so the 50/100 ppm and 18/28 mm/s cases were not started.
+
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
 
 ## Hard pin on the equal-power bead
