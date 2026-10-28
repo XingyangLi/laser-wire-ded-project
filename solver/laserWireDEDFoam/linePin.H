@@ -38,7 +38,12 @@
                 if (rad.x() <= 0) continue;
                 const scalar r = mag(rad);
                 if (r <= wireRadius || r > wireRadius + shellThick(h)) continue;
-                if (alpha[celli] > 0.5) zMax = max(zMax, C[celli].z());
+                // The solid wire above the pool is alpha 1 and cold. The crest
+                // is the highest liquid metal in the shell, not that column.
+                if (alpha[celli] > 0.5 && liquidFraction[celli] > 0.5)
+                {
+                    zMax = max(zMax, C[celli].z());
+                }
             }
             reduce(zMax, maxOp<scalar>());
             if (zMax < 0.2e-3) zMax = 1.20e-3;
