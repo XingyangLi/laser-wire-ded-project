@@ -487,15 +487,11 @@ Consequences: the material and bead travel through the mesh, so their shape is c
 The ambient gas also moves at v_scan, which is physically consistent: the gas is at rest relative to the part.
 
 ### Laser (ray-traced surface heat flux)
-The beam is vertical (−z). Its profile is Gaussian `I = 2P/(πw²) exp(−2r²/w²)` (w = 1/e² radius) or top-hat.
-Every vertical column of cells is a ray bundle carrying `P_col = I(x,y)·A_col`. Marching down the column,
-energy is absorbed where the running maximum of the metal fraction increases:
-`dE = A_abs · P_col · (α_cell − max α above)⁺`. So the energy goes **into the first metal surface the beam
-hits**, whatever its shape: wire, droplet, pool, or bead. Anything below is **shadowed**, including the
-substrate under the wire. `--no-shadowing` lets the beam pass through the solid wire.
-This is the same idea as FLOW-3D's single-reflection ray tracing with constant absorptivity.
-It needs a structured blockMesh mesh and a decomposition without cuts in z (`simple`, n = (nx ny 1)),
-and the generator ensures both. Incident and absorbed power are logged every step for a power balance check.
+Each beam is a bundle of parallel rays in the plane normal to its axis through the focus. The profile is Gaussian `I = 2P/(πw²) exp(−2r²/w²)` (w = 1/e² radius), truncated at 2w and renormalised, or top-hat. Marching down a ray, the first cell with `alpha >= alphaHit` absorbs `A · P_ray`. Metal behind that point is shadowed, so the wire can shade the pool and the pool can shade the plate. `--no-shadowing` lets the beam pass through the solid wire.
+
+`laser/trackSurface` (on for `--laser-config triple`) sets each focus height to the free-surface height at that beam's aim: the height where a vertical column first reaches `alphaHit`. The rays are rebuilt when the height moves by more than about a quarter of a cell. The spot centre stays on the substrate at the start and on the bead once metal has piled up at the aim. A negative inclination points the ray toward the wire as it descends, so the beam arrives from outside the wire. The dictionary focus z is the starting height and the fallback when the aim is off the mesh. A Rayleigh length is measured from the focus, so with tracking the waist is the spot on the surface.
+
+The mesh is a structured blockMesh with a decomposition that does not cut columns in z (`simple`, n = (nx ny 1)). Incident and absorbed power are logged every step.
 
 ### Physics included
 | Phenomenon | Implementation |
@@ -562,7 +558,7 @@ lateral flow, so the pool is hotter and longer than in 3D. Use it for trends and
 |---|---|---|
 | Free surface | TruVOF, gas as void (pressure/thermal BC) | Two-phase VOF (MULES), argon resolved |
 | Melting/solidification | enthalpy, solid fraction, drag | same (enthalpy-porosity, Carman–Kozeny) |
-| Laser | ray tracing with multiple reflections, Fresnel absorption | single-hit vertical ray march, constant absorptivity (no Fresnel, no multiple reflections, no inclined beam) |
+| Laser | ray tracing with multiple reflections, Fresnel absorption | single-hit inclined ray march, constant absorptivity (no Fresnel, no multiple reflections); focal plane follows the free surface when `trackSurface` is on |
 | Surface tension, Marangoni | yes | yes (σ(T), liquid-only CSF) |
 | Recoil, evaporation | yes (incl. evaporative mass loss) | recoil + evaporative cooling (no mass loss) |
 | Wire feeding | moving solid component / mass source | wire inflow patch + Carman–Kozeny feed velocity |
@@ -671,7 +667,7 @@ As the metal at the line freezes, the window opens and the target velocity becom
 
 The wire cavity is not required to be a closed pore. After the atmosphere flood, gas that touches the unmelted wire, lies below `zWireMax`, and sits in the trailing sector (default half-angle 110° about +x, out to `cavityOuter`) is the wake. If every cell of that component is enclosed, the status is closed; if any cell still reaches the atmosphere, it is open; both at once is mixed. Open gas is not locked. Volume, depth below the contact line, and the downstream extent are written to `postProcessing/wireCavity/wireCavity.dat`. `cavityMarker` is 1 (open) or 2 (closed). Half-domain volumes are not mirrored. The report needs a wire contact line, so `--wire-cavity` is tied to `--pin-wire`.
 
-`--laser-config triple` places three beams from lists (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). The defaults are two beams in front of the wire and one behind, aimed off the axis so the front spots heat the dome and the rear spot heats the wake. The Gao et al. configs are unchanged unless those lists are passed. See README section "Running on a workstation".
+`--laser-config triple` places three beams 120° apart from lists (`--beam-azimuths`, `--beam-inclinations`, `--beam-powers`, `--beam-radii-each`, `--beam-aim-radii`, `--beam-aim-heights`). The defaults are two beams in front of the wire and one behind, aimed outside the wire so the bright core heats the substrate and the inner shoulder meets the wire tip. `trackSurface` keeps each focus on the free surface at that aim, including the raised bead behind the wire. The Gao et al. configs are unchanged unless those lists are passed. See README section "Running on a workstation".
 
 ### Oxygen-dependent surface tension and contact angle
 

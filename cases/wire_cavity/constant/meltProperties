@@ -135,14 +135,15 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
     absorptivity    0.35;
     beams
     (
-        beam1_az55 { power 700; focus (-0.00080300701 0.0011468129 0.0004); direction (-0.3039492 0.43408445 -0.8480481); radius 0.0007; profile gaussian; }
-        beam2_az-55 { power 700; focus (-0.00080300701 -0.0011468129 0.0004); direction (-0.3039492 -0.43408445 -0.8480481); radius 0.0007; profile gaussian; }
-        beam3_az180 { power 450; focus (0.0009 1.1021821e-19 0.0003); direction (0.37460659 4.5876077e-17 -0.92718385); radius 0.00055; profile gaussian; }
+        beam1_az60 { power 700; focus (-0.000525 0.00090932667 0); direction (0.26495963 -0.45892354 -0.8480481); radius 0.0007; profile gaussian; }
+        beam2_az-60 { power 700; focus (-0.000525 -0.00090932667 0); direction (0.26495963 0.45892354 -0.8480481); radius 0.0007; profile gaussian; }
+        beam3_az180 { power 450; focus (0.0009 1.1021821e-19 0); direction (-0.37460659 -4.5876077e-17 -0.92718385); radius 0.00055; profile gaussian; }
     );
     symmetryY       true;   // rays folded at the y = 0 symmetry plane
     raySpacingFactor 0.5;
     rayStepFactor   0.33;
     alphaHit        0.5;
+    trackSurface    true;   // focus z follows the free surface at each aim
     tStart          0;
     tRamp           0.002;
     shadowing       true;
@@ -181,7 +182,7 @@ contactLine   // triple-line pinning (postProcessing/contactLine)
     flSolid         0.20;    // solid support: metal below this
     Kpin            1e7;     // kg/m3/s
     gradMin         0.25;    // |grad alpha| * dx above this is an interface cell
-    forceFactor     1;       // scale of the Young force outside the window
+    forceFactor     1;   // scale of the Young force outside the window
     zSubstrate      0;
     interval        10;
 }

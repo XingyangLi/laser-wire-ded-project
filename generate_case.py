@@ -92,10 +92,12 @@ def build_parser():
     a("--beam-azimuths", default=None,
       help="comma list of beam azimuths [deg] from the travel direction "
            "(0 = in front, -x; 180 = behind the wire, +x). "
-           "triple default: 55,-55,180 (two in front, one behind)")
+           "triple default: 60,-60,180 (120 deg apart; two in front, one behind)")
     a("--beam-inclinations", default=None,
       help="comma list of beam inclinations from vertical [deg], one value or one per beam. "
-           "triple default: 32,32,22. --beam-angle is the shared paper-head angle")
+           "Negative: the ray travels toward the wire as it descends, so the beam "
+           "arrives from outside and the aim is the spot centre. "
+           "triple default: -32,-32,-22. --beam-angle is the shared paper-head angle")
     a("--beam-powers", default=None,
       help="comma list of beam powers [W]. triple default: 700,700,450 "
            "(scaled to --power when --power is set and this is omitted)")
@@ -105,10 +107,17 @@ def build_parser():
     a("--beam-aim-radii", default=None,
       help="comma list: horizontal distance [m] from the wire axis to each beam axis "
            "at the aim height. 0 = the beam crosses the wire axis. "
-           "triple default: 1.4e-3,1.4e-3,0.9e-3")
+           "triple default: 1.05e-3,1.05e-3,0.9e-3 "
+           "(outside a 0.5 mm wire; the inner 1/e^2 edge still meets the wire)")
     a("--beam-aim-heights", default=None,
-      help="comma list: height [m] above the substrate where each beam axis is aimed. "
-           "triple default: 0.4e-3,0.4e-3,0.3e-3. The axis continues to the plate")
+      help="comma list: initial focus height [m] above the substrate. "
+           "triple default: 0,0,0. With trackSurface this is only the starting "
+           "value; the focus then follows the free-surface height at the aim")
+    a("--track-surface", action="store_true",
+      help="focus height of every beam follows the free surface at its aim "
+           "(default for --laser-config triple)")
+    a("--no-track-surface", action="store_true",
+      help="keep each focus at the dictionary height (no free-surface tracking)")
     # laser
     a("--power", type=float, default=None, help="laser power [W] (total of all beams)")
     a("--spot-radius", type=float, default=1.2e-3, help="beam radius [m] (1/e^2 radius for Gaussian)")
@@ -552,6 +561,7 @@ class Case:
         self.d2 = a.dim == "2d"
         self.custom_beams = False
         self.beam_specs = None
+        self.track_surface = False
         beam_flags = any((
             a.beam_azimuths, a.beam_inclinations, a.beam_powers,
             a.beam_radii_each, a.beam_aim_radii, a.beam_aim_heights,
@@ -572,6 +582,15 @@ class Case:
                 print(f"[generate] --beam-powers sum to {listed:.0f} W; "
                       f"using that as the total (was --power {a.power:.0f} W)")
             a.power = listed
+        if a.track_surface and a.no_track_surface:
+            raise SystemExit("pass only one of --track-surface and --no-track-surface")
+        if a.no_track_surface:
+            self.track_surface = False
+        elif a.track_surface:
+            self.track_surface = True
+        else:
+            # Baseline triple (and any per-beam aim list) follows the free surface.
+            self.track_surface = self.custom_beams
         if a.pin_wire and not a.contact_pinning:
             raise SystemExit("--pin-wire needs --contact-pinning")
         if a.wire_cavity and not a.porosity:
@@ -1557,7 +1576,7 @@ sigma           {f(self.ms['sigma'])};   // not used: see constant/meltPropertie
         if a.beam_azimuths:
             az = csv_floats(a.beam_azimuths, "--beam-azimuths")
         elif self.triple:
-            az = [55.0, -55.0, 180.0]
+            az = [60.0, -60.0, 180.0]
         elif a.beam_direction == "+":
             az = [60.0, -60.0, 180.0]
         else:
@@ -1566,7 +1585,8 @@ sigma           {f(self.ms['sigma'])};   // not used: see constant/meltPropertie
         if a.beam_inclinations:
             angles = fit_list(csv_floats(a.beam_inclinations, "--beam-inclinations"), n, "--beam-inclinations")
         elif self.triple and n == 3:
-            angles = [32.0, 32.0, 22.0]
+            # Negative: the ray travels toward the wire as it descends.
+            angles = [-32.0, -32.0, -22.0]
         else:
             angles = [a.beam_angle] * n
         if a.beam_powers:
@@ -1586,13 +1606,13 @@ sigma           {f(self.ms['sigma'])};   // not used: see constant/meltPropertie
         if a.beam_aim_radii:
             aim_r = fit_list(csv_floats(a.beam_aim_radii, "--beam-aim-radii"), n, "--beam-aim-radii")
         elif self.triple and n == 3:
-            aim_r = [1.40e-3, 1.40e-3, 0.90e-3]
+            aim_r = [1.05e-3, 1.05e-3, 0.90e-3]
         else:
             aim_r = [0.0] * n
         if a.beam_aim_heights:
             aim_z = fit_list(csv_floats(a.beam_aim_heights, "--beam-aim-heights"), n, "--beam-aim-heights")
         elif self.triple and n == 3:
-            aim_z = [0.40e-3, 0.40e-3, 0.30e-3]
+            aim_z = [0.0, 0.0, 0.0]
         else:
             aim_z = [a.focus_height] * n
         return [
@@ -1612,7 +1632,10 @@ sigma           {f(self.ms['sigma'])};   // not used: see constant/meltPropertie
             for i, b in enumerate(self.beam_specs):
                 phi = math.radians(b["azimuth"])
                 thb = math.radians(b["angle"])
-                # 0 deg = travel direction of the head (-x); 180 deg = behind the wire (+x)
+                # 0 deg = travel direction of the head (-x); 180 deg = behind the wire (+x).
+                # Inclination is from vertical. A negative angle points the horizontal
+                # part of the ray back toward the wire, so the beam arrives from outside
+                # and the aim is the spot centre on the free surface.
                 sx, sy = -math.cos(phi), math.sin(phi)
                 d = (math.sin(thb) * sx, math.sin(thb) * sy, -math.cos(thb))
                 mag = math.sqrt(sum(c * c for c in d)) or 1.0
@@ -1819,9 +1842,10 @@ laser   // ray-traced; radius = 1/e^2 radius; absorptivity = substrate (wire: wi
 {beams}
     );
     symmetryY       {'false' if (self.d2 or self.full) else 'true'};   // rays folded at the y = 0 symmetry plane
-    raySpacingFactor {2 if self.a.neck_refine else 0.5};   // neck: ~2 dx_min, so a 19 um cell does not build a 9 um ray grid
+    raySpacingFactor {2 if self.a.neck_refine else 0.5};{'   // neck: ~2 dx_min, so a 19 um cell does not build a 9 um ray grid' if self.a.neck_refine else ''}
     rayStepFactor   {1.5 if self.a.neck_refine else 0.33};
     alphaHit        {f(self.alpha_hit)};
+    trackSurface    {'true' if self.track_surface else 'false'};   // focus z follows the free surface at each aim
     tStart          0;
     tRamp           {f(a.laser_ramp)};
 {self.power_dip_block()}    shadowing       {'false' if a.no_shadowing else 'true'};
@@ -2453,6 +2477,7 @@ fi
             track_length_m=a.scan_speed * a.end_time,
             absorptivity_substrate=self.A, absorptivity_wire=self.Awire,
             alpha_hit=self.alpha_hit, rayleigh_length=a.rayleigh_length,
+            track_surface=self.track_surface,
             strand_k_factor=self.strand_k_factor,
             unmelted_k_factor=self.unmelted_k_factor,
             liquidus_unmixed_threshold=self.liquidus_unmixed,
@@ -2489,6 +2514,8 @@ def main(argv=None):
           f"v_scan={a.scan_speed*1e3:.1f} mm/s, WFS={a.wire_feed_speed*1e3:.1f} mm/s, "
           f"d_wire={a.wire_diameter*1e3:.2f} mm @ {a.feed_angle:.0f} deg ({a.feed_side} feed)")
     if c.custom_beams:
+        if c.track_surface:
+            print("[generate] trackSurface: focus height follows the free surface at each aim")
         print("[generate] beams (azimuth from travel -x; 180 = behind the wire, +x):")
         for n, pw, F, d, r, _pr in c.beams():
             # where the axis meets the plate
