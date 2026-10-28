@@ -5,6 +5,9 @@
 #
 # Azimuths 60, -60, 180. Half-domain symmetryY folds y < 0 and halves each
 # beam's power, so the negative beam has to stay in the dictionary.
+# Each axis meets the plate 0.70 mm from the wire, so the 0.26 mm spot is
+# mostly on the substrate and the inner wing still meets the wire. The hit
+# is the first metal along the ray, so a rising bead takes the trailing beam.
 #
 #   TRACK_TAG   case tag (default cal90)
 #   TRACK_END   end time [s] (default 0.60)
@@ -50,8 +53,8 @@ log="$ROOT/results/calibration/${TAG}_launch.log"
         --beam-inclinations=-26,-26,-38 \
         --beam-powers 160,160,420 \
         --beam-radii-each 0.26e-3,0.26e-3,0.26e-3 \
-        --beam-aim-radii 0.60e-3,0.60e-3,0.24e-3 \
-        --beam-aim-heights 0.08e-3,0.08e-3,0.55e-3 \
+        --beam-aim-radii 0.798e-3,0.798e-3,0.856e-3 \
+        --beam-aim-heights 0.20e-3,0.20e-3,0.20e-3 \
         --end-time "$END" --write-interval 0.20 --np 12 --laser-ramp 2e-3 \
         --contact-pinning --pin-wire --porosity --wire-cavity \
         --theta-receding 110 --theta-advancing 150 \

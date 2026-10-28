@@ -94,7 +94,20 @@ def check(case):
         raise SystemExit("no beam has focus y > 0")
     if not any(abs(y) <= 1e-6 for y in ys):
         raise SystemExit("no beam sits on the symmetry plane")
-    print("equilateral: three axes, negative-y beam kept for the symmetry fold")
+    for b in beams:
+        hit = plate_hit(b)
+        if hit is None:
+            raise SystemExit(f"{b['name']} does not meet the plate")
+        r = math.hypot(hit[0], hit[1])
+        # 0.26 mm spot centred inside 0.62 mm sits on the wire. 0.70 mm
+        # leaves the core on the substrate and the inner wing on the wire.
+        if r < 0.62e-3:
+            raise SystemExit(
+                f"{b['name']} plate hit is {r*1e3:.2f} mm from the axis; "
+                "the spot would land on the wire"
+            )
+        print(f"  {b['name']} plate radius {r*1e3:.2f} mm")
+    print("equilateral: three axes, negative-y beam kept, spots outside the wire")
     return beams
 
 
