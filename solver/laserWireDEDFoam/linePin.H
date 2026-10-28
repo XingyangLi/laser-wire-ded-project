@@ -10,10 +10,16 @@
         const scalar sHold = oxygenDependent
             ? min(max(chamberOxygenPpm/linePinPpmRef, scalar(0)), scalar(1))
             : scalar(1);
-        // 300 ppm removes the whole error after this alpha solve. Lower ppm
-        // removes that fraction, so a strong capillary flux can push the
-        // shell back toward metal.
-        const scalar fac = sHold;
+        // tau is a ramp, not a one-step overwrite. A full alpha jump on the
+        // 19 um neck makes a one-cell interface and the capillary force
+        // collapses the time step. The shell is imposed; this only slows
+        // how fast that imposition is applied.
+        const scalar ramp = min
+        (
+            max(runTime.value()/max(linePinTau, SMALL), scalar(0)),
+            scalar(1)
+        );
+        const scalar fac = sHold*ramp;
 
         const vectorField& C = mesh.C().primitiveField();
         const scalarField& Vc = mesh.V();
@@ -45,7 +51,7 @@
             linePinZ0 + wireFeedVelocity.z()*runTime.value(),
             scalar(0.2e-3)
         );
-        const scalar Khold = sHold*linePinK;
+        const scalar Khold = fac*linePinK;
         scalar nGas = 0, nMet = 0;
         const labelListList& cellCells = mesh.cellCells();
 
@@ -104,7 +110,10 @@
             const scalar target = (z > zLine) ? scalar(0) : scalar(1);
             if (fac > 0)
             {
-                const scalar dAlpha = fac*(target - alpha[celli]);
+                scalar dAlpha = fac*(target - alpha[celli]);
+                // At most 0.2 of a cell per step, so the interface is not a
+                // single-face jump.
+                dAlpha = max(min(dAlpha, scalar(0.2)), scalar(-0.2));
                 alpha[celli] = min(max(alpha[celli] + dAlpha, scalar(0)), scalar(1));
                 // give > 0: liquid left the shell and must land outside it.
                 scalar give = -dAlpha*Vc[celli];
@@ -166,8 +175,8 @@
                 if (r <= rShell || r > rShell + h) continue;
                 const scalar z = C[celli].z();
                 if (z <= zLine || z > linePinZ0 + 0.5*h) continue;
-                alpha[celli] += fac*(scalar(1) - alpha[celli]);
-                alpha[celli] = min(max(alpha[celli], scalar(0)), scalar(1));
+                const scalar dOut = min(fac*(scalar(1) - alpha[celli]), scalar(0.2));
+                alpha[celli] = min(max(alpha[celli] + dOut, scalar(0)), scalar(1));
             }
         }
 
@@ -186,9 +195,11 @@
             Info<< "LinePin: zLine " << zLine*1e3
                 << " mm  z0 " << linePinZ0*1e3
                 << " mm  hold " << sHold
+                << "  ramp " << ramp
                 << "  gas " << nGas
                 << "  metal " << nMet
                 << "  feed " << wireFeedVelocity.z()
+                << "  (pin imposed, pool outside the shell is free)"
                 << nl;
         }
     }
