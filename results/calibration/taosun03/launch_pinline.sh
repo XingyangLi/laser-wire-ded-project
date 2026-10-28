@@ -6,10 +6,11 @@
 # The pool outside the shell is free.
 # td24_p100 writes every 0.36 ms so a 5 fps encode is about 10 s.
 # The other eight write every 1 ms for the width/depth table.
-# Stop a case (and the rest) if the neck runs away, alpha exceeds 1.05,
-# the step collapses, or a wide gas column is the scored slit.
-# A width of 0 at 2 ms is not a stop: the line is still in the diffuse
-# crown, and the thin gap only exists once it has entered bulk metal.
+# Each case is its own 4-rank mpirun, nice 10, pinned to four physical
+# cores. Eight run at once (32 cores). The ninth waits for a free set.
+# Stop that case only, once the first 1 ms is clearly off: fatal, alpha
+# above 1.05, a collapsed step, a violent neck, or a wide gas column.
+# A width of 0 is not a stop.
 set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck disable=SC1091
@@ -21,8 +22,6 @@ PY="$TAO_PY"
 NP=4
 DUR="0.018"
 TEND="$(python3 -c "print(float('$T0') + float('$DUR'))")"
-TGATE="$(python3 -c "print(float('$T0') + 0.002)")"
-ABORT="/tmp/taosun03-pinline-abort"
 LOG="$TAO_OUT/pinline_launch.log"
 
 # feed_mm_s ppm
@@ -171,134 +170,39 @@ PY
 
 run_one() {
     local feed="$1" ppm="$2"
-    local CASE tag
+    local CASE tag cores="" rf="" wrc=0
     CASE="$(case_dir "$feed" "$ppm")"
     tag="td${feed}_p${ppm}"
-    local held=0
     release() {
-        if (( held > 0 )); then tao_release "$held"; held=0; fi
+        if [[ -n "${cores:-}" ]]; then
+            tao_release_cores "$cores" || true
+            cores=""
+        fi
+        rm -f "${rf:-}"
     }
     trap release EXIT
-    tao_acquire "$NP"
-    held=$NP
-    echo "START $tag"
+    cores="$(tao_acquire_cores "$NP")"
+    rf="$(mktemp /tmp/taosun03-rf-XXXXXX)"
+    tao_write_rankfile "$cores" "$rf"
+    echo "START $tag cores $cores"
     (
         cd "$CASE"
-        exec nice -n 10 stdbuf -oL -eL mpirun --use-hwthread-cpus -np "$NP" \
+        exec nice -n 10 stdbuf -oL -eL mpirun --bind-to core -rf "$rf" -np "$NP" \
             laserWireDEDFoam -parallel > "$CASE/log.laserWireDEDFoam" 2>&1
     ) &
     local pid=$!
     echo "PID $tag $pid"
-    local scored="" gated=0
-    while kill -0 "$pid" 2>/dev/null; do
-        sleep 20
-        if [[ -f "$ABORT" ]]; then
-            echo "KILL $tag abort file"
-            kill -TERM "$pid" 2>/dev/null || true
-            break
-        fi
-        if [[ -f "$CASE/log.laserWireDEDFoam" ]] && grep -qE "FOAM FATAL|Signal: Floating point exception" "$CASE/log.laserWireDEDFoam"; then
-            echo "KILL $tag foam fatal"
-            echo "$tag foam fatal" > "$ABORT"
-            kill -TERM "$pid" 2>/dev/null || true
-            break
-        fi
-        local amax=""
-        amax="$(grep 'Max(alpha.metal)' "$CASE/log.laserWireDEDFoam" | tail -1 | sed -n 's/.*Max(alpha.metal) = //p' || true)"
-        if [[ -n "$amax" ]]; then
-            if python3 - "$amax" <<'PY'
-import sys
-raise SystemExit(0 if float(sys.argv[1]) > 1.5 else 1)
-PY
-            then
-                echo "KILL $tag alpha max $amax"
-                echo "$tag alpha max $amax" > "$ABORT"
-                kill -TERM "$pid" 2>/dev/null || true
-                break
-            fi
-        fi
-        local dt_now=""
-        dt_now="$(grep '^deltaT = ' "$CASE/log.laserWireDEDFoam" | tail -1 | awk '{print $3}' || true)"
-        if [[ -n "$dt_now" ]] && python3 - "$dt_now" <<'PY'
-import sys
-raise SystemExit(0 if float(sys.argv[1]) < 1e-7 else 1)
-PY
-        then
-            echo "KILL $tag timestep collapse dt=$dt_now"
-            echo "$tag timestep collapse dt=$dt_now" > "$ABORT"
-            kill -TERM "$pid" 2>/dev/null || true
-            break
-        fi
-        local latest=""
-        latest="$(latest_time "$CASE")" || latest=""
-        if [[ -z "$latest" || "$latest" == "$scored" ]]; then
-            grep -E 'TrailDrag:|deltaT = |FOAM FATAL' "$CASE/log.laserWireDEDFoam" | tail -1 || true
-            continue
-        fi
-        echo "SCORE $tag t=$latest"
-        "$PY" "$DIR/score_film.py" "$CASE" "$latest" || true
-        local rc=0
-        "$PY" "$DIR/neck_state.py" "$CASE" "$latest" --calm-max 15 || rc=$?
-        if (( rc == 3 )); then
-            echo "KILL $tag violent neck at t=$latest"
-            echo "$tag violent neck at $latest" > "$ABORT"
-            kill -TERM "$pid" 2>/dev/null || true
-            break
-        fi
-        local dt=""
-        dt="$(grep '^deltaT = ' "$CASE/log.laserWireDEDFoam" | tail -1 | awk '{print $3}' || true)"
-        if [[ -z "$dt" ]]; then
-            scored="$latest"
-            continue
-        fi
-        if ! python3 - "$dt" "$latest" "$TGATE" <<'PY'
-import sys
-try:
-    dt = float(sys.argv[1])
-except ValueError:
-    raise SystemExit(0)
-t = float(sys.argv[2])
-gate = float(sys.argv[3])
-if t + 1e-9 >= gate and dt < 1.5e-7:
-    raise SystemExit(1)
-raise SystemExit(0)
-PY
-        then
-            echo "KILL $tag timestep collapse dt=$dt at t=$latest"
-            echo "$tag timestep collapse at $latest" > "$ABORT"
-            kill -TERM "$pid" 2>/dev/null || true
-            break
-        fi
-        local gate_rc=0
-        python3 - "$latest" "$TGATE" <<'PY' || gate_rc=$?
-import sys
-raise SystemExit(0 if float(sys.argv[1]) + 1e-9 >= float(sys.argv[2]) else 1)
-PY
-        if (( gate_rc == 0 )); then
-            if (( gated == 0 )); then
-                gated=1
-                echo "GATE $tag 2 ms passed t=$latest dt=$dt"
-            fi
-            local line=""
-            line="$("$PY" "$DIR/score_film.py" "$CASE" "$latest" | head -1 || true)"
-            echo "CHECK $tag $line"
-            if echo "$line" | grep -q "width 0.1[5-9]\|width 0.[2-9]\|width [1-9]"; then
-                echo "KILL $tag wide gas column at t=$latest"
-                echo "$tag wide column at $latest" > "$ABORT"
-                kill -TERM "$pid" 2>/dev/null || true
-                break
-            fi
-        fi
-        scored="$latest"
-        grep -E 'TrailDrag:' "$CASE/log.laserWireDEDFoam" | tail -1 || true
-    done
+    tao_watch_case "$pid" "$CASE" "$CASE/log.laserWireDEDFoam" "$T0" "$tag" \
+        "$PY" "$DIR/score_film.py" "$DIR/neck_state.py" || wrc=$?
     wait "$pid" || true
     release
-    echo "DONE $tag"
+    if (( wrc == 2 || wrc == 0 )); then
+        return 0
+    fi
+    return 1
 }
 
 main() {
-    rm -f "$ABORT"
     mkdir -p "$TAO_OUT"
     : > "$LOG"
     exec > >(tee -a "$LOG") 2>&1
@@ -322,10 +226,6 @@ main() {
     for pid in "${pids[@]}"; do
         wait "$pid" || rc=1
     done
-    if [[ -f "$ABORT" ]]; then
-        echo "PINLINE_ABORT $(cat "$ABORT")"
-        exit 1
-    fi
     echo "PINLINE_DONE"
     exit "$rc"
 }

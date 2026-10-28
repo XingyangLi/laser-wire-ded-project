@@ -57,7 +57,9 @@ Description
       - optional contact-line pinning (meltProperties/contactLine, default
         off): contact-angle hysteresis where the free surface meets solid
         substrate or, if pinWire is set, the unmelted wire. The window
-        opens to a full pin once the metal at the line solidifies,
+        opens to a full pin once the metal at the line solidifies.
+        oxideSkin/surface (default off) lets oxide coverage scale sigma
+        and blend that wire window toward the trailing oxide angles,
       - optional porosity (meltProperties/porosity, default off): enclosed
         gas is classified as entrapment, lack-of-fusion or keyhole and,
         once the metal shell freezes, locked against numerical filling.
@@ -204,7 +206,9 @@ int main(int argc, char *argv[])
 
             // --- Energy equation with melting / solidification
             #include "TEqn.H"
+            #include "oxideSurface.H"
             #include "updateSurfaceTension.H"
+            #include "oxideSigma.H"
             #include "recoilPressure.H"
             #include "contactLine.H"
             #include "porosity.H"

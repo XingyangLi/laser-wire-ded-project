@@ -6,7 +6,11 @@
 
     if (oxideSkinEnabled && oxideSkinDynamic && oxideSkinStrength > SMALL)
     {
-        #include "oxideCoverage.H"
+        // oxideSurface.H already advanced coverage this step.
+        if (!oxideSurface)
+        {
+            #include "oxideCoverage.H"
+        }
         const volVectorField gradAlpha(fvc::grad(alpha1));
         scalarField& muI = muOxide.primitiveFieldRef();
         scalarField& KI = Koxide.primitiveFieldRef();

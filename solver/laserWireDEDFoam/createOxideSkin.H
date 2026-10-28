@@ -54,6 +54,23 @@ const scalar oxideSkinAlphaGas = oxideSkinDict.getOrDefault<scalar>("alphaGas", 
 const bool oxideSkinDynamic = oxideSkinDict.getOrDefault<bool>("dynamic", false);
 const scalar oxideSkinGenTime = oxideSkinDict.getOrDefault<scalar>("genTime", 1e-3);
 const scalar oxideSkinLeaveTime = oxideSkinDict.getOrDefault<scalar>("leaveTime", 2e-4);
+// surface: coverage changes sigma and the wire contact-angle window.
+// The membrane (muSkin, Kskin) is unchanged and stays off when those are 0.
+// dynamic false: coverage is a fixed trailing patch equal to the ppm strength.
+// dynamic true: coverage grows on the exposed surface (trailOnly limits that
+// to the trailing neck). Neither mode writes alpha or velocity.
+const bool oxideSurface =
+    oxideSkinEnabled && oxideSkinDict.getOrDefault<bool>("surface", false);
+const bool oxideTrailOnly = oxideSkinDict.getOrDefault<bool>("trailOnly", true);
+const scalar oxideSigmaDrop = max
+(
+    min(oxideSkinDict.getOrDefault<scalar>("sigmaDrop", 0.5), scalar(1)),
+    scalar(0)
+);
+const scalar oxideBand = oxideSkinDict.getOrDefault<scalar>("band", 0.30e-3);
+const scalar oxideSector =
+    oxideSkinDict.getOrDefault<scalar>("sectorDeg", 90.0)
+   *constant::mathematical::pi/180.0;
 const label oxideSkinInterval = oxideSkinDict.getOrDefault<label>
 (
     "interval",
@@ -122,7 +139,7 @@ volScalarField oxideCoverage
         runTime.timeName(),
         mesh,
         IOobject::READ_IF_PRESENT,
-        (oxideSkinEnabled && oxideSkinDynamic)
+        (oxideSkinEnabled && (oxideSkinDynamic || oxideSurface))
       ? IOobject::AUTO_WRITE
       : IOobject::NO_WRITE
     ),
@@ -152,6 +169,23 @@ if (oxideSkinEnabled)
             << " z " << oxideSkinZ0 << " " << oxideSkinZ1
             << " ppmRef " << oxideSkinPpmRef
             << " alphaGas " << oxideSkinAlphaGas;
+    }
+    if (oxideSurface)
+    {
+        Info<< " surface sigmaDrop " << oxideSigmaDrop
+            << " band " << oxideBand << " m"
+            << " sector " << (oxideSector*180.0/constant::mathematical::pi)
+            << " deg";
+        if (oxideSkinDynamic)
+        {
+            Info<< " coverage grows"
+                << (oxideTrailOnly ? " on the trailing neck" : " on every exposed surface");
+        }
+        else
+        {
+            Info<< " fixed trailing patch, coverage = strength";
+        }
+        Info<< " (angle window and sigma only; alpha and velocity are free)";
     }
     Info<< nl << endl;
 }
