@@ -54,6 +54,10 @@ prepare_case() {
             find "$CASE" -mindepth 2 -maxdepth 2 -type d -regextype posix-extended \
                 -regex '.*/[0-9].*' ! -name "$T0" -exec rm -rf {} +
             rm -f "$CASE/log.laserWireDEDFoam"
+            if ! grep -q "div(phi,oxideCoverage)" "$CASE/system/fvSchemes"; then
+                sed -i '/div(phi,meltHistory)/a\    div(phi,oxideCoverage) Gauss upwind;' \
+                    "$CASE/system/fvSchemes"
+            fi
             return 0
         fi
     fi
@@ -148,6 +152,18 @@ oxideSkin   // {marker}
 }}
 """
 mp.write_text(t)
+sch = Path(case) / "system/fvSchemes"
+st = sch.read_text()
+if "div(phi,oxideCoverage)" not in st:
+    st2, n = re.subn(
+        r"(?m)^(\s*div\(phi,meltHistory\)\s+Gauss upwind;)",
+        r"\1\n    div(phi,oxideCoverage) Gauss upwind;",
+        st,
+        count=1,
+    )
+    if n != 1:
+        raise SystemExit("meltHistory div scheme missing")
+    sch.write_text(st2)
 cd = Path(case) / "system/controlDict"
 c = cd.read_text()
 c2, n = re.subn(r"(?m)^endTime\s+[0-9.eE+-]+;", f"endTime         {tend};", c, count=1)
