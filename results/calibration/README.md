@@ -468,3 +468,11 @@ The bare-neck pin had no melt track. cal90 grows one with the lasers on, in the 
 At 0.60 s the center plane is a bead fused to the plate. The trailing crest is 1.91 mm at x = 0.58 mm. The leading crest is 0.84 mm. The trailing foot reaches x = 3.28 mm. The half-mesh laser power is 370 W incident, 130 W absorbed, and the peak temperature is about 2920 K.
 
 cal91 cuts that 0.60 s wire into a true wall (291 faces on this mesh) and turns on `linePin`. `pinWire` is off. The formed bead is the initial field, the feed runs at once, and the pin window is 20 ms. The line is recorded at z0 = 1.912 mm and then moves at the feed. At 20 ms, zLine = 1.435 mm, which is the 0.48 mm the wire travels. Below that height the face is metal. Above it the face is gas and the first metal is at x = 0.875 mm, 0.375 mm from the wire surface. That width is the two-cell shell on the 150 µm mesh. The bead outside the shell is the free surface from cal90. Figures: `cal90_t060_views.png` and `cal91_pin_views.png`.
+
+## Beams on the substrate, hits on the free surface
+
+Each ray is marched from the top of the domain. The power goes into the first cell with `alpha >= 0.5`. A bead that rises into the ray takes that power. `LaserHit:` is the power-weighted height of those cells.
+
+cal92 put the three plate spots 0.70 mm from the wire axis. The side beams climbed from the plate to about 0.7 mm. The trailing beam stayed near z = 0 for the whole 0.60 s, because the surface under that spot never rose: the 420 W spot was far enough outside the wire that the fed metal did not build a bead there.
+
+cal93 moves every spot to 0.55 mm and sets every inclination to 26°. About 70% of a 0.26 mm Gaussian centred there is on the substrate and the inner wing meets the wire. At the first step the trailing beam puts 8% of its power above 0.3 mm (the wire) and the rest on the plate. By 0.60 s every trailing ray hits above 0.3 mm, the mean hit is 1.18 mm and the highest is 1.45 mm. The side beams finish at a mean hit of 0.71 mm. On the center plane the trailing crest is 1.45 mm at x = 0.58 mm, the leading crest is 0.99 mm, and the foot reaches x = 3.43 mm. Figure: `cal93_t060_views.png`.
