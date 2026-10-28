@@ -100,6 +100,22 @@
             return best;
         };
 
+        // Furthest trailing metal in each height bin, across all ranks.
+        const label nBin = 64;
+        const scalar zBin0 = 0.8e-3;
+        const scalar dzBin = 2.5e-5;
+        scalarField rMaxMetal(nBin, scalar(0));
+        forAll(alpha, celli)
+        {
+            if (alpha[celli] < 0.5 || C[celli].x() <= 0) continue;
+            const label b = label((C[celli].z() - zBin0)/dzBin);
+            if (b < 0 || b >= nBin) continue;
+            const vector d = C[celli] - wireOrigin;
+            const vector rad = d - (d & wireUp)*wireUp;
+            rMaxMetal[b] = max(rMaxMetal[b], mag(rad));
+        }
+        reduce(rMaxMetal, maxOp<scalarField>());
+
         boolList inShell(mesh.nCells(), false);
         DynamicList<label> shellCells(64);
         forAll(alpha, celli)
@@ -130,25 +146,13 @@
             // so the attachment stays on the wire. Outside this z window the
             // pool is untouched.
             const scalar target = (z > zLine) ? scalar(0) : scalar(1);
-            // Do not clear the last metal at this height. That is the bead
-            // tip; cutting it opens a hole instead of a slit.
+            // Parallel-safe: only clear gas where this height still has metal
+            // beyond the shell. Otherwise the thin crest becomes a hole.
             if (target < 0.5 && linePinThicknessTop > 0)
             {
-                bool beadOutside = false;
-                label cur = celli;
-                scalar rCur = r;
-                const scalar rNeed = wireRadius + thickAt(z, h) + 0.5*h;
-                for (label step = 0; step < 8 && !beadOutside; ++step)
-                {
-                    const label nei = outerCell(cur, rCur, z, h);
-                    if (nei < 0) break;
-                    const vector dn = C[nei] - wireOrigin;
-                    const vector rn = dn - (dn & wireUp)*wireUp;
-                    cur = nei;
-                    rCur = mag(rn);
-                    if (rCur > rNeed && alpha[nei] > 0.5) beadOutside = true;
-                }
-                if (!beadOutside) continue;
+                const label b = label((z - zBin0)/dzBin);
+                const scalar rNeed = wireRadius + thickAt(z, h) + 4e-5;
+                if (b < 0 || b >= nBin || rMaxMetal[b] < rNeed) continue;
             }
             const scalar facLocal = fac*fadeAt(z);
             if (facLocal > 0)
