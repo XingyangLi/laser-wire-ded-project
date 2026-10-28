@@ -59,15 +59,14 @@
         const scalar Khold = sHold*linePinK;
         scalar nGas = 0, nMet = 0;
         const scalar spanZ = max(linePinZ0 - zLine, scalar(1e-4));
-        // Graded bias: narrow and fully held at the line, wider and softer
-        // toward the crest. Cells outside the bias are not painted.
+        // Imposed shell offset: narrow at the line, wider at the crest.
+        // Linear in height. Cells outside this radius are not modified.
         auto thickAt = [&](const scalar z, const scalar hCell) -> scalar
         {
             const scalar base = shellThick(hCell);
             if (linePinThicknessTop <= base || z <= zLine) return base;
             const scalar s = min(max((z - zLine)/spanZ, scalar(0)), scalar(1));
-            // Opens toward the crest. The lower part of the slit stays narrow.
-            return base + s*s*(linePinThicknessTop - base);
+            return base + s*(linePinThicknessTop - base);
         };
         auto fadeAt = [&](const scalar z) -> scalar
         {
