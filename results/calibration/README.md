@@ -488,3 +488,19 @@ At 0.80 s the wire is liquid from about z = 0.6 mm to 1.4 mm (liquid fraction 0.
 The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beams are equal: 740 W divided by three (246.6667, 246.6667, 246.6666 W). cal95b is that rerun, same aims and 0.80 s. The wire is liquid from 0.2 mm to 0.6 mm. The trailing crest is 1.76 mm and liquid. The leading crest is 0.69 mm. The plate under the pool is 1671 K. There is no gas film under the bead. Figure: `cal95b_t080_views.png`.
 
 Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
+
+## Hard pin on the equal-power bead
+
+The true wall is cut from the cal95b checkpoint and `linePin` is turned on. The crest is recorded at z0 = 1.759 mm and then moves at the feed. The shell is two cells of the 150 µm mesh, so the first metal above the line sits 0.375 mm from the wire. Below the line the bead face stays metal. ppm sets the hold `s = min(ppm/300, 1)`. s = 1/6 already keeps the line on the feed, so 50, 100 and 300 ppm leave the same height.
+
+| tag | feed | ppm | s | time | zLine | drop | feed × time |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cal96 | 24 mm/s | 300 | 1 | 6 ms | 1.620 mm | 0.139 mm | 0.144 mm |
+| cal97 | 18 mm/s | 50 | 1/6 | 10 ms | 1.581 mm | 0.178 mm | 0.180 mm |
+| cal98 | 18 mm/s | 100 | 1/3 | 10 ms | 1.582 mm | 0.177 mm | 0.180 mm |
+| cal99 | 18 mm/s | 300 | 1 | 10 ms | 1.579 mm | 0.180 mm | 0.180 mm |
+| cal100 | 28 mm/s | 50 | 1/6 | 10 ms | 1.486 mm | 0.273 mm | 0.280 mm |
+| cal101 | 28 mm/s | 100 | 1/3 | 10 ms | 1.482 mm | 0.277 mm | 0.280 mm |
+| cal102 | 28 mm/s | 300 | 1 | 10 ms | 1.480 mm | 0.279 mm | 0.280 mm |
+
+The 2 ms sample of cal96 still has the bead on the wire below the line and a gas shell only in the slice above it. Figure: `cal95b_pin_views.png` (28 mm/s, 300 ppm, 10 ms, with the beam spots).

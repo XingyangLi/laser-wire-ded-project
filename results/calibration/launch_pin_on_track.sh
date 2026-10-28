@@ -60,9 +60,11 @@ fi
 case="$ROOT/cases/wire_cavity_${TAG}"
 log="$ROOT/results/calibration/${TAG}_launch.log"
 {
-    echo "=== true-wall pin ${TAG} from ${SRC} time ${PIN_TIME}, extra ${EXTRA} s ==="
+    echo "=== true-wall pin ${TAG} from ${SRC} time ${PIN_TIME}, feed ${FEED}, ppm ${PPM}, extra ${EXTRA} s, np ${NP} ==="
     cd "$SRC"
-    reconstructPar -time "$PIN_TIME" > "$ROOT/results/calibration/${TAG}_reconstruct.log" 2>&1
+    if [ ! -f "$PIN_TIME/alpha.metal" ]; then
+        reconstructPar -time "$PIN_TIME" > "$ROOT/results/calibration/${TAG}_reconstruct.log" 2>&1
+    fi
     rm -rf "$case"
     mkdir -p "$case/0"
     cp -a "$SRC/constant" "$SRC/system" "$case/"
