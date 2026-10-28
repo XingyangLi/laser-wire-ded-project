@@ -39,7 +39,9 @@
 
             cMax = max(cMax, cov[celli]);
             if (target > 0.5*sCap) nExposed += 1;
-            if (onWire && cov[celli] > 0.5) nWall += 1;
+            // 0.5*sCap so a 50 ppm run, whose coverage cannot exceed 1/6,
+            // still counts wall cells that have reached the cap.
+            if (onWire && cov[celli] > 0.5*max(sCap, SMALL)) nWall += 1;
             if (sCap > SMALL && cov[celli] > 0.9*sCap) nFull += 1;
         }
         oxideCoverage.correctBoundaryConditions();
