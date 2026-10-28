@@ -197,7 +197,7 @@ run_one() {
             kill -TERM "$pid" 2>/dev/null || true
             break
         fi
-        if [[ -f "$CASE/log.laserWireDEDFoam" ]] && grep -qE "FOAM FATAL|Floating point exception" "$CASE/log.laserWireDEDFoam"; then
+        if [[ -f "$CASE/log.laserWireDEDFoam" ]] && grep -qE "FOAM FATAL|Signal: Floating point exception" "$CASE/log.laserWireDEDFoam"; then
             echo "KILL $tag foam fatal"
             echo "$tag foam fatal" > "$ABORT"
             kill -TERM "$pid" 2>/dev/null || true
