@@ -209,6 +209,7 @@ int main(int argc, char *argv[])
             #include "recoilPressure.H"
             #include "contactLine.H"
             #include "linePin.H"
+            #include "wireWallSlide.H"
             #include "porosity.H"
 
             if (pimple.frozenFlow())

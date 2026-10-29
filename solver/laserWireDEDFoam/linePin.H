@@ -88,12 +88,13 @@
         };
 
         // Wedge: throat of width wBottom down to the moving line, opening
-        // to wTop at the original wetted surface. The slope is imposed.
-        // Cells outside it, and cells under the slope, stay free so the
-        // pool surface can sit on that slope. The old rectangular shell
-        // is used when wTop is not set.
+        // to wTop at the mouth. Equal widths are a constant notch (the
+        // cal109 0.047 mm reference). The old nCells shell is used only
+        // when the widths are not set.
+        const bool widthOn =
+            linePinWBottom > 0 && linePinWTop + 1e-12 >= linePinWBottom;
         const bool wedgeOn =
-            linePinWTop > linePinWBottom && linePinWBottom > 0;
+            widthOn && linePinWTop > linePinWBottom + 1e-12;
         const scalar wedgeDepth = max(linePinZ0 - zLine, SMALL);
 
         boolList inShell(mesh.nCells(), false);
@@ -108,7 +109,7 @@
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar r = mag(rad);
             const scalar gap = r - wireRadius;
-            const scalar rMax = wedgeOn ? linePinWTop : linePinNCells*h;
+            const scalar rMax = widthOn ? linePinWTop : linePinNCells*h;
             if (gap <= 0 || gap > rMax) continue;
             const scalar z = C[celli].z();
             if (z > linePinZ0 + 0.5*h || z < zLine - 1.5*h) continue;

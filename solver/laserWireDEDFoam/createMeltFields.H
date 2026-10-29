@@ -377,6 +377,7 @@ boolList inWireZone(mesh.nCells(), false);
 #include "createSurfaceTension.H"
 #include "createContactLine.H"
 #include "createLinePin.H"
+#include "createWireWallSlide.H"
 #include "createWireTipMelt.H"
 #include "createPorosity.H"
 #include "createOxideSkin.H"
