@@ -157,6 +157,7 @@ PY
     foamDictionary "$dest/system/controlDict" -entry writeInterval -set 0.002 > /dev/null
     foamDictionary "$dest/system/controlDict" -entry maxDeltaT -set 2e-6 > /dev/null
     foamDictionary -entry numberOfSubdomains -set "$NP" "$dest/system/decomposeParDict" > /dev/null
+    foamDictionary -entry method -set scotch "$dest/system/decomposeParDict" > /dev/null
     foamDictionary -entry coeffs.n -set "($NP 1 1)" "$dest/system/decomposeParDict" > /dev/null
     (cd "$dest" && decomposePar -force > log.decomposePar 2>&1)
     # The hot/cold wire temperature is imposed. Store it on the faces so the
