@@ -159,6 +159,9 @@ PY
     foamDictionary -entry numberOfSubdomains -set "$NP" "$dest/system/decomposeParDict" > /dev/null
     foamDictionary -entry coeffs.n -set "($NP 1 1)" "$dest/system/decomposeParDict" > /dev/null
     (cd "$dest" && decomposePar -force > log.decomposePar 2>&1)
+    # The hot/cold wire temperature is imposed. Store it on the faces so the
+    # pressure solve does not re-parse an expression every matrix update.
+    python3 "$DIR/bake_wire_wall_T.py" "$dest"
     echo "PREPPED $name ppm=$ppm feed=${feed_mm}"
 }
 

@@ -43,8 +43,12 @@ retraceLaser = [&]()
     const bool planar = ld.getOrDefault<bool>("planar2D", false);
     const scalar width2D = ld.getOrDefault<scalar>("width2D", 1e-3);
     const scalar dxMin = 1.0/max(gMax(mesh.deltaCoeffs().primitiveField()), SMALL);
-    const scalar hRay = ld.getOrDefault<scalar>("raySpacingFactor", 0.5)*dxMin;
-    const scalar dsRay = ld.getOrDefault<scalar>("rayStepFactor", 0.33)*dxMin;
+    // Neck cells can be a few micrometres. The beam radius is 0.26 mm, so
+    // ray spacing stops following the mesh below 15 um. Finer than that the
+    // march is billions of findCell calls and never reaches the time loop.
+    const scalar dxRay = max(dxMin, scalar(1.5e-5));
+    const scalar hRay = ld.getOrDefault<scalar>("raySpacingFactor", 0.5)*dxRay;
+    const scalar dsRay = ld.getOrDefault<scalar>("rayStepFactor", 0.33)*dxRay;
 
     // symmetryY: the mesh is the half y >= 0 of a domain symmetric about y = 0.
     // Rays are traced in the full (mirrored) domain and folded back with
