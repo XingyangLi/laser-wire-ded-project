@@ -4,8 +4,13 @@
 The square slot used for cal34–cal37 left no metal wall on the center plane
 after 4 ms. This initial field is two ellipsoids (a pool on the plate, a
 taller dome on the trailing side) with a groove cut along the wire. The
-groove is 0.06 mm at z = 1.20 mm and tapers to a point at z = 0.75 mm, and
-it is only 0.28 mm wide in y so the center plane cuts through it.
+groove mouth is `--gap-mm` (default 0.06 mm) at z = 1.20 mm and tapers to a
+point at z = 0.75 mm. It is only 0.28 mm wide in y so the center plane cuts
+through it. `--film-mm` replaces that taper with a uniform gas layer of that
+thickness on the trailing half of the wire, from z = 0.30 mm to 1.50 mm.
+`--film-depth-mm` limits that layer to a window of the given depth ending at
+z = 1.20 mm (inside the dome). Depth 0 is a wetted neck: no film and no
+tapered groove, so the dome metal sits on the wire.
 
 Runs on the serial mesh, after 0/ has been copied from 0.orig and before
 decomposePar. Wire cells stay unmelted and at rest.
@@ -21,6 +26,13 @@ Z_TIP = 0.75e-3
 Z_MOUTH = 1.20e-3
 W_MOUTH = 0.060e-3
 Y_GROOVE = 0.28e-3
+# Uniform trailing-face film. 0 keeps the tapered groove.
+FILM = 0.0
+Z_FILM_LO = 0.30e-3
+Z_FILM_HI = 1.50e-3
+# None keeps the full film (or the groove). A length, including 0, is a
+# window ending at the dome mouth and suppresses the tapered groove.
+FILM_DEPTH = None
 # Pool on the plate, top near the slit tip. Dome is taller and trailing.
 POOL_C = (0.0, 0.0, 0.20e-3)
 POOL_R = (1.15e-3, 0.95e-3, 0.55e-3)
@@ -132,11 +144,31 @@ def in_groove(x, y, z):
     return x < xs + gap_width(z)
 
 
+def film_window():
+    """z limits of the painted gas layer, in metres."""
+    if FILM_DEPTH is None:
+        return Z_FILM_LO, Z_FILM_HI
+    return Z_MOUTH - FILM_DEPTH, Z_MOUTH
+
+
+def in_film(x, y, z):
+    """Uniform gas layer on the trailing half, not only the groove mouth."""
+    if FILM <= 0 or FILM_DEPTH == 0 or x <= 0:
+        return False
+    lo, hi = film_window()
+    if z < lo or z > hi:
+        return False
+    r = math.hypot(x, y)
+    return WIRE_R < r < WIRE_R + FILM
+
+
 def classify(x, y, z):
     """wire, slit, dome, pool, plate, substrate, gas."""
     if (x * x + y * y) < WIRE_R * WIRE_R and z > 0.08e-3:
         return "wire"
-    if in_groove(x, y, z):
+    if in_film(x, y, z):
+        return "slit"
+    if FILM_DEPTH is None and FILM <= 0 and in_groove(x, y, z):
         return "slit"
     if z > 0.0 and in_ellipsoid(x, y, z, DOME_C, DOME_R):
         return "dome"
@@ -189,7 +221,27 @@ def scan_velocity(path):
     return (u, v, w)
 
 
-def paint(case, wire_t, dry_run):
+def paint(case, wire_t, dry_run, gap_mm, film_mm, film_depth_mm):
+    global W_MOUTH, FILM, FILM_DEPTH
+    if gap_mm <= 0 or gap_mm > 0.40:
+        raise SystemExit("--gap-mm must be in (0, 0.40]")
+    if film_mm < 0 or film_mm > 0.40:
+        raise SystemExit("--film-mm must be in [0, 0.40]")
+    if film_depth_mm is not None and (film_depth_mm < 0 or film_depth_mm > 1.20):
+        raise SystemExit("--film-depth-mm must be in [0, 1.20]")
+    W_MOUTH = gap_mm * 1e-3
+    FILM = film_mm * 1e-3
+    FILM_DEPTH = None if film_depth_mm is None else film_depth_mm * 1e-3
+    if FILM_DEPTH is not None and (FILM_DEPTH <= 0 or FILM <= 0):
+        print("wetted neck: no painted film and no groove")
+    elif FILM > 0:
+        lo, hi = film_window()
+        print(
+            f"trailing film {film_mm:.3f} mm from z = {lo * 1e3:.2f}"
+            f" to {hi * 1e3:.2f} mm"
+        )
+    else:
+        print(f"groove mouth {gap_mm:.3f} mm at z = {Z_MOUTH * 1e3:.2f} mm")
     cc = cell_centres(case)
     n = len(cc)
     alpha = np.zeros(n)
@@ -232,7 +284,7 @@ def paint(case, wire_t, dry_run):
     for z0 in np.arange(0.70e-3, 1.45e-3, 0.05e-3):
         m = (y < 0.04e-3) & (np.abs(z - z0) < 0.025e-3) & (x > WIRE_R + 0.005e-3)
         metal = m & (alpha > 0.5)
-        gas = m & (alpha < 0.5) & (x < WIRE_R + 0.15e-3)
+        gas = m & (alpha < 0.5) & (x < WIRE_R + W_MOUTH + 0.04e-3)
         if not np.any(metal):
             wall = "none"
             width = "bare" if np.any(gas) else "no samples"
@@ -262,9 +314,19 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--case", required=True)
     ap.add_argument("--wire-t", type=float, default=300.0)
+    ap.add_argument("--gap-mm", type=float, default=0.06,
+                    help="groove width at z = 1.20 mm (0.06 narrow, 0.12 wide)")
+    ap.add_argument("--film-mm", type=float, default=0.0,
+                    help="uniform trailing-face gas film [mm]; 0 keeps the tapered groove")
+    ap.add_argument("--film-depth-mm", type=float, default=None,
+                    help="painted film depth [mm] ending at z = 1.20 mm. "
+                         "0 is a wetted neck. Omit to keep the full z window")
     ap.add_argument("--dry-run", action="store_true")
     args = ap.parse_args()
-    paint(args.case, args.wire_t, args.dry_run)
+    paint(
+        args.case, args.wire_t, args.dry_run,
+        args.gap_mm, args.film_mm, args.film_depth_mm,
+    )
 
 
 if __name__ == "__main__":

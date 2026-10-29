@@ -169,6 +169,25 @@ const label contactInterval = contactDict.getOrDefault<label>
     meltProperties.subOrEmptyDict("statistics").getOrDefault<label>("interval", 10)
 );
 
+// True-wall wire (patch wireWall). Inside the pinnedAlphaContactAngle window
+// the trailing contact line is no-slip and Kcontact holds those cells on the
+// feed velocity, so the wall carries the line. Outside the window the slip
+// length is short and the angle condition can slide the line. Absent or
+// enabled false: the wall BC is left as written and Kcontact is untouched.
+const dictionary wireDragDict(meltProperties.subOrEmptyDict("wireDrag"));
+const bool wireDragEnabled = wireDragDict.getOrDefault<bool>("enabled", false);
+const scalar wireDragKpin = wireDragDict.getOrDefault<scalar>("Kpin", 1e12);
+const scalar wireDragSlipFar = wireDragDict.getOrDefault<scalar>("slipFar", 1e-3);
+const scalar wireDragSlipNear = wireDragDict.getOrDefault<scalar>("slipNear", 5e-5);
+const scalar wireDragGradMin = wireDragDict.getOrDefault<scalar>("gradMin", 0.25);
+if (wireDragEnabled && wireDragSlipFar < wireDragSlipNear)
+{
+    FatalErrorInFunction
+        << "wireDrag: slipFar (" << wireDragSlipFar
+        << " m) is shorter than slipNear (" << wireDragSlipNear << " m)" << nl
+        << exit(FatalError);
+}
+
 volScalarField Kcontact
 (
     IOobject
@@ -243,6 +262,14 @@ volScalarField contactSupport
     dimensionedScalar(dimless, Zero)
 );
 
+if (wireDragEnabled)
+{
+    Info<< "Wire-wall drag: Kpin " << wireDragKpin
+        << "  slipFar " << wireDragSlipFar
+        << " m  slipNear " << wireDragSlipNear
+        << " m  (angles from pinnedAlphaContactAngle on wireWall)"
+        << nl;
+}
 Info<< "Contact-line pinning (hysteresis + solidification): "
     << (contactEnabled ? "on" : "off");
 if (contactEnabled)

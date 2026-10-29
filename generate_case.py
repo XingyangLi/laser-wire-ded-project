@@ -359,6 +359,45 @@ def build_parser():
            "thermocapillary stress turn on")
     a("--settle-ramp", type=float, default=0.002,
       help="seconds after --settle over which laser, Marangoni and recoil rise to full")
+    a("--oxide-skin", action="store_true",
+      help="oxide membrane on the trailing wire face: interfacial viscosity "
+           "on the alpha gradient, plus a damper of the radial velocity in "
+           "the gas and the interface within --oxide-skin-gap of the wire. "
+           "Strength is min(oxygen ppm / --oxide-skin-ppm-ref, 1) when "
+           "--oxygen-ppm is set, and full strength otherwise. The written "
+           "dictionary grows that coverage from zero with feed and oxygen. "
+           "Off by default")
+    a("--oxide-skin-mu", type=float, default=20.0,
+      help="oxide-skin interfacial viscosity [Pa.s] (default 20)")
+    a("--oxide-skin-k", type=float, default=1.0e14,
+      help="oxide-skin radial damper [kg/m^3/s] (default 1e14)")
+    a("--oxide-skin-gap", type=float, default=0.10e-3,
+      help="oxide skin acts within this distance of the wire face [m] "
+           "(default 0.10 mm)")
+    a("--oxide-skin-ppm-ref", type=float, default=300.0,
+      help="oxygen ppm that gives full oxide-skin strength (default 300)")
+    a("--oxide-skin-surface", action="store_true",
+      help="oxide coverage is a passive scalar on the free surface, carried "
+           "by the flow. The damper acts only where gas faces the trailing "
+           "wire, so it does not freeze a wetted neck")
+    a("--oxide-skin-length-tau", type=float, default=0.0,
+      help="if > 0, the skin is on from the first step over a length "
+           "feed*tau below z = 1.20 mm, and growth is left off")
+    a("--gas-cavity", action="store_true",
+      help="trailing-face gas cavity: a pressure on gas that faces the wire, "
+           "and/or a gas volume flux at the triple line. Both scale with "
+           "oxygen ppm. The flux also scales with wire feed. Off by default")
+    a("--gas-pressure", type=float, default=0.0,
+      help="cavity support pressure at --gas-ppm-ref [Pa] (default 0)")
+    a("--gas-q", type=float, default=0.0,
+      help="gas volume flux at the triple line at --gas-ppm-ref and "
+           "20 mm/s feed [m/s] (default 0)")
+    a("--gas-gap", type=float, default=0.10e-3,
+      help="pressure support acts while the gas is within this of the wire "
+           "[m] (default 0.10 mm)")
+    a("--gas-ppm-ref", type=float, default=300.0,
+      help="oxygen ppm that gives the full cavity pressure and flux "
+           "(default 300)")
     a("--neck-box", default="0.32e-3:0.90e-3:0:0.22e-3:0.55e-3:1.45e-3",
       help="trailing-face box x0:x1:y0:y1:z0:z1 [m] about the wire axis. "
            "On a half mesh the plane y = 0 is included")
@@ -456,14 +495,18 @@ OXYGEN_ANGLE_TABLE = (
 
 # Oxide film on the solid wire, not a sessile-drop fit. Columns [deg]:
 # ppm, wire receding, wire advancing, trailing receding, trailing advancing.
-# The plate window is not in this table. Higher ppm stands in for a thicker
-# oxide: the trailing face wets less, so a gas slit can stay open.
+# The plate window is not in this table. The front of the wire stays a
+# wetting-to-intermediate window. The trailing face is the oxide: wetting
+# at low ppm (receding well below 90 deg, so melt is pulled onto the wire)
+# and non-wetting from 100 ppm up (receding 90–120, advancing 120–150).
+# A receding floor below 90 deg accepts a wetted groove; one above 90 deg
+# drives that meniscus back off the wire.
 WIRE_OXIDE_TABLE = (
-    (0, 25, 70, 30, 80),
-    (50, 32, 80, 45, 100),
-    (100, 42, 100, 60, 120),
-    (300, 58, 125, 85, 150),
-    (1000, 70, 140, 110, 165),
+    (0, 25, 70, 25, 70),
+    (50, 32, 80, 40, 85),
+    (100, 42, 100, 90, 125),
+    (300, 58, 125, 110, 145),
+    (1000, 70, 140, 120, 150),
 )
 
 
@@ -633,6 +676,21 @@ class Case:
             raise SystemExit("--oxygen-wire-angles cannot be combined with --oxygen-sigma-only")
         if a.neck_refine < 0:
             raise SystemExit("--neck-refine must be >= 0")
+        if a.oxide_skin_mu < 0 or a.oxide_skin_k < 0 or a.oxide_skin_gap <= 0:
+            raise SystemExit(
+                "--oxide-skin-mu and --oxide-skin-k must be >= 0 "
+                "and --oxide-skin-gap must be > 0"
+            )
+        if a.oxide_skin_ppm_ref <= 0:
+            raise SystemExit("--oxide-skin-ppm-ref must be > 0")
+        if a.oxide_skin_surface:
+            a.oxide_skin = True
+        if a.oxide_skin_length_tau < 0:
+            raise SystemExit("--oxide-skin-length-tau must be >= 0")
+        if a.gas_cavity and a.gas_pressure <= 0 and a.gas_q <= 0:
+            raise SystemExit("--gas-cavity needs --gas-pressure and/or --gas-q > 0")
+        if a.gas_pressure < 0 or a.gas_q < 0 or a.gas_gap <= 0 or a.gas_ppm_ref <= 0:
+            raise SystemExit("--gas-pressure and --gas-q must be >= 0, and --gas-gap and --gas-ppm-ref > 0")
         if a.oxygen_wire_angles:
             wr, wa, tr, ta = oxide_wire_angles(a.oxygen_ppm)
             a.theta_receding_wire = wr
@@ -1375,6 +1433,8 @@ divSchemes
     div(alphaPhi,fl) Gauss upwind;
     div(phi,meltHistory) Gauss upwind;
     div(alphaPhi,cWire) Gauss upwind;
+    div(phiOxide,oxideFilm) Gauss upwind;
+    div(phi,oxideFilm) Gauss upwind;
     div(alphaPhi,cComp) Gauss vanLeer;   // multi-component tracers (bounded TVD: keeps strand fragments sharp)
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
 }
@@ -1814,7 +1874,7 @@ statistics
     beadProbeOffset {f(max(3e-4, 3*self.dx))};
     beadHeightThreshold {f(0.2*self.dx)};
 }}
-{self.contact_line_block()}{self.porosity_block()}""" + FOOT
+{self.oxide_skin_block()}{self.gas_cavity_block()}{self.contact_line_block()}{self.porosity_block()}""" + FOOT
 
     def power_dip_block(self):
         """Optional rear-beam power window written into the laser dictionary."""
@@ -1853,6 +1913,74 @@ statistics
             "    oxygenK1         0.0138;       // 1/wt%\n"
             "    oxygenDeltaH0    -146300;      // J/mol\n"
             "    oxygenR          8.314462618;  // J/mol/K\n"
+        )
+
+    def oxide_skin_block(self):
+        """Trailing-face oxide membrane. Empty unless --oxide-skin."""
+        a = self.a
+        if not getattr(a, "oxide_skin", False):
+            return ""
+        length_tau = a.oxide_skin_length_tau
+        if a.oxide_skin_surface:
+            growth = (
+                "    growth          false;\n"
+                "    surface         true;\n"
+                f"    tau             {f(1.0e-3)};\n"
+            )
+        elif length_tau > 0:
+            growth = (
+                "    growth          false;\n"
+                f"    lengthTau       {f(length_tau)};\n"
+                "    zMouth          0.0012;\n"
+            )
+        else:
+            growth = (
+                "    growth          true;\n"
+                f"    tau             {f(5.0e-4)};\n"
+                f"    feedRef         {f(0.020)};\n"
+            )
+        return (
+            "\n// Oxide membrane on the trailing wire face. Strength is\n"
+            "// min(chamberOxygenPpm/ppmRef, 1) when oxygenDependent is true.\n"
+            "// growth true: coverage starts at 0 and rises on the exposed\n"
+            "// trailing face at (ppm/ppmRef)*(feed/feedRef)/tau.\n"
+            "// lengthTau > 0: on from t = 0 over a length feed*lengthTau\n"
+            "// below zMouth.\n"
+            "oxideSkin\n"
+            "{\n"
+            "    enabled         true;\n"
+            f"    muSkin          {f(a.oxide_skin_mu)};\n"
+            f"    Kskin           {f(a.oxide_skin_k)};\n"
+            f"    gapThreshold    {f(a.oxide_skin_gap)};\n"
+            "    zMin            0.0003;\n"
+            "    zMax            0.00155;\n"
+            f"    ppmRef          {f(a.oxide_skin_ppm_ref)};\n"
+            "    alphaGas        0.98;\n"
+            f"{growth}"
+            "}\n"
+        )
+
+    def gas_cavity_block(self):
+        """Trailing-face gas pressure and/or supply. Empty unless --gas-cavity."""
+        a = self.a
+        if not getattr(a, "gas_cavity", False):
+            return ""
+        return (
+            "\n// Gas cavity on the trailing wire face. pSupport and qRef are\n"
+            "// the values at ppmRef. qRef also scales with feed/feedRef.\n"
+            "// The z window is a cap, not the slit depth.\n"
+            "gasCavity\n"
+            "{\n"
+            "    enabled         true;\n"
+            f"    pSupport        {f(a.gas_pressure)};\n"
+            f"    qRef            {f(a.gas_q)};\n"
+            f"    gapMax          {f(a.gas_gap)};\n"
+            f"    ppmRef          {f(a.gas_ppm_ref)};\n"
+            f"    feedRef         {f(0.020)};\n"
+            "    band            0.0008;\n"
+            "    zMin            0.0002;\n"
+            "    zMax            0.0018;\n"
+            "}\n"
         )
 
     def contact_line_block(self):

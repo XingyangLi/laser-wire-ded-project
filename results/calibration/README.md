@@ -217,7 +217,7 @@ The radiograph feature to reproduce is a thin gas slit on the trailing face of t
 
 The mesh is the 150 µm track with three nested refinement passes in x, y and z on the trailing face only (`--neck-refine 3`, box x 0.32–0.90 mm, y 0–0.22 mm, z 0.55–1.45 mm). Each pass is two cells larger than the next, so every interface is a 2:1 jump. OpenFOAM v2406 names that third axis `normal` in `refineMeshDict`. The neck spacing is 19 µm. A mesh-only check of the 100 ppm case has 61402 cells, shortest edge 19 µm, maximum non-orthogonality 26° and maximum aspect ratio 4.7 (`checkMesh`: Mesh OK). The capillary step uses that spacing (`maxDeltaT` about 2.4×10⁻⁶ s). There is no full-height `--wire-refine`: stacking it on the neck passes would take the gap cells well below 19 µm and the time step with them. `dx_min` is the product of the wire-box levels and the neck levels when both are set.
 
-The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-angles` writes a 7-column table and `oxygenWireAnglesOnly`, so the solver applies the wire and trailing columns and leaves the plate at 10°/40°. The table is a stand-in for an oxide film, not a sessile-drop fit: higher ppm, higher angles, poorer wetting, a slit that can stay open. Knots (ppm, wire receding/advancing, trailing receding/advancing): 0 → 25/70 and 30/80; 50 → 32/80 and 45/100; 100 → 42/100 and 60/120; 300 → 58/125 and 85/150; 1000 → 70/140 and 110/165. The trailing sector is 40° about +x with a 15° blend, so the oxide window is the center-back of the wire and not the side groove at y ≈ 1 mm.
+The wire window and the trailing-sector window follow oxygen. `--oxygen-wire-angles` writes a 7-column table and `oxygenWireAnglesOnly`, so the solver applies the wire and trailing columns and leaves the plate at 10°/40°. The table is a stand-in for an oxide film, not a sessile-drop fit. The front of the wire stays wetting-to-intermediate. The trailing face is wetting at low ppm and non-wetting from 100 ppm up, so a wetted groove (apparent angle near 50°) sits inside the low-ppm window and below the high-ppm receding floor. Knots (ppm, wire receding/advancing, trailing receding/advancing): 0 → 25/70 and 25/70; 50 → 32/80 and 40/85; 100 → 42/100 and 90/125; 300 → 58/125 and 110/145; 1000 → 70/140 and 120/150. The trailing sector is 40° about +x with a 15° blend, so the oxide window is the center-back of the wire and not the side groove at y ≈ 1 mm.
 
 Sahoo–Belton `sigma(T, a_O)` is on, and Marangoni is on, so `dσ/dT` can change sign as oxygen adsorption overtakes the clean-metal slope. Recoil is on. The wire inlet stays at 300 K: the slit sits on solid unmelted wire, and preheating that face would melt it. Dissolved-gas transport is not solved: the slit is an open meniscus, and the oxygen entry is the uniform melt activity `a_O = ppm × 10⁻⁴` already used by the surface-tension model.
 
@@ -255,6 +255,295 @@ The split is between the beam and the capillary collapse, not between a noisy sw
 
 Turning the laser, Marangoni and recoil on clears that wetted face. cal41 stays wetted for the whole settle and is gas beside the wire by 10 ms, 2 ms after the ramp finishes. cal39, cal40 and cal42, with those terms on from the first step, are bare by 4–6 ms. Tmax on cal42 is about 3080 K with 131 W absorbed, so recoil is on at the hot spot. The contact-line report in that window is mostly a pinned or advancing plate line; it is not a wire line oscillating between pin and advance.
 
-So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. The thin open film is not an equilibrium of this contact window once the rear beam, Marangoni and recoil are on, and it is not an equilibrium of surface tension while they are off either. No full-domain demo was started.
+So a short settle wets the groove shut, a smoother switch does not keep it open, and stronger neck compression only slows the fill. On cal41 the wire line starts near 50° with the receding branch already on (the 85° floor of the old 300 ppm knot) and the angle never climbs to that floor: the groove is full by 2 ms. The Young force on those cells is already at its cap, so raising the floor does not push a 50° cell any harder. It does put a force on the cells that were pinned between 85° and the new floor.
+
+`launch_slit_nonwetting.sh` is that test. The plate stays 10°/40°. The trailing face uses the table above. All four keep the 8° blend and neck compression ×4, the curved groove, wire at 300 K, feed 20 mm/s, 3 ranks each, `nice -n 10`. The painted center-plane mouth is 0.057 mm on the narrow cases and 0.114 mm on cal46. They were stopped once the 4–6 ms side planes were in: nothing in the neck was still a film, so the remaining run to 16 ms would not have changed the score.
+
+| tag | ppm | trailing window | groove mouth | laser, Marangoni, recoil | what the neck does |
+| --- | --- | --- | --- | --- | --- |
+| cal44 | 300 | 110°/145° | 0.06 mm | off | metal on the wire by 2 ms; only a 0.02 mm crown wisp at 6 ms (z 1.38–1.48 mm) |
+| cal45 | 300 | 110°/145° | 0.06 mm | on | bare trailing face at 2, 4 and 6 ms |
+| cal46 | 300 | 110°/145° | 0.12 mm | off | same as cal44: the resolved gap is metal on the wire by 2 ms |
+| cal47 | 50 | 40°/85° | 0.06 mm | off | a capped 0.07 × 0.10 mm patch at 2 ms (z 1.08–1.18 mm); crown wisp only at 4 ms |
+
+`stability:` is "no steady film" on all four. No depth reaches 0.25 mm, and no sample is both 0.03–0.08 mm wide and that deep. At 2 ms the 300 ppm wire line is still near 55–60°, with about half of the remaining wire cells on the receding branch, and the wire count has fallen from about 100 cells to about 15. The apparent angle never climbs to the 110° floor. The 50 ppm line sits near 40°, inside its window, and that groove is gone by 4 ms as well.
+
+The 0.114 mm mouth is six cells on the 19 µm neck, so this closure is not the two-cell interface thickness. A 12–15 µm neck was not run: the wide groove already separates that from the angle, and it closed the same way. No full-domain demo was started.
+
+`launch_slit_static.sh` asks whether a fixed trailing-face angle can hold a groove at all. Sahoo–Belton sigma stays at 300 ppm and the oxygen angle table is off, so the trailing window is one number: receding and advancing are both 140° (cal48, cal50) or both 160° (cal49). The sector blend and the Young-force blend are 0, the plate stays 10°/40°, and the laser, Marangoni and recoil stay off. cal48 and cal49 keep the 0.06 mm tapered groove. cal50 paints a 0.05 mm gas layer on the whole trailing half of the wire from z = 0.30 mm to 1.50 mm (the painted center-plane width is 0.057 mm from z = 0.70 mm to 1.25 mm). Four ranks each, `nice -n 10`, out to 6 ms.
+
+Neither static angle holds a slit, and the film does not either. There is no minimum angle to map onto oxygen.
+
+| tag | trailing angle | initial gas | neck |
+| --- | --- | --- | --- |
+| cal48 | 140°/140° | 0.06 mm groove | mouth closed by 0.5 ms (width 0.001 mm); crown wisp only at 2, 4 and 6 ms |
+| cal49 | 160°/160° | 0.06 mm groove | same closure |
+| cal50 | 140°/140° | 0.05 mm film on the trailing half | mouth closed by 0.5 ms; crown wisp only at 2–6 ms |
+
+`stability:` is "no steady film" on all three. The wire line starts near 50° (cal50 near 61°) with almost every cell on the receding branch, so the force is trying to drive the angle up to 140° or 160°. The mean falls toward 25–45° while the count falls from about 105 cells to a handful by 2 ms. It never reaches the set angle.
+
+`WireForce:` is the neck check in the solver log. `touch` is an interface cell within one cell of the wire surface; `touchForced` is one of those that carries a Young force. `inBand` is inside the acceptance radius R+1.75h (about 33 µm on this mesh) and `beyond` is an interface the band ignores. `missGas`, `missLiq` and `missWire` are in-band cells dropped for a missing neighbour. `atCap` hit the 2σ/h² clamp. `sink` is the velocity sink, which is on only inside the hysteresis window. A static angle has no window, so the sink is only the dozen cells whose apparent angle is already exactly 140°. There is no velocity cap on the force (`velCap none`). The tangent test does not drop the force (`noTan` 0). `pYoung` is |F|·h and `pCap` is 2σ/w at the center-plane mouth (z = 1.10–1.30 mm).
+
+On cal48 at the first step, with the painted mouth still open at 0.058 mm: 1350 cells touch the trailing face and 93 of them carry a force. 1238 in-band cells are dropped because they have no liquid-metal neighbour, 209 because they have no unmelted-wire neighbour, and 432 interface cells sit outside the 1.75h band. 69 of the 93 forced cells are at the 2σ/h² cap. pYoung is 1.21×10⁵ Pa and pCap is 4.04×10⁴ Pa, so the force on a triple-line cell is about three times the capillary pressure of that mouth. By 2 ms the mouth is closed, the trailing line is 8 cells, and pYoung has fallen to 2.4×10⁴ Pa. The same pattern is on cal49 and on the film. The cells that actually touch the wire along the groove are mostly gas against solid wire, three cells away from the metal wall, so they never receive the angle.
 
 The full-track trio was stopped before any side-plane write, so it has no slit depth. The mesh check on the small domain (cal35) is 34980 cells, 19 µm neck, Mesh OK. The square slit box had selected 1448 cells before the wire cylinder restored its own interior.
+
+`launch_slit_wall.sh` separates the missing wall from the mesh size. Same slab, same 300 ppm Sahoo–Belton sigma, laser, Marangoni and recoil off, plate window 10°/40°, out to 6 ms, 12 ranks, `nice -n 10`.
+
+(A) The wire is cut out of the mesh (`subsetMesh` on the complement of a 0.5 mm cylinder from z = 0.05 mm upward). The new patch `wireWall` is a wall, 1443 faces. `alpha.metal` is `constantAlphaContactAngle` (theta0 through the metal, limit gradient). `U` is fixedValue `(0 0 -0.02)`, the feed velocity on a static mesh. `T` is 1700 K for z < 1.35 mm and 600 K above that. A 0.05 mm gas film is painted on the trailing face after the cut (center-plane width 0.057 mm from z = 0.70 mm to 1.25 mm). The internal wire pin is off. 3 ranks each. cal51 is 140°. cal52 is 40°.
+
+(B) cal53 keeps the cal48 wire (metal region, static 140°/140°, 0.06 mm groove, internal pin) and refines the neck four times, to 9.4 µm, in the box x 0.40–0.80 mm, y 0–0.18 mm, z 0.65–1.35 mm. 90742 cells, Mesh OK, 6 ranks.
+
+The wall angle does change the neck, and it does not hold a slit. `stability:` is "no steady film" on cal51 and cal52.
+
+| tag | wall angle | what the center plane does |
+| --- | --- | --- |
+| cal51 | 140° | at 2 ms a 0.040 × 0.075 mm open patch at z 0.78–0.85 mm; by 4 ms and at 6 ms no metal in the 0.08 mm band from z = 0.60 mm up (the pool has left the wall) |
+| cal52 | 40° | by 2 ms the 0.50–0.58 mm band is metal from z = 0.60 mm to 1.30 mm, and it is still metal at 6 ms. The mouth gap in the solver log is 0.0007 mm from 0.5 ms through 6 ms |
+
+140° does not keep a 0.05 mm film. The non-wetting wall drives the pool off the face. 40° closes the gap and the metal stays on the wall. The contact angle is being enforced. Neither state is the radiograph slit (0.03–0.08 mm wide, at least 0.25 mm deep, steady for 4 ms), so there is no oxygen-to-angle map and no change to how the lower end melts. Figure: `wall_fine_neck.png`.
+
+cal53 does not hold the groove either. The painted mouth is 0.048 mm at the first step and 0.0005 mm from 0.25 ms onward. At 2 ms the center plane is metal on the wire from z = 0.60 mm to 1.20 mm, with a capped 0.020 × 0.050 mm wisp at z 1.25–1.30 mm. That sample already fails the film test, so later times could not accumulate 4 ms of a good film. The run was stopped at 2.3 ms. The step had stayed between 0.05 µs and 0.3 µs with a maximum Courant number near 0.4. Finer cells close the same groove faster than the 19 µm mesh. `stability:` is "no steady film".
+
+The wall boundary condition does enforce the angle: 40° wets and stays wet, and 140° drives the pool off the wall onto a bare face. The 9.4 µm neck still fills the groove.
+
+## Oxide skin
+
+`launch_slit_oxide.sh`. Same slab and the same painted 0.05 mm trailing film as cal50 (static 140°/140°, plate 10°/40°, 300 ppm Sahoo–Belton sigma, angle table off, laser, Marangoni and recoil off, 19 µm neck, 12 ranks, `nice -n 10`, out to 6 ms). The skin is on from the first step. Strength is `min(ppm/300, 1)`, so 300 ppm is full strength. `muSkin` is an implicit viscosity on cells with `|grad alpha| h > 0.25`. `Kskin` damps every cell in the trailing shell (z 0.30–1.55 mm, within 0.10 mm of the wire). The radial velocity is removed. A scalar coefficient also holds the tangential velocity, so the shell stays put. The wire feed still wins inside the unmelted wire.
+
+| tag | muSkin | Kskin | center plane |
+| --- | --- | --- | --- |
+| cal54 | 200 Pa·s | 1×10¹² | at 2 ms a 0.040 × 0.750 mm open film, z 0.55–1.30 mm; at 4 ms the crown from z = 1.05 mm up is bare and the metric depth is 0.050 mm |
+| cal55 | 20 Pa·s | 1×10¹³ | open film at 2, 4 and 6 ms, width 0.040 mm, depth 0.750 → 0.650 mm. `stability:` drifting (depth change 0.10 mm, limit 0.08 mm) |
+| cal56 | 20 Pa·s | 1×10¹⁴ | open film at 2, 4 and 6 ms, width 0.040 mm, depth 0.725 mm, z 0.55–1.28 mm, unchanged. `stability:` steady |
+
+cal54 also ran at a time step near 0.1 µs because the Courant number sat on 0.4. cal55 and cal56 stay on the capillary step, about 1.2 µs. The mouth gap in the solver log stays 0.058 mm for the whole of cal56. Figure: `oxide_skin_slit.png`.
+
+The recipe that holds is cal56. No gas-pressure support and no solid shell were run. The full-domain run with beams, Marangoni and recoil on is left to the other machine.
+
+`launch_slit_oxide_sweep.sh` keeps the cal56 flags and changes one number. `ppmRef` stays 300, so the skin strength is `min(ppm/300, 1)`. Sahoo–Belton `sigma(T)` is evaluated at the same ppm. Feed runs stay at 300 ppm. Width is the metric width (0.02 mm bins). Depth is the range from 2 ms to 6 ms.
+
+| tag | ppm | feed mm/s | width mm | depth mm | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal57 | 50 | 20 | 0.040 | 0.600–0.725 | drifting |
+| cal58 | 100 | 20 | 0.040 | 0.650–0.725 | steady |
+| cal59 | 200 | 20 | 0.040 | 0.725 | steady |
+| cal56 | 300 | 20 | 0.040 | 0.725 | steady |
+| cal60 | 300 | 18 | 0.040 | 0.725 | steady |
+| cal61 | 300 | 24 | 0.040 | 0.725 | steady |
+| cal62 | 300 | 28 | 0.040 | 0.725 | steady |
+
+Low oxygen does not close the slit. At 50 ppm the film stays 0.040 mm wide and open; the crown shortens, so the depth change is 0.125 mm and the metric calls it drifting. From 100 ppm up it is steady, and at 200 and 300 ppm the depth does not move. Depth is the same 0.725 mm at 18, 20, 24 and 28 mm/s.
+
+## Growing skin and painted depth
+
+That flat depth is the painted film. The uniform membrane is at full strength from the first step, so it holds whatever gas was painted. `launch_slit_oxide_depth.sh` uses the same slab, 300 ppm, 20 mm/s and 140° window, with `growth true`. Coverage starts at 0. On the exposed trailing face it rises at `(ppm/300) * (feed/0.020) / 0.5 ms` and is carried down with the wire. `Kskin` and `muSkin` in a cell are the full cal56 values times `min(coverage, 1)`. At 300 ppm and 20 mm/s the coverage reaches 1 in 0.5 ms. The painted film is 0.05 mm thick and ends at z = 1.20 mm. Depth 0 leaves the dome metal on the wire: no film and no groove.
+
+Width and depth are the metric values at 2, 4 and 6 ms. A zero is no thin gap.
+
+| tag | painted mm | 2 ms, depth × width | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal63 | 0.10 | 0.025 × 0.100 | 0 | 0 | no steady film |
+| cal64 | 0 | 0 | 0 | 0 | no steady film |
+| cal65 | 0.30 | 0.350 × 0.070 | 0.100 × 0.080 | 0 | no steady film |
+| cal66 | 0.50 | 0.475 × 0.080 | 0.025 × 0.060 | 0 | no steady film |
+| cal67 | 0.75 | 0.475 × 0.080 | 0.075 × 0.080 | 0.025 × 0.020 | no steady film |
+
+No run holds a film. The 0.10 mm paint is a 0.025 mm wisp at 2 ms and is gone after that. The wetted neck never opens a thin gap: at 6 ms the metal fraction in x = 0.50–0.56 mm is 1.00 at z = 0.70 mm and 0.08 at z = 1.10 mm, so the lower neck stays wet and the crown is gas. The 0.30, 0.50 and 0.75 mm paints are still open at 2 ms. The two shorter ones still have about the painted depth (0.35 and 0.48 mm). The 0.75 mm paint has already shortened to 0.48 mm. By 6 ms the depths are 0, 0 and 0.025 mm. The solver mouth gap is about 0.001 mm once the coverage has saturated, so the membrane is locking a closed face. The time step sits on Courant 0.4 while that face is moving.
+
+There is no steady depth for a new oxygen and feed table. The table above is the uniform skin, which preserves the paint. The growing skin does not select a slit, and it does not keep the painted depth either.
+
+## Gas pressure, gas flux, and a feed-length skin
+
+The uniform skin preserves the paint, so these smokes ask whether a cavity pressure, a gas supply, or a shorter skin can choose the depth. The metric is unchanged: width 0.03–0.08 mm, depth at least 0.25 mm, open, steady for at least 4 ms. Beams, Marangoni and recoil stay off. 12 ranks, nice 10, 6 ms. A zero in the table is no thin gap. The smears that remain are one cell wide (0.020 mm) and sit above the painted film.
+
+`pSupport` is a face force on interfaces whose gas side faces the wire, and only while that gas is within 0.10 mm of the wire. `qRef` is a gas volume flux at the highest of those interfaces, times feed/20 mm/s. Both scale with `min(ppm/300, 1)`. The oxide skin is off for cal68–cal70. All three start from a 0.1 mm film at 300 ppm and 20 mm/s.
+
+| tag | mechanism | 2 ms, depth × width | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- |
+| cal68 | 5 kPa, no flux | 0.050 × 0.020 | 0.075 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal69 | flux 5 mm/s, aimed above the bead | 0.050 × 0.020 | 0.075 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal70 | flux 50 mm/s at the cavity | 0.075 × 0.020, capped | — | — | stopped |
+
+5 kPa does not hold a 0.05 mm film. The capillary pressure across that gap is about 20 kPa, so the 1–5 kPa range is too small. cal69 fed the bare wire above the bead (contact height 1.79 mm) and never reached the film. cal70 feeds the cavity (contact height about 1.4 mm). At 2 ms the painted film is a capped one-cell gap, and the time step has fallen to 30 ns, so the run was stopped.
+
+The other mechanism is the cal56 membrane, on from the first step, but only over a length `feed × tau` below z = 1.20 mm. Strength is full at 300 ppm. cal71 is a 0.1 mm paint and a 0.072 mm shell (18 mm/s × 4 ms). cal72 and cal73 use a 0.75 mm paint, which is longer than the shell, so a held depth could have been the shell length rather than the paint.
+
+| tag | shell mm | painted mm | feed mm/s | 2 ms | 4 ms | 6 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cal71 | 0.072 | 0.10 | 18 | 0.025 × 0.020 | 0.025 × 0.020 | 0.050 × 0.020 | no steady film |
+| cal72 | 0.36 | 0.75 | 18 | 0.025 × 0.020 | 0.050 × 0.020 | 0.075 × 0.020 | no steady film |
+| cal73 | 0.56 | 0.75 | 28 | 0.025 × 0.020 | 0.050 × 0.020 | 0.025 × 0.020 | no steady film |
+
+The shell does not hold the film when it stops short of the lower lip. The lip is free, and the film closes through the damped region. The depth does not become the oxidised length, and it does not change from 18 to 28 mm/s. No oxygen and feed table follows, because none of these runs left a steady slit.
+
+## Bare neck
+
+These three start with no painted film and no groove. The initial field is a pool and a dome sitting on the wire, the wire feeding at 20 mm/s, travel speed 4 mm/s. Wire advancing/receding angles are 140°/40° on the wire and on the trailing sector. The plate stays 10°/40°. 300 ppm, 8 ms, 12 ranks. The metric is unchanged. A zero is no thin gap. "Bare face" means the crown is open gas, which is the wetted neck, not a slit.
+
+cal74 carries oxide coverage on the free surface. It starts at 0, moves with the mixture flux, and grows at `(ppm/300)/1 ms` on interface cells. The damper acts only where gas faces the trailing wire, so it cannot freeze the wet neck. Laser, Marangoni and recoil are off. cal75 is the same skin with those three on. cal76 has no skin: only the moving contact line and the 4 mm/s travel.
+
+| tag | mechanism | 2 ms | 4 ms | 6 ms | 8 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- |
+| cal74 | surface skin, 140/40 | bare face | 0.025 × 0.020 | 0.050 × 0.020 | 0.025 × 0.020 | no steady film |
+| cal75 | same skin, Marangoni and recoil on | bare face | bare face | bare face | bare face | no steady film |
+| cal76 | travel speed, no skin | 0 | bare face | 0.025 × 0.020 | 0.025 × 0.020 | no steady film |
+
+None of them generates a thin open slit. On cal74 the coverage does reach the cap (oxMax = 2) and about 170 trailing cells are damped, but the mouth gap stays at about 0.001 mm, so the skin is sitting on a closed face. The only thin signal is a one-cell wisp near z = 1.4 mm. Marangoni and recoil do not push a film open in 8 ms; the neck stays a bare face. At 4 mm/s the substrate moves 0.032 mm in 8 ms, and the wire feeds 0.16 mm. That does not entrain a gas film on the trailing face. The capillary number of the travel speed is about 2×10⁻⁵.
+
+## Wire-wall drag
+
+cal77 starts from the same bare neck and gives the wire a real wall. The mesh is static. The wall velocity is the feed, 24 mm/s downward. `alpha.metal` on that wall is `pinnedAlphaContactAngle` with a window of 40° receding and 140° advancing: inside the window the imposed angle is the apparent angle, so the Young force is zero and the line can stay stuck. `U` is `partialSlip` at the feed. The solver sets no-slip, and a momentum sink (`Kpin` 1×10¹² kg/m³/s), on the trailing contact only: the highest metal still touching the wall, and the 0.20 mm band under it. The rest of the wall slips, so the moving wire does not pump the pool. Plate window 10°/40°. Oxygen is Sahoo–Belton at 300 ppm, with the angle table off. Laser, Marangoni and recoil are off. 10 ms, 12 ranks. No painted film.
+
+The contact starts at z = 1.20 mm with an apparent angle of 117°. About 25 faces stay pinned. The angle falls and remains inside the window (slip stays at 0 or 1).
+
+| time | z of the wetted top | angle | pinned faces |
+| --- | --- | --- | --- |
+| 0 | 1.20 mm | 117° | 24 |
+| 2 ms | 1.18 mm | 73° | 27 |
+| 2.7 ms | 0.58 mm | 71° | 36 |
+| 4 ms | 0.65 mm | 60° | 21 |
+| 6 ms | 0.63 mm | 59° | 20 |
+| 8 ms | 0.63 mm | 59° | 21 |
+| 10 ms | 0.65 mm | 60° | 21 |
+
+In 10 ms the wire itself moves 0.24 mm. The wetted top moves about 0.55 mm, most of it between 2 and 3 ms, then sits near 0.63 mm.
+
+The center-plane gap tells the other half of that motion. At 2 ms the trailing face is still metal up to 1.15 mm, and the crown above that is open gas. At 4, 6, 8 and 10 ms the face is gas from 0.35 mm to 1.55 mm (the metric cap of 0.40 mm). The metric reads a bare face at every sample. No thin open slit appears, so the feed sweep (18/24/28 mm/s) and the oxygen sweep (50/100/300 ppm) were not run.
+
+| tag | ppm | feed | window | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cal77 | 300 | 24 mm/s | 40°/140° | bare face | bare face | bare face | bare face | bare face | no steady film |
+
+## Imposed line pin
+
+cal78–cal86 start from the same bare neck. The trailing contact is a material point of the wire. On the first step the solver records the wetted top on the trailing face, z0 = 1.215 mm. After that the line height is `z0 + feed_z * t`, and the log line `LinePin:` follows that height. A two-cell shell on the trailing face is held at gas above the line and metal below it, and the shell velocity is the feed. Liquid that leaves a shell cell is passed to the next cell outward. That next cell is restored toward metal, chosen by radius, so the displaced coating stays beside the gap. Cells beyond it, and the pool below the line, are free. The wall angle stays 40°/140° at every ppm. Laser, Marangoni and recoil are off. 10 ms, 12 ranks. No painted film.
+
+ppm sets the hold. `s = min(ppm/300, 1)` is the fraction of the alpha error and the velocity error removed after every alpha solve, and the fraction of `Kpin` (1×10¹² kg/m³/s). At 50 ppm, s = 1/6. At 100 ppm, s = 1/3. At 300 ppm, s = 1 and the shell is overwritten. Sahoo–Belton `sigma` still follows ppm. The angle window does not.
+
+The line height and the shell are imposed. The gap from the wire surface (x = 0.50 mm) to the first metal is 0.039 mm at every sample below, which is the two-cell shell (the first metal sits at x = 0.539 mm). Depth grows with the feed: at 10 ms the wire has moved 0.18, 0.24 and 0.28 mm, and the measured run is 0.175, 0.250 and 0.300 mm. The extra is one 0.025 mm slice. The two-bin metric in `slit_metric.py` reads a one-cell wall as a bare face, so its width is 0.020 mm and its depth misses the top of the run, where the wall is a single cell. Both numbers are in the table. The steady test wants width 0.03–0.08 mm, depth at least 0.25 mm, and a change of at most 0.08 mm in depth over 4 ms. Depth here increases at the feed rate, about 0.05 mm every 2 ms, so none of the runs is a steady film. The gap stays open and keeps deepening.
+
+The metal past the shell is free. At 10 ms it is one cell thick at the top of the gap (z ≈ 1.20 mm) and extends to about 0.65–0.69 mm lower down, where the line has reached the bead. That outer extent is the pool sitting against the imposed gap. The gap width itself stays 0.039 mm from the bottom of the run to the top.
+
+50, 100 and 300 ppm produce the same gap at a given feed. s = 1/6 still puts the shell back on the target each step, and the momentum sink stays far above ρ/Δt, so the velocity stays at the feed. Oxygen changes the hold fraction and Sahoo–Belton `sigma`. It does not change the width or the depth in this smoke.
+
+Figures: `linepin_feed_300ppm.png` (radiograph, then 18/24/28 mm/s at 300 ppm, 10 ms) and `linepin_ppm_24mms.png` (50/100/300 ppm at 24 mm/s, 10 ms).
+
+| tag | ppm | feed | s | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | two-bin at 10 ms |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cal78 | 300 | 18 mm/s | 1 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.125, open |
+| cal83 | 50 | 18 mm/s | 1/6 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.125, open |
+| cal84 | 100 | 18 mm/s | 1/3 | 0.025 × 0.039 | 0.075 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.175 × 0.039 | 0.020 × 0.150, open |
+| cal79 | 300 | 24 mm/s | 1 | 0.050 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal81 | 50 | 24 mm/s | 1/6 | 0.050 × 0.039 | 0.100 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal82 | 100 | 24 mm/s | 1/3 | 0.050 × 0.039 | 0.125 × 0.039 | 0.150 × 0.039 | 0.225 × 0.039 | 0.250 × 0.039 | 0.020 × 0.225, open |
+| cal80 | 300 | 28 mm/s | 1 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.275, open |
+| cal85 | 50 | 28 mm/s | 1/6 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.300, open |
+| cal86 | 100 | 28 mm/s | 1/3 | 0.075 × 0.039 | 0.125 × 0.039 | 0.175 × 0.039 | 0.225 × 0.039 | 0.300 × 0.039 | 0.020 × 0.275, open |
+
+Entries are depth × width in millimetres, from the wire surface to the first metal. Every run reports `no steady film`.
+
+## Trailing oxide angle
+
+cal87–cal89 start from the same bare wetted neck. There is no painted film, no `linePin` and no `wireDrag`. Coverage starts at 0 and grows on the trailing wire surface toward `s = min(ppm/300, 1)`, with a 1 ms timescale. The first cell outside the wire grows even where it is metal. Cells farther out, up to 3 cells, grow while `alpha < 0.9`. Buried metal relaxes back toward 0. The field is not advected.
+
+That coverage is generated by the exposure law. The map applied to it is imposed. The clean wall window is 10°/40°. Coverage blends it toward 40°/140°, so the saturated window is 15°/57° at 50 ppm, 20°/73° at 100 ppm and 40°/140° at 300 ppm. `sigma` is multiplied by `max(1 - 0.5*coverage, 0.1)` after the Sahoo–Belton value, so full coverage halves it. The tangential force from that oxide part of `grad(sigma)` is on. Thermal Marangoni, the laser and recoil stay off until 0.020 s. On trailing `wireWall` faces the no-slip fraction equals coverage and the reference velocity is the feed. `Kcontact` is not set, and alpha is not overwritten. Feed 24 mm/s, 10 ms, 12 ranks. In that time the wire moves 0.24 mm.
+
+`cMax` reaches `s` in each run. The free surface does not become a thin open slit. The two-bin metric and the first-metal gap both find no run of width 0.03–0.08 mm. What forms is a bare trailing neck, sooner at higher ppm.
+
+| tag | ppm | s | 2 ms | 4 ms | 6 ms | 8 ms | 10 ms | stability |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| cal89 | 50 | 1/6 | wetted neck | wetted neck | bare window | bare window | bare from 0.65 to 1.05 mm; metal still on the wire below 0.60 mm and above 1.15 mm | no steady film |
+| cal88 | 100 | 1/3 | wetted neck | wetted neck | bare neck | bare neck | bare neck | no steady film |
+| cal87 | 300 | 1 | wetted neck | bare neck | bare neck | bare neck | bare neck | no steady film |
+
+At 2 ms every run still has metal on the trailing wire. The coating extends about 0.15–0.25 mm out from the face. At 300 ppm that metal is gone by 4 ms: cells with `alpha > 0.5` in the neck (z 0.55–1.35 mm, x > 0.45 mm) fall from 5904 to 22, then to 0, and stay there. The same count at 100 ppm is still 2808 at 4 ms and 0 from 6 ms on. The metal that leaves the neck remains in the domain, on the plate. At 50 ppm the count falls from 4018 to about 900. On the center plane, and in the volume, z 0.65–1.05 mm on the trailing side is gas at 10 ms. Metal remains on the wire below that window and above it. None of the three holds a gap whose depth follows the feed.
+
+Figures: `oxideangle_300ppm_time.png` (radiograph, then 300 ppm at 2, 4 and 10 ms) and `oxideangle_ppm_24mms.png` (50, 100 and 300 ppm at 10 ms).
+
+## Equilateral beams, then a true-wall pin
+
+The bare-neck pin had no melt track. cal90 grows one with the lasers on, in the cal08 arrangement, with the three beam axes 120° apart: 60°, −60° and 180°. The half-domain `symmetryY` fold is on. All three beams stay in the dictionary, including the focus at y = −0.52 mm. Each listed power is halved in the half mesh and the negative-y rays are folded to |y|, so the −60° beam is the mirror of the +60° beam and is not dropped. The gaps are 120°, 120° and 120°. Powers are 160 W, 160 W and 420 W. The rear aim is on the trailing flank. Scan 4 mm/s, feed 24 mm/s from 0.05 s, coarse 150 µm mesh, 12 ranks, `nice -n 10`. No painted drop.
+
+At 0.60 s the center plane is a bead fused to the plate. The trailing crest is 1.91 mm at x = 0.58 mm. The leading crest is 0.84 mm. The trailing foot reaches x = 3.28 mm. The half-mesh laser power is 370 W incident, 130 W absorbed, and the peak temperature is about 2920 K.
+
+cal91 cuts that 0.60 s wire into a true wall (291 faces on this mesh) and turns on `linePin`. `pinWire` is off. The formed bead is the initial field, the feed runs at once, and the pin window is 20 ms. The line is recorded at z0 = 1.912 mm and then moves at the feed. At 20 ms, zLine = 1.435 mm, which is the 0.48 mm the wire travels. Below that height the face is metal. Above it the face is gas and the first metal is at x = 0.875 mm, 0.375 mm from the wire surface. That width is the two-cell shell on the 150 µm mesh. The bead outside the shell is the free surface from cal90. Figures: `cal90_t060_views.png` and `cal91_pin_views.png`.
+
+## Beams on the substrate, hits on the free surface
+
+Each ray is marched from the top of the domain. The power goes into the first cell with `alpha >= 0.5`. A bead that rises into the ray takes that power. `LaserHit:` is the power-weighted height of those cells.
+
+cal92 put the three plate spots 0.70 mm from the wire axis. The side beams climbed from the plate to about 0.7 mm. The trailing beam stayed near z = 0 for the whole 0.60 s, because the surface under that spot never rose: the 420 W spot was far enough outside the wire that the fed metal did not build a bead there.
+
+cal93 moves every spot to 0.55 mm and sets every inclination to 26°. About 70% of a 0.26 mm Gaussian centred there is on the substrate and the inner wing meets the wire. At the first step the trailing beam puts 8% of its power above 0.3 mm (the wire) and the rest on the plate. By 0.60 s every trailing ray hits above 0.3 mm, the mean hit is 1.18 mm and the highest is 1.45 mm. The side beams finish at a mean hit of 0.71 mm. On the center plane the trailing crest is 1.45 mm at x = 0.58 mm, the leading crest is 0.99 mm, and the foot reaches x = 3.43 mm. Figure: `cal93_t060_views.png`. The wire itself stays solid: inside the cylinder the peak is 1490 K and the liquid fraction is 0. That is not a fused dome.
+
+## Baseline bead
+
+cal95 keeps those fixed aims and tilts every beam to 15° from vertical, so the inner wing meets the wire near 0.8 mm instead of at the foot. The substrate starts at 1100 K and the plate window is 10°/40°. The wire inlet stays at 300 K. Scan 4 mm/s, feed 24 mm/s, coarse mesh, 12 ranks. No line pin.
+
+At 0.80 s the wire is liquid from about z = 0.6 mm to 1.4 mm (liquid fraction 0.7–1) and solid above that, where the cold feed is still coming in. The trailing crest is 1.61 mm at x = 0.58 mm and is liquid. The leading crest is 0.69 mm. The trailing foot reaches x = 4.47 mm. There is no gas film under the bead. The plate under the pool reached 1706 K at 0.40 s and is 1616 K at 0.80 s, just under the 1658 K solidus. The trailing beam’s mean hit height is 1.35 mm, with every ray above 0.3 mm. Figure: `cal95_t080_views.png`. The pinned slit is not started on this bead yet.
+
+## Equal-power checkpoint
+
+The 160/160/420 W split was the old trailing-heavy cal08 setting. The three beams are equal: 740 W divided by three (246.6667, 246.6667, 246.6666 W). cal95b is that rerun, same aims and 0.80 s. The wire is liquid from 0.2 mm to 0.6 mm. The trailing crest is 1.76 mm and liquid. The leading crest is 0.69 mm. The plate under the pool is 1671 K. There is no gas film under the bead. Figure: `cal95b_t080_views.png`.
+
+The half-domain geometry is the mesh that was solved. It is not mirrored across y = 0. Temperature on the metal surface, the cold wire, the substrate and the bead are in `cal95b_3d_trailing.png`, `cal95b_3d_front.png` and `cal95b_3d_top.png`. The cyan rings are the 60° and 180° spots (247 W each); the −60° beam is folded onto the 60° spot by the symmetry plane, which is labelled. `cal95b_3d.mp4` is the same trailing view from 0 to 0.8 s (1280×720, 12.5 s).
+
+Centre-plane movies, symmetry plane y = 0, wire at x = 0, crop x = ±3 mm and z = 0 to 2.5 mm, 1920×1080, 240 frames at 30 fps: `cal95b_center_temperature.mp4` (fixed colour bar, solidus 1658 K, free surface) and `cal95b_center_flow.mp4` (melt velocity). The case writes every 0.2 s, so frames between those five times are linear blends of alpha, T and U. Melt speed on that plane is 0 to 0.335 m/s (99th percentile 0.186 m/s).
+
+The 2 s rerun (`cases/wire_cavity_cal95b_2s`, same mesh and beams, write every 0.01 s, 201 fields) is in `cal95b_2s_center_temperature.mp4` and `cal95b_2s_center_flow.mp4`: 201 frames, 30 fps, no interpolation. At 0.8 s the wire-side trailing crest is 1.61 mm and the foot is at 4.03 mm. By 2.0 s that crest is 1.30 mm, the foot has reached 6.77 mm (the downstream edge of the domain is 7 mm), and the leading crest is 0.69 mm. Melt speed on the plane is 0 to 1.36 m/s (median 0.010, 99th percentile 0.221).
+
+`cal95b_2s_metallic.mp4` is those same 201 fields, with no time interpolation and no mirror. `alpha.metal` is averaged from cells onto points, the point field is resampled by 2 in index space, and a marching-cubes surface is taken at 0.5. Eight Taubin iterations (lambda 0.45, mu -0.47) soften the grid stair-steps; points that start on y = 0 stay there. Lighting is three lamps, a tight specular lobe, a soft lobe and a Fresnel rim. Metal above 1658 K picks up an orange glow, and the plate stays matte. The view is from above the half-bead. The symmetry plane is labelled, and the note that the foot meets x = 7 mm after about 1.6 s is drawn in red from that time. 1920×1080, 30 fps. Stills: `cal95b_2s_metallic_t080.png`, `cal95b_2s_metallic_t200.png`.
+
+`cal95b_2s_metallic_mirrored.mp4` is that same surface reflected across y = 0, so the frame shows the full bead and wire. It is a display mirror of the half-domain result. The caption reads "mirrored across y = 0 symmetry plane for display". Same shading, 201 frames, 1920×1080, 30 fps, and the same boundary note. Still: `cal95b_2s_metallic_mirrored_t080.png`.
+
+`cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
+
+cal105 finished 6 ms with the 19 µm band on the lower neck (z 0.45–1.55 mm). The line itself sits at the crest, z0 = 1.80 mm, and in 6 ms it only falls to 1.65 mm, so that band never contains the shell. The crest gap there is one coarse cell. Figure: `cal105_neck.png`.
+
+cal109 moves the 19 µm band onto the crest (z 1.25–1.98 mm) and sets an imposed shell thickness of 0.0375 mm (two fine cells). sigma stays the alloy value, 1.75 N/m. The shell is imposed: above the feed-following line, alpha in that thickness is restored to gas and the liquid is passed outward. The bead outside the shell is free. z0 is the highest liquid cell in the shell, 1.826 mm, not the cold wire.
+
+| t | width | depth | z |
+| --- | --- | --- | --- |
+| 2 ms | 0.047 mm | 0.060 mm | 1.78–1.84 |
+| 6 ms | 0.047 mm | 0.200 mm | 1.68–1.88 |
+| 10 ms | 0.047 mm | 0.260 mm | 1.58–1.84 |
+| 14 ms | 0.047 mm | 0.340 mm | 1.50–1.84 |
+
+Width stays 0.047 mm from 2 ms through 14 ms. Depth passes 0.25 mm at 10 ms and the gap stays open. Over 10–14 ms the depth moves 0.08 mm, which is the imposed feed, and the width does not move. The bead is still against the wall below the line. No gas film on the plate. deltaT ends at 9.6×10⁻⁷ s. zLine at 14 ms is 1.490 mm, equal to 1.826 mm minus 0.336 mm of feed. Figure: `cal109_neck.png`.
+
+cal110 keeps that mesh and alloy sigma, and replaces the constant shell with a graded bias: 0.040 mm at the line, opening quadratically to 0.090 mm at the crest. That bias is imposed. The cell outside it is not forced to metal, and gas is imposed only where metal still lies further from the wire. The run was stopped at 14.8 ms. At 4 ms the center plane does show a short flare (about 0.047 mm at z = 1.72 mm, 0.10 mm at z = 1.80 mm) with metal still outside it, but the depth is only 0.10 mm. By 10–14 ms the crest above the line has no metal on the center plane over a long stretch. The fragment that the gap metric still finds is 0.10 mm wide at both ends and 0.06 mm deep. Metal cells fall from 22431 to 16268. There is no gas film on the plate and deltaT stays near 10⁻⁶ s. Figure: `cal110_neck.png`. This is not the radiograph wedge.
+
+cal111–cal113 use the same cal109 mesh and a linear imposed offset: narrow at the feed-following line, wider at the crest. Metal outside that radius is not cleared. Sigma stays 1.75 N/m. All three ran 16 ms on 4 ranks.
+
+| tag | offset at line | offset at crest | metal cells 0 → 16 ms | 16 ms centre plane |
+| --- | --- | --- | --- | --- |
+| cal111 | 0.040 mm | 0.090 mm | 22431 → 15563 | crest above the line is open, no lasting taper |
+| cal112 | 0.040 mm | 0.100 mm | 22431 → 16066 | same; a short 0.047-to-0.10 mm flare at 4–6 ms does not last |
+| cal113 | 0.0375 mm | 0.090 mm | 22431 → 15686 | same |
+
+At 16 ms the measured fragment is about 0.10 mm wide at both ends and under 0.1 mm deep. The crest is not intact. deltaT stays near 10⁻⁶ s and there is no gas film on the plate. Figure: `cal112_neck.png`.
+
+## Hysteresis on the wire wall
+
+cal114 turns the gas shell off. The wire wall uses contact-angle hysteresis, and the feed velocity is the partial-slip reference. While the local angle is inside the window the line is pinned to the wire; outside it, the line can slide. The window is a model assumption in `wire_hysteresis.cfg`, not a measured isotherm. At 300 ppm the row is receding 20°, advancing 155°, Kpin 1e12. Sigma stays 1.75 N/m. The 19 µm crest mesh and the cal95b bead are the cal109 restart. Nothing is painted into alpha.
+
+The run was stopped at 6.7 ms. The liquid contact started at 1.826 mm, dropped to 1.577 mm, and stayed there. Over the same time the wire feed is 0.16 mm, so the line did not travel with the wire. The angle stayed near 55–72°, inside the window, and almost every contact face was classified as pinned rather than sliding. On the centre plane the wall cell is still metal. The crest free surface is a short round-off, about 0.08 mm wide and 0.06 mm deep, the same at the top and the bottom. Metal cells go from 22431 to 21314. There is no gas film on the plate. deltaT stays near 10⁻⁶ s. Figure: `cal114_neck.png`. No slit formed, so the 50/100 ppm and 18/28 mm/s cases were not started.
+
+Restart fields, mesh and dictionaries are in `results/calibration/checkpoints/cal95b/` (t = 0.8 s, no processor directories). `pack_checkpoint.sh` rebuilds that tree. Copy it to a new case and continue from `0.8`, or rename that time to `0` when the pin window should start at t = 0.
+
+## Hard pin on the equal-power bead
+
+The true wall is cut from the cal95b checkpoint and `linePin` is turned on. The crest is recorded at z0 = 1.759 mm and then moves at the feed. The shell is two cells of the 150 µm mesh, so the first metal above the line sits 0.375 mm from the wire. Below the line the bead face stays metal. ppm sets the hold `s = min(ppm/300, 1)`. s = 1/6 already keeps the line on the feed, so 50, 100 and 300 ppm leave the same height.
+
+| tag | feed | ppm | s | time | zLine | drop | feed × time |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| cal96 | 24 mm/s | 300 | 1 | 6 ms | 1.620 mm | 0.139 mm | 0.144 mm |
+| cal97 | 18 mm/s | 50 | 1/6 | 10 ms | 1.581 mm | 0.178 mm | 0.180 mm |
+| cal98 | 18 mm/s | 100 | 1/3 | 10 ms | 1.582 mm | 0.177 mm | 0.180 mm |
+| cal99 | 18 mm/s | 300 | 1 | 10 ms | 1.579 mm | 0.180 mm | 0.180 mm |
+| cal100 | 28 mm/s | 50 | 1/6 | 10 ms | 1.486 mm | 0.273 mm | 0.280 mm |
+| cal101 | 28 mm/s | 100 | 1/3 | 10 ms | 1.482 mm | 0.277 mm | 0.280 mm |
+| cal102 | 28 mm/s | 300 | 1 | 10 ms | 1.480 mm | 0.279 mm | 0.280 mm |
+
+The 2 ms sample of cal96 still has the bead on the wire below the line and a gas shell only in the slice above it. Figure: `cal95b_pin_views.png` (28 mm/s, 300 ppm, 10 ms, with the beam spots).

@@ -5,6 +5,11 @@
 // the processor owning that cell deposits A(cWire) * P_ray there.
 // Metal behind that point (along the ray) is shadowed: the wire shadows the
 // pool and vice versa, and each beam can hit the wire side.
+// The march starts at the top of the domain and goes along the beam. The
+// focus and direction stay the dictionary values for the whole run; they are
+// not moved up with the bead. The first metal cell on the ray absorbs the
+// power. Cells further along the ray, including the original plate under a
+// raised bead, get none.
 // The same routine also computes the column surface height zSurface.
 // ---------------------------------------------------------------------------
 {
@@ -62,6 +67,10 @@
     Pstream::listCombineReduce(hit, minEqOp<label>());
 
     scalar incident = 0, missed = 0;
+    scalarField zHitSum(beamNames.size(), 0);
+    scalarField pHitSum(beamNames.size(), 0);
+    scalarField pHitHigh(beamNames.size(), 0);
+    scalarField zHitMax(beamNames.size(), -GREAT);
     forAll(rayCells, ri)
     {
         scalar bscale = 1.0;
@@ -83,6 +92,18 @@
             {
                 const label c = rayCells[ri][k];
                 Q[c] += matA[c]*Pr/V[c];
+                if (ri < rayBeam.size())
+                {
+                    const label bi = rayBeam[ri];
+                    if (bi >= 0 && bi < zHitSum.size())
+                    {
+                        const scalar zc = mesh.C()[c].z();
+                        zHitSum[bi] += Pr*zc;
+                        pHitSum[bi] += Pr;
+                        zHitMax[bi] = max(zHitMax[bi], zc);
+                        if (zc > 3.0e-4) pHitHigh[bi] += Pr;
+                    }
+                }
                 break;
             }
         }
@@ -90,6 +111,30 @@
     Qheat.correctBoundaryConditions();
     laserIncidentPower = returnReduce(incident, sumOp<scalar>());
     laserAbsorbedPower = gSum(Q*V);
+    reduce(zHitSum, sumOp<scalarField>());
+    reduce(pHitSum, sumOp<scalarField>());
+    reduce(pHitHigh, sumOp<scalarField>());
+    reduce(zHitMax, maxOp<scalarField>());
+    {
+        static scalar nextHitLog = -GREAT;
+        if (Pstream::master() && (t >= nextHitLog || runTime.writeTime()))
+        {
+            nextHitLog = t + 0.05;
+            Info<< "LaserHit:";
+            forAll(beamNames, bi)
+            {
+                const scalar zMean =
+                    pHitSum[bi] > SMALL ? zHitSum[bi]/pHitSum[bi] : -1;
+                const scalar fHigh =
+                    pHitSum[bi] > SMALL ? pHitHigh[bi]/pHitSum[bi] : 0;
+                Info<< "  " << beamNames[bi]
+                    << " z " << zMean*1e3 << " mm"
+                    << " zMax " << (zHitMax[bi] > -0.5*GREAT ? zHitMax[bi]*1e3 : -1)
+                    << " mm  above0.3 " << fHigh;
+            }
+            Info<< endl;
+        }
+    }
 
     // column surface heights
     scalarField& zs = zSurface.primitiveFieldRef();
