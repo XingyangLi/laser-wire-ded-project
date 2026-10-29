@@ -25,7 +25,7 @@ if [[ "$MORE" == 1 ]]; then
     )
 else
     JOBS=(
-        "drag300f24 300 24 6 120 158 175"
+        "${SLIT_NAME:-drag300f24} 300 24 6 120 158 175"
     )
 fi
 NJOBS=${#JOBS[@]}
@@ -160,6 +160,7 @@ PY
     foamDictionary -entry method -set scotch "$dest/system/decomposeParDict" > /dev/null
     (cd "$dest" && decomposePar -force > log.decomposePar 2>&1)
     python3 "$DIR/bake_wire_wall_T.py" "$dest"
+    python3 "$DIR/bake_wire_wall_T.py" --recompute "$dest"
     echo "PREPPED $name ppm=$ppm feed=${feed_mm}"
 }
 

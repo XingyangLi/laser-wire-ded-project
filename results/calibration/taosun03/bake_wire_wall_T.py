@@ -130,6 +130,50 @@ def bake_field(tpath, mesh):
     print(f"baked {tpath}: {nfaces} faces, hot {nhot}, cold {ncold}, zHot {z_hot}")
 
 
+def recompute_case(case, z_hot=0.0016, t_hot=1850.0, t_cold=600.0):
+    """Rewrite wireWall T from face centres. Needed after refineMesh, which
+    changes the wall face count and leaves the stored list the wrong length."""
+    case = Path(case)
+    meshes = []
+    parent = case / "0" / "T"
+    if parent.is_file() and (case / "constant" / "polyMesh" / "faces").is_file():
+        meshes.append((parent, case / "constant" / "polyMesh"))
+    for proc in sorted(case.glob("processor*")):
+        tf = proc / "0" / "T"
+        pm = proc / "constant" / "polyMesh"
+        if tf.is_file() and (pm / "faces").is_file():
+            meshes.append((tf, pm))
+    for tpath, mesh in meshes:
+        data = tpath.read_bytes()
+        m = re.search(br"wireWall\s*\{.*?\n    \}", data, re.S)
+        if not m:
+            print(f"skip {tpath}: no wireWall")
+            continue
+        boundary = (mesh / "boundary").read_text(errors="replace")
+        start, nfaces = wire_span(boundary)
+        binary = b"format      binary" in data[:1200]
+        if nfaces == 0:
+            values = b"uniform 1850"
+            nhot = ncold = 0
+        else:
+            centres = face_centres(mesh)
+            vals = [t_hot if centres[i][2] < z_hot else t_cold for i in range(start, start + nfaces)]
+            nhot = sum(1 for v in vals if v == t_hot)
+            ncold = nfaces - nhot
+            if binary:
+                blob = struct.pack("<" + "d" * nfaces, *vals)
+                values = b"nonuniform List<scalar> \n%d\n(%s)" % (nfaces, blob)
+            else:
+                body = "\n".join(f"{v:.8g}" for v in vals).encode()
+                values = b"nonuniform List<scalar>\n%d\n(\n%s\n)" % (nfaces, body)
+        new = (
+            b"wireWall\n    {\n        type            fixedValue;\n        value           "
+            + values + b";\n    }"
+        )
+        tpath.write_bytes(data[:m.start()] + new + data[m.end():])
+        print(f"recomputed {tpath}: {nfaces} faces, hot {nhot}, cold {ncold}")
+
+
 def bake_case(case):
     case = Path(case)
     mesh = case / "constant" / "polyMesh"
@@ -144,7 +188,15 @@ def bake_case(case):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        raise SystemExit("usage: bake_wire_wall_T.py CASE [CASE...]")
-    for c in sys.argv[1:]:
-        bake_case(c)
+    args = sys.argv[1:]
+    recompute = False
+    if args and args[0] == "--recompute":
+        recompute = True
+        args = args[1:]
+    if not args:
+        raise SystemExit("usage: bake_wire_wall_T.py [--recompute] CASE [CASE...]")
+    for c in args:
+        if recompute:
+            recompute_case(c)
+        else:
+            bake_case(c)

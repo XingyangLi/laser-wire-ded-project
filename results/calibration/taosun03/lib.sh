@@ -5,7 +5,9 @@
 # the other half. MPI ranks across every job, and wmake -j, stay at or under 32.
 # Solvers are started with nice -n 10 by the launch scripts.
 
-TAO_MAX_CORES=32
+# 32 unless the caller raises it. This machine has 64 physical cores;
+# override only when they are idle.
+TAO_MAX_CORES="${TAO_MAX_CORES:-32}"
 TAO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 TAO_OUT="$TAO_ROOT/results/calibration/taosun03"
 TAO_PY="${TAO_PY:-/home/asb6102/lwded-viz/bin/python}"
