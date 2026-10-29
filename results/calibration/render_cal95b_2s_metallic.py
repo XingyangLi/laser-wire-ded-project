@@ -9,6 +9,9 @@ and lit with three lights, a tight specular lobe, a soft lobe and a Fresnel
 rim (environment-style; there is no HDRI map). The symmetry cut is the same
 point field, marching squares at 0.5, so its edge meets the iso-surface.
 One frame per written time; nothing is interpolated in time.
+
+Pass --mirror to reflect that surface across y = 0 and write
+cal95b_2s_metallic_mirrored.mp4. The half-domain movie is left as it is.
 """
 import sys
 from pathlib import Path
@@ -37,6 +40,9 @@ SOLIDUS = 1658.0
 ELEV, AZIM = 34.0, 80.0
 DIST = 10.0
 FRAME_ZOOM = 1.74
+# Both halves are in frame: a little more oblique than the half-bead view.
+MIRROR_ELEV, MIRROR_AZIM = 28.0, 62.0
+MIRROR_ZOOM = 1.32
 SURF_ZOOM = 2
 CAP_ZOOM = 3
 
@@ -52,14 +58,19 @@ def camera_direction(elev, azim):
     return v / np.linalg.norm(v)
 
 
-VIEW = camera_direction(ELEV, AZIM)
-# Key sits near the camera and above; fill from the side; rim from behind.
-LIGHTS = np.stack([
-    VIEW + np.array([0.25, 0.05, 0.95]),
-    VIEW + np.array([-0.85, 0.15, 0.15]),
-    -VIEW + np.array([0.10, -0.05, 1.15]),
-])
-LIGHTS /= np.linalg.norm(LIGHTS, axis=1, keepdims=True)
+def set_camera(elev, azim):
+    """Point the three lights from this matplotlib camera."""
+    global VIEW, LIGHTS
+    VIEW = camera_direction(elev, azim)
+    LIGHTS = np.stack([
+        VIEW + np.array([0.25, 0.05, 0.95]),
+        VIEW + np.array([-0.85, 0.15, 0.15]),
+        -VIEW + np.array([0.10, -0.05, 1.15]),
+    ])
+    LIGHTS /= np.linalg.norm(LIGHTS, axis=1, keepdims=True)
+
+
+set_camera(ELEV, AZIM)
 LIGHT_W = np.array([1.15, 0.55, 0.70])
 
 
@@ -317,9 +328,26 @@ def symmetry_cap(xs, zs, vol, tvol, zoom=CAP_ZOOM):
     return phys, packed[:, :, 2]
 
 
-def frame(tris, rgb, t, writer, png):
+def mirror_mesh(xyz, tris, normals, temp, plate):
+    """Reflect the half-bead across y = 0. Winding is flipped so normals stay outward."""
+    xyz_m = xyz.copy()
+    xyz_m[:, 1] *= -1.0
+    nrm_m = normals.copy()
+    nrm_m[:, 1] *= -1.0
+    faces_m = tris[:, [0, 2, 1]] + xyz.shape[0]
+    return (
+        np.vstack([xyz, xyz_m]),
+        np.vstack([tris, faces_m]),
+        np.vstack([normals, nrm_m]),
+        np.concatenate([temp, temp]),
+        np.concatenate([plate, plate]),
+    )
+
+
+def frame(tris, rgb, t, writer, png, mirror=False):
     fig = plt.figure(figsize=(19.2, 10.8), dpi=100)
-    ax = fig.add_axes([0.0, 0.045, 1.0, 0.90], projection="3d")
+    bottom = 0.078 if mirror else 0.045
+    ax = fig.add_axes([0.0, bottom, 1.0, 0.975 - bottom - 0.03], projection="3d")
     # Axes3D would otherwise shrink itself to a square and leave side bars.
     ax.apply_aspect = lambda position=None: None
     q = tris * 1e3
@@ -328,23 +356,40 @@ def frame(tris, rgb, t, writer, png):
     ))
     xx = np.array([[-0.9, 7.2], [-0.9, 7.2]])
     zz = np.array([[-0.2, -0.2], [1.95, 1.95]])
-    ax.plot_surface(xx, np.zeros_like(xx), zz, color="#d6e6f5", alpha=0.18,
-                    linewidth=0, shade=False)
-    ax.text(4.6, 0.02, 1.55, "symmetry plane  y = 0", color="#08306b", fontsize=14)
     ax.set_xlim(-0.9, 7.2)
-    ax.set_ylim(0.0, 1.7)
     ax.set_zlim(-0.2, 1.95)
-    ax.view_init(elev=ELEV, azim=AZIM)
     ax.set_proj_type("persp")
-    ax.set_box_aspect((8.1, 1.7, 2.15), zoom=FRAME_ZOOM)
     ax.dist = DIST
+    if mirror:
+        ax.set_ylim(-1.85, 1.85)
+        ax.view_init(elev=MIRROR_ELEV, azim=MIRROR_AZIM)
+        ax.set_box_aspect((8.1, 3.7, 2.15), zoom=MIRROR_ZOOM)
+    else:
+        ax.plot_surface(xx, np.zeros_like(xx), zz, color="#d6e6f5", alpha=0.18,
+                        linewidth=0, shade=False)
+        ax.text(4.6, 0.02, 1.55, "symmetry plane  y = 0", color="#08306b", fontsize=14)
+        ax.set_ylim(0.0, 1.7)
+        ax.view_init(elev=ELEV, azim=AZIM)
+        ax.set_box_aspect((8.1, 1.7, 2.15), zoom=FRAME_ZOOM)
     wide = 16.0 / 9.0
     matplotlib.axes.Axes.set_xlim(ax, -0.095 * wide, 0.090 * wide)
-    matplotlib.axes.Axes.set_ylim(ax, -0.095, 0.090)
+    # The mirrored wire is tall. Shift the window up so its cut top stays in frame.
+    if mirror:
+        matplotlib.axes.Axes.set_ylim(ax, -0.070, 0.115)
+    else:
+        matplotlib.axes.Axes.set_ylim(ax, -0.095, 0.090)
     ax.set_axis_off()
     fig.suptitle(f"cal95b    t = {t:.2f} s", fontsize=18, y=0.975)
+    note_y = 0.012
+    if mirror:
+        fig.text(
+            0.5, 0.042,
+            "mirrored across y = 0 symmetry plane for display",
+            ha="center", fontsize=14, color="#08306b",
+        )
+        note_y = 0.012
     fig.text(
-        0.5, 0.015,
+        0.5, note_y,
         "after ~1.6 s the bead foot touches the downstream boundary at x = 7 mm",
         ha="center", fontsize=13, color="#7f0000" if t >= 1.6 else "#333333",
     )
@@ -374,10 +419,13 @@ def main():
     print(f"grid {xs.size}x{ys.size}x{zs.size}")
     addressing = load_addressing(CASE, NPROC)
     names = written_times(CASE, NPROC)
-    only = set(sys.argv[1:])
+    mirror = "--mirror" in sys.argv
+    only = {a for a in sys.argv[1:] if a != "--mirror"}
+    if mirror:
+        set_camera(MIRROR_ELEV, MIRROR_AZIM)
+    movie = OUT / ("cal95b_2s_metallic_mirrored.mp4" if mirror else "cal95b_2s_metallic.mp4")
     writer = None if only else imageio.get_writer(
-        OUT / "cal95b_2s_metallic.mp4",
-        fps=FPS, codec="libx264", quality=8, macro_block_size=1,
+        movie, fps=FPS, codec="libx264", quality=8, macro_block_size=1,
     )
     kept = 0
     for name in names:
@@ -410,12 +458,13 @@ def main():
         vt = trilinear(tvol, orig)
         normals = vertex_normals(xyz, tris)
         plate = xyz[:, 2] < 8e-5
+        if mirror:
+            xyz, tris, normals, vt, plate = mirror_mesh(xyz, tris, normals, vt, plate)
         vcol = shade_vertices(xyz, normals, vt, plate)
         tri_xyz, fcol = shade_faces(xyz, tris, vcol)
-        # The cut is drawn only when it faces the camera. From +y the outer
-        # bead is the subject and the cap would sit behind it.
+        # The cut is the half-domain section. The mirrored bead is closed without it.
         cap_n = np.array([0.0, -1.0 if VIEW[1] < 0 else 1.0, 0.0])
-        if cap_n[1] * VIEW[1] > 0.25:
+        if not mirror and cap_n[1] * VIEW[1] > 0.25:
             cap, cap_t = symmetry_cap(xs, zs, vol, tvol)
             if cap.shape[0]:
                 normals_c = np.tile(cap_n, (cap.shape[0] * 3, 1))
@@ -427,17 +476,18 @@ def main():
                 tri_xyz = np.concatenate([tri_xyz, cap], axis=0)
                 fcol = np.concatenate([fcol, cap_col], axis=0)
         png = None
+        stem = "cal95b_2s_metallic_mirrored" if mirror else "cal95b_2s_metallic"
         if abs(t - 0.8) < 1e-8:
-            png = OUT / "cal95b_2s_metallic_t080.png"
-        elif abs(t - 2.0) < 1e-8:
+            png = OUT / f"{stem}_t080.png"
+        elif abs(t - 2.0) < 1e-8 and not mirror:
             png = OUT / "cal95b_2s_metallic_t200.png"
-        frame(tri_xyz, fcol, t, writer, png)
+        frame(tri_xyz, fcol, t, writer, png, mirror=mirror)
         kept += 1
         if kept % 20 == 1 or only:
             print(f"  t={name} tris {tri_xyz.shape[0]}")
     if writer is not None:
         writer.close()
-        print("wrote", OUT / "cal95b_2s_metallic.mp4", "frames", kept)
+        print("wrote", movie, "frames", kept)
 
 
 if __name__ == "__main__":

@@ -495,6 +495,8 @@ The 2 s rerun (`cases/wire_cavity_cal95b_2s`, same mesh and beams, write every 0
 
 `cal95b_2s_metallic.mp4` is those same 201 fields, with no time interpolation and no mirror. `alpha.metal` is averaged from cells onto points, the point field is resampled by 2 in index space, and a marching-cubes surface is taken at 0.5. Eight Taubin iterations (lambda 0.45, mu -0.47) soften the grid stair-steps; points that start on y = 0 stay there. Lighting is three lamps, a tight specular lobe, a soft lobe and a Fresnel rim. Metal above 1658 K picks up an orange glow, and the plate stays matte. The view is from above the half-bead. The symmetry plane is labelled, and the note that the foot meets x = 7 mm after about 1.6 s is drawn in red from that time. 1920×1080, 30 fps. Stills: `cal95b_2s_metallic_t080.png`, `cal95b_2s_metallic_t200.png`.
 
+`cal95b_2s_metallic_mirrored.mp4` is that same surface reflected across y = 0, so the frame shows the full bead and wire. It is a display mirror of the half-domain result. The caption reads "mirrored across y = 0 symmetry plane for display". Same shading, 201 frames, 1920×1080, 30 fps, and the same boundary note. Still: `cal95b_2s_metallic_mirrored_t080.png`.
+
 `cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
 
 cal105 finished 6 ms with the 19 µm band on the lower neck (z 0.45–1.55 mm). The line itself sits at the crest, z0 = 1.80 mm, and in 6 ms it only falls to 1.65 mm, so that band never contains the shell. The crest gap there is one coarse cell. Figure: `cal105_neck.png`.
