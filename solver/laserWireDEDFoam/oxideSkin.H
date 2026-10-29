@@ -3,10 +3,24 @@
     muOxide == dimensionedScalar(muOxide.dimensions(), Zero);
     Koxide == dimensionedScalar(Koxide.dimensions(), Zero);
     Ukeep == U;
+    Fskin == dimensionedVector(Fskin.dimensions(), Zero);
 
     if (oxideSkinEnabled && oxideSkinDynamic && oxideSkinStrength > SMALL)
     {
         #include "oxideCoverage.H"
+        // Carry the stretch with the surface, then let the exposed skin
+        // accumulate strain from the surface divergence of velocity.
+        {
+            const scalar dtEs = runTime.deltaTValue();
+            skinStrain.correctBoundaryConditions();
+            const volScalarField divEs(fvc::div(phi, skinStrain));
+            scalarField& es = skinStrain.primitiveFieldRef();
+            const scalarField& dEs = divEs.primitiveField();
+            forAll(es, celli)
+            {
+                es[celli] = max(min(es[celli] - dtEs*dEs[celli], scalar(4)), scalar(-1));
+            }
+        }
         // Imposed numerical stiffness. Alloy sigma is already in stForcef.
         // Coverage starts at 0, so the first step adds nothing.
         if (oxideSkinSigma > 0)
@@ -46,9 +60,16 @@
         const scalarField& ox = oxideCoverage.primitiveField();
         const vectorField& gA = gradAlpha.primitiveField();
         const vector trail(1, 0, 0);
+        const volTensorField gradU(fvc::grad(U));
+        const tensorField& gradUc = gradU.primitiveField();
+        const scalarField& rhoC = rho.primitiveField();
+        scalarField& es = skinStrain.primitiveFieldRef();
+        scalarField& oxW = oxideCoverage.primitiveFieldRef();
+        vectorField& Fs = Fskin.primitiveFieldRef();
+        const scalar dtEs = runTime.deltaTValue();
 
         scalar nSkin = 0, nMu = 0, gapMin = GREAT, unMax = 0, wMouth = GREAT;
-        scalar oxMax = 0, oxSum = 0, nOx = 0;
+        scalar oxMax = 0, oxSum = 0, nOx = 0, nRup = 0, eMax = 0, aMax = 0;
 
         forAll(a, celli)
         {
@@ -88,6 +109,55 @@
             nSkin += 1;
             nMu += 1;
             unMax = max(unMax, mag(Uc[celli] & nHat));
+
+            // Surface strain. Capped rate so a noisy divergence cannot
+            // rupture the skin in one step.
+            const scalar divS = max
+            (
+                min
+                (
+                    tr(gradUc[celli]) - (nHat & (gradUc[celli] & nHat)),
+                    scalar(40)
+                ),
+                scalar(-40)
+            );
+            es[celli] = max(min(es[celli] + dtEs*divS, scalar(4)), scalar(-1));
+            eMax = max(eMax, es[celli]);
+            if (es[celli] > oxideSkinEpsRup)
+            {
+                // Rupture: this patch of skin is gone. The surface here is
+                // generated again, with no membrane force.
+                oxW[celli] = 0;
+                es[celli] = 0;
+                nRup += 1;
+                continue;
+            }
+
+            // Elastic membrane on the trailing face. The force points away
+            // from the wire and fades once the gap reaches the bending
+            // length, so a stretched skin is not pushed back onto the wire
+            // and does not inflate a wide cavity. Acceleration is capped.
+            // The old shell stopped at 1.55 mm. The bead top sits above
+            // that, so the membrane uses the whole trailing face.
+            const bool trailFace =
+                (rad & trail) > 0 && s > 0.4e-3 && s < 2.0e-3;
+            if (!trailFace || r <= wireRadius) continue;
+            const scalar gap = r - wireRadius;
+            if (gap >= oxideSkinBend) continue;
+            const scalar close = (oxideSkinBend - gap)/oxideSkinBend;
+            const scalar tensionW =
+                min(max(es[celli], scalar(0)), oxideSkinEpsRup)
+               /oxideSkinEpsRup;
+            const scalar eFrac = min(oxideSkinE/2.5, scalar(2));
+            const scalar aEl =
+                oxideSkinACap
+               *(ox[celli]/max(oxideSkinStrength, scalar(0.05)))
+               *close
+               *(0.35 + 0.65*tensionW)
+               *eFrac;
+            const vector nOut = rad/max(r, SMALL);
+            Fs[celli] = rhoC[celli]*aEl*nOut;
+            aMax = max(aMax, aEl);
         }
 
         if
@@ -105,6 +175,9 @@
             reduce(oxMax, maxOp<scalar>());
             reduce(oxSum, sumOp<scalar>());
             reduce(nOx, sumOp<scalar>());
+            reduce(nRup, sumOp<scalar>());
+            reduce(eMax, maxOp<scalar>());
+            reduce(aMax, maxOp<scalar>());
             const word mouth =
                 (wMouth > 0.20e-3) ? word("bare")
               : (wMouth < 0.020e-3 ? word("closed") : word("open"));
@@ -117,6 +190,9 @@
                 << " wMouth "
                 << (wMouth > 0.5 ? scalar(-1) : wMouth*1e3) << " mm " << mouth
                 << " Un " << unMax
+                << " eMax " << eMax
+                << " nRup " << nRup
+                << " aEl " << aMax
                 << nl;
         }
     }

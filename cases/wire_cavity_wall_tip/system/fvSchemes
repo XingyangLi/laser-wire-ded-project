@@ -34,6 +34,7 @@ divSchemes
     div(phiOxide,oxideFilm) Gauss upwind;
     div(phi,oxideFilm) Gauss upwind;
     div(phi,oxideCoverage) Gauss vanLeer;
+    div(phi,skinStrain) Gauss vanLeer;
     div(alphaPhi,cComp) Gauss vanLeer;   // multi-component tracers (bounded TVD: keeps strand fragments sharp)
     div(((rho*nuEff)*dev2(T(grad(U))))) Gauss linear;
 }

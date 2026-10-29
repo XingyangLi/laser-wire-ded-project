@@ -69,6 +69,14 @@ scalar oxideSkinSigma = 0;
 // angles (thetaRox / thetaAox) so a skinned wall face does not wet.
 scalar oxideSkinThetaR = 0;
 scalar oxideSkinThetaA = 0;
+// Elastic membrane. Imposed numerical model. E is the in-plane modulus
+// (N/m) at saturation, bend is the length over which the membrane force
+// fades as the gap opens, epsRup is the stretch at which the skin breaks
+// and the surface is free again. aCap limits the elastic acceleration.
+scalar oxideSkinE = 0;
+scalar oxideSkinBend = 8e-5;
+scalar oxideSkinEpsRup = 1.2;
+const scalar oxideSkinACap = 150;
 if (oxideSkinEnabled)
 {
     oxideSkinStrength =
@@ -134,12 +142,28 @@ if (oxideSkinEnabled)
         oxideSkinMu0 = max(muRow, scalar(0))/satSafe;
         oxideSkinSigma = max(sigRow, scalar(0))/satSafe;
         oxideSkinK0 = 0;
+        oxideSkinE = 2.5*oxideSkinStrength;
+        if (oxTable[iLo].size() >= 9 && oxTable[iHi].size() >= 9)
+        {
+            oxideSkinE =
+                oxTable[iLo][6] + f*(oxTable[iHi][6] - oxTable[iLo][6]);
+            oxideSkinBend =
+                oxTable[iLo][7] + f*(oxTable[iHi][7] - oxTable[iLo][7]);
+            oxideSkinEpsRup =
+                oxTable[iLo][8] + f*(oxTable[iHi][8] - oxTable[iLo][8]);
+        }
+        oxideSkinE = max(oxideSkinE, scalar(0));
+        oxideSkinBend = max(oxideSkinBend, scalar(1e-5));
+        oxideSkinEpsRup = max(oxideSkinEpsRup, scalar(0.05));
         Info<< "OxideSkin table: ppm " << ppm
             << " sat " << oxideSkinStrength
             << " mu " << muRow << " Pa.s"
             << " sigmaExtra " << sigRow << " N/m"
             << " thetaOx " << oxideSkinThetaR << "/" << oxideSkinThetaA
-            << " deg (imposed numerical skin)" << nl;
+            << " deg  E " << oxideSkinE << " N/m"
+            << " bend " << oxideSkinBend*1e3 << " mm"
+            << " epsRup " << oxideSkinEpsRup
+            << " (imposed elastic membrane)" << nl;
     }
 }
 
@@ -184,6 +208,39 @@ volVectorField Ukeep
         IOobject::NO_WRITE
     ),
     U
+);
+
+// Elastic membrane force. Zero when the skin is off.
+volVectorField Fskin
+(
+    IOobject
+    (
+        "Fskin",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedVector(dimForce/dimVolume, Zero)
+);
+
+// Surface stretch. Missing file -> 0, same unpainted start as coverage.
+volScalarField skinStrain
+(
+    IOobject
+    (
+        "skinStrain",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        (oxideSkinEnabled && oxideSkinDynamic)
+      ? IOobject::AUTO_WRITE
+      : IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero),
+    "zeroGradient"
 );
 
 // Coverage in [0, 1]. Missing file -> 0, so a restarted neck is unpainted.

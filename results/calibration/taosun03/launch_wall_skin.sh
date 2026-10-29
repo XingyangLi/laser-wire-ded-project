@@ -84,14 +84,16 @@ oxideSkin
     leaveTime       0.0005;
     Kskin           0;
     // Imposed numerical skin, not a measured oxide isotherm.
-    // Columns: ppm strength mu[Pa.s] sigmaExtra[N/m] thetaRox[deg] thetaAox[deg]
-    // Strength is the coverage ceiling. sigmaExtra is added to the alloy
-    // 1.75 N/m on skin cells. The wall angles are non-wetting.
+    // Columns: ppm strength mu[Pa.s] sigmaExtra[N/m] thetaRox thetaAox
+    //          E[N/m] bendLength[m] epsRupture
+    // Imposed elastic membrane. E and the bending length scale with ppm.
+    // Past epsRupture the skin breaks and that patch is a free surface.
+    // Alloy sigma stays 1.75 N/m. sigmaExtra is only the skin addition.
     oxygenTable
     (
-        (50  0.35  4  0.6  130 155)
-        (100 0.65  10 1.4  145 165)
-        (300 1    18 2.5  158 175)
+        (50  0.35  4  0.6  130 155  0.6  4e-5  0.45)
+        (100 0.65  10 1.4  145 165  1.2  6e-5  0.8)
+        (300 1    18 2.5  158 175  2.5  8e-5  1.2)
     );
 }}
 """
