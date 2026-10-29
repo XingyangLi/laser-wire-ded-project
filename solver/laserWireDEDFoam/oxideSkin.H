@@ -176,7 +176,9 @@
             oxSurf = max(oxSurf, oxW[celli]);
         }
         reduce(oxSurf, maxOp<scalar>());
-        if (oxSurf > 0.3)
+        // slitEntry opens the neck by letting gas in at the dragged line.
+        // The body force on wet wall cells is off in that mode.
+        if (oxSurf > 0.3 && !slitEntryEnabled)
         {
             forAll(a, celli)
             {

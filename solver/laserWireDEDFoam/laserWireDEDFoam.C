@@ -196,6 +196,10 @@ int main(int argc, char *argv[])
 
             mixture.correct();
 
+            // Gas entry at the dragged contact line. After alpha, so the
+            // opened cells are what the momentum equation sees.
+            #include "slitEntry.H"
+
             bool trailDragDoLog = false;
             #include "trailDrag.H"
             mixture.correct();

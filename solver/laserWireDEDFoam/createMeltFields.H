@@ -381,5 +381,6 @@ boolList inWireZone(mesh.nCells(), false);
 #include "createWireTipMelt.H"
 #include "createPorosity.H"
 #include "createOxideSkin.H"
+#include "createSlitEntry.H"
 
 mesh.setFluxRequired(T.name());
