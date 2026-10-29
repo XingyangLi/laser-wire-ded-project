@@ -76,7 +76,7 @@ scalar oxideSkinThetaA = 0;
 scalar oxideSkinE = 0;
 scalar oxideSkinBend = 8e-5;
 scalar oxideSkinEpsRup = 1.2;
-const scalar oxideSkinACap = 150;
+scalar oxideSkinACap = oxideSkinDict.getOrDefault<scalar>("aCap", 150);
 if (oxideSkinEnabled)
 {
     oxideSkinStrength =

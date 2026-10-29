@@ -83,7 +83,12 @@
             {
                 if (Keff > 0)
                 {
-                    Kcontact[celli] = max(Kcontact[celli], Keff);
+                    // NeckDiag: K = 4e8 froze uRad at 0 and cancelled the
+                    // membrane. K = 2e7 still left uRad inward. 5e6 carries
+                    // the line down (tau ~ 1 ms) and leaves room for the
+                    // outward acceleration.
+                    const scalar Kuse = min(Keff, scalar(5e6));
+                    Kcontact[celli] = max(Kcontact[celli], Kuse);
                     Ucontact[celli] = wireFeedVelocity;
                 }
                 zPinMin = min(zPinMin, z);

@@ -6,8 +6,8 @@ set -euo pipefail
 DIR="$(cd "$(dirname "$0")" && pwd)"
 source "$DIR/lib.sh"
 ROOT="$TAO_ROOT"
-SRC="$ROOT/cases/wire_cavity_wall_tip"
-NP=4
+SRC="${SKIN_SRC:-$ROOT/cases/wire_cavity_wall_tip}"
+NP="${SKIN_NP:-4}"
 MORE="${MORE:-0}"
 
 # name ppm feed_mm thetaR thetaA thetaRox thetaAox

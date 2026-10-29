@@ -160,6 +160,110 @@
             aMax = max(aMax, aEl);
         }
 
+        // The neck diagnostic showed the membrane acceleration was zero on
+        // 581 of 582 centre-plane cells against the wire: they are alpha~1
+        // and carry no coverage, and one neighbour hop does not reach the
+        // free surface. Once the trailing surface has a skin, that skin
+        // pushes the metal in the first bending-length off the wall.
+        scalar oxSurf = 0;
+        forAll(a, celli)
+        {
+            if (oxW[celli] < 0.05) continue;
+            const vector d = Cc[celli] - wireOrigin;
+            const scalar sAx = d & wireUp;
+            const vector rad = d - sAx*wireUp;
+            if ((rad & trail) <= 0) continue;
+            oxSurf = max(oxSurf, oxW[celli]);
+        }
+        reduce(oxSurf, maxOp<scalar>());
+        if (oxSurf > 0.3)
+        {
+            forAll(a, celli)
+            {
+                if (a[celli] < 0.35) continue;
+                const vector d = Cc[celli] - wireOrigin;
+                const scalar sAx = d & wireUp;
+                const vector rad = d - sAx*wireUp;
+                if ((rad & trail) <= 0) continue;
+                if (sAx < 1.15e-3 || sAx > 1.80e-3) continue;
+                const scalar r = mag(rad);
+                if (r <= wireRadius) continue;
+                const scalar gap = r - wireRadius;
+                if (gap <= 0 || gap >= oxideSkinBend) continue;
+                const scalar close = (oxideSkinBend - gap)/oxideSkinBend;
+                const scalar tensionW =
+                    min(max(es[celli], scalar(0)), oxideSkinEpsRup)
+                   /oxideSkinEpsRup;
+                const scalar eFrac = min(oxideSkinE/2.5, scalar(2));
+                const scalar aEl =
+                    oxideSkinACap
+                   *(oxSurf/max(oxideSkinStrength, scalar(0.05)))
+                   *close
+                   *(0.35 + 0.65*tensionW)
+                   *eFrac;
+                const vector nOut = rad/max(r, SMALL);
+                Fs[celli] = rhoC[celli]*aEl*nOut;
+                aMax = max(aMax, aEl);
+                nSkin += 1;
+            }
+        }
+
+        // Neck diagnostic: cells on the centre plane, within 0.08 mm of the
+        // trailing wire face, z = 1.20-1.80 mm. Reports the acceleration the
+        // membrane actually applied there.
+        {
+            scalar nNeck = 0, aSum = 0, aLo = 1, aHi = 0, oxN = 0;
+            scalar accMax = 0, kN = 0, urSum = 0, nPush = 0;
+            const scalarField& kC = Kcontact.primitiveField();
+            forAll(a, celli)
+            {
+                const vector d = Cc[celli] - wireOrigin;
+                const scalar sAx = d & wireUp;
+                const vector rad = d - sAx*wireUp;
+                if ((rad & trail) <= 0) continue;
+                if (mag(Cc[celli].y()) > 1.2e-4) continue;
+                if (sAx < 1.20e-3 || sAx > 1.80e-3) continue;
+                const scalar r = mag(rad);
+                const scalar gap = r - wireRadius;
+                if (gap <= 0 || gap > 8.0e-5) continue;
+                nNeck += 1;
+                aSum += a[celli];
+                aLo = min(aLo, a[celli]);
+                aHi = max(aHi, a[celli]);
+                oxN += oxW[celli];
+                const scalar acc = mag(Fs[celli])/max(rhoC[celli], SMALL);
+                accMax = max(accMax, acc);
+                if (acc > 1) nPush += 1;
+                kN = max(kN, kC[celli]);
+                urSum += Uc[celli] & (rad/max(r, SMALL));
+            }
+            reduce(nNeck, sumOp<scalar>());
+            reduce(aSum, sumOp<scalar>());
+            reduce(aLo, minOp<scalar>());
+            reduce(aHi, maxOp<scalar>());
+            reduce(oxN, sumOp<scalar>());
+            reduce(accMax, maxOp<scalar>());
+            reduce(kN, maxOp<scalar>());
+            reduce(urSum, sumOp<scalar>());
+            reduce(nPush, sumOp<scalar>());
+            if
+            (
+                runTime.timeIndex() <= 3
+             || runTime.timeIndex() % max(oxideSkinInterval, 1) == 0
+            )
+            {
+                Info<< "NeckDiag: n " << nNeck
+                    << " alpha " << (nNeck > 0 ? aSum/nNeck : 0)
+                    << " [" << aLo << "," << aHi << "]"
+                    << " ox " << (nNeck > 0 ? oxN/nNeck : 0)
+                    << " aElMax " << accMax
+                    << " nPush " << nPush
+                    << " Kmax " << kN
+                    << " uRad " << (nNeck > 0 ? urSum/nNeck : 0)
+                    << nl;
+            }
+        }
+
         if
         (
             runTime.timeIndex() != oxideSkinLogIndex
