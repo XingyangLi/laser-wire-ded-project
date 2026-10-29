@@ -59,6 +59,14 @@
             const scalar a = alpha1[celli];
             // Gas above the line is not the attachment.
             if (a < 0.2) continue;
+            // A skinned wall face has no adhesion. The non-wetting angle
+            // on that face is what keeps liquid off the wire. The bare
+            // triple line below the skin is still dragged with the feed.
+            if (oxideSkinEnabled && oxideCoverage[celli] > 0.5)
+            {
+                nSlide += 1;
+                continue;
+            }
             const scalar h = Foam::cbrt(max(Vc[celli], SMALL));
             const scalar magG = mag(gradAlpha[celli]);
 

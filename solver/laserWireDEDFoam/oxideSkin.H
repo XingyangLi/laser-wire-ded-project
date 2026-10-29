@@ -7,6 +7,34 @@
     if (oxideSkinEnabled && oxideSkinDynamic && oxideSkinStrength > SMALL)
     {
         #include "oxideCoverage.H"
+        // Imposed numerical stiffness. Alloy sigma is already in stForcef.
+        // Coverage starts at 0, so the first step adds nothing.
+        if (oxideSkinSigma > 0)
+        {
+            const volScalarField sigSkin
+            (
+                dimensionedScalar(sigmaT.dimensions(), oxideSkinSigma)
+               *oxideCoverage
+            );
+            surfaceScalarField skinKf
+            (
+                fvc::interpolate(sigSkin*(-fvc::div(mixture.nHatf())))
+            );
+            if (stLiquidOnly)
+            {
+                skinKf *= stWeightf;
+            }
+            surfaceScalarField skinForce(skinKf*fvc::snGrad(alpha1));
+            if (stDensityScaled)
+            {
+                skinForce *= fvc::interpolate((2.0*rho)/(rho1 + rho2));
+            }
+            stForcef += skinForce;
+            const scalar fMax = rho1.value()*2.0/1.0e-6;
+            const dimensionedScalar fMaxD("fCap", stForcef.dimensions(), fMax);
+            const dimensionedScalar fMinD("fCap", stForcef.dimensions(), -fMax);
+            stForcef = min(max(stForcef, fMinD), fMaxD);
+        }
         const volVectorField gradAlpha(fvc::grad(alpha1));
         scalarField& muI = muOxide.primitiveFieldRef();
         scalarField& KI = Koxide.primitiveFieldRef();
