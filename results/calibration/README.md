@@ -491,6 +491,8 @@ The half-domain geometry is the mesh that was solved. It is not mirrored across 
 
 Centre-plane movies, symmetry plane y = 0, wire at x = 0, crop x = ±3 mm and z = 0 to 2.5 mm, 1920×1080, 240 frames at 30 fps: `cal95b_center_temperature.mp4` (fixed colour bar, solidus 1658 K, free surface) and `cal95b_center_flow.mp4` (melt velocity). The case writes every 0.2 s, so frames between those five times are linear blends of alpha, T and U. Melt speed on that plane is 0 to 0.335 m/s (99th percentile 0.186 m/s).
 
+The 2 s rerun (`cases/wire_cavity_cal95b_2s`, same mesh and beams, write every 0.01 s, 201 fields) is in `cal95b_2s_center_temperature.mp4` and `cal95b_2s_center_flow.mp4`: 201 frames, 30 fps, no interpolation. At 0.8 s the wire-side trailing crest is 1.61 mm and the foot is at 4.03 mm. By 2.0 s that crest is 1.30 mm, the foot has reached 6.77 mm (the downstream edge of the domain is 7 mm), and the leading crest is 0.69 mm. Melt speed on the plane is 0 to 1.36 m/s (median 0.010, 99th percentile 0.221).
+
 `cal95b_cal105_3d.mp4` keeps that baseline, then appends the cal105 pin window. The pin segment is the same trailing view plus the symmetry-plane neck. The contact line is imposed and the wire is a solid wall.
 
 cal105 finished 6 ms with the 19 µm band on the lower neck (z 0.45–1.55 mm). The line itself sits at the crest, z0 = 1.80 mm, and in 6 ms it only falls to 1.65 mm, so that band never contains the shell. The crest gap there is one coarse cell. Figure: `cal105_neck.png`.
