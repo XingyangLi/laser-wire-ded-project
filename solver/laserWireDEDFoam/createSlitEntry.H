@@ -82,5 +82,9 @@ if (slitEntryEnabled)
         << nl
         << "    Higher ppm pins harder (smaller threshold, faster entry)."
         << " The line starts on the generated crest. Gas is not painted."
+        << nl
+        << "    Each step removes at most entryRate*dt of metal "
+        << "(capped at 0.002 mm) and at most a quarter of a cell. "
+        << "The width is the physical gap, not a cell count."
         << nl << endl;
 }

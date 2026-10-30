@@ -8,7 +8,6 @@
         const vectorField& Cc = mesh.C().primitiveField();
         const scalarField& Vc = mesh.V();
         scalarField& alpha = alpha1.primitiveFieldRef();
-        vectorField& Uc = U.primitiveFieldRef();
         const label nCells = mesh.nCells();
 
         // Generated crest: highest metal a little off the wall, so the thin
@@ -24,7 +23,9 @@
             // Off the wall film, and only the refined neck. A coarse cell
             // above the bead was setting the crest at 1.80 mm.
             if (Foam::cbrt(Vc[celli]) > 3.5e-5) continue;
-            if (gap < 0.8e-4 || gap > 3.5e-4) continue;
+            // 0.02 mm skips the wall film. 0.60 mm still sees the bead top
+            // after the shoulder rounds inside the old 0.08 mm cutoff.
+            if (gap < 2.0e-5 || gap > 6.0e-4) continue;
             if (alpha[celli] < 0.5) continue;
             if (sAx < 0.6e-3) continue;
             zSurf = max(zSurf, sAx);
@@ -59,7 +60,12 @@
 
             boolList opening(nCells, false);
             scalarField aNew(alpha);
+            // Physical lengths, not a cell count. The front is smeared over
+            // 0.02 mm, and each step removes at most entryRate*dt of metal
+            // (capped at 0.002 mm) and at most a quarter of the cell.
             const scalar hFront = 2.0e-5;
+            const scalar convDepth =
+                min(max(slitRate*dt, scalar(0)), scalar(2.0e-6));
 
             for (label celli = 0; celli < nCells; ++celli)
             {
@@ -83,8 +89,17 @@
                 {
                     target = min(max((sAx - slitZfront)/hFront, scalar(0)), scalar(1));
                 }
-                aNew[celli] = min(alpha[celli], target);
+                const scalar hNorm = max(Foam::cbrt(Vc[celli]), SMALL);
+                const scalar dAlpha = min(convDepth/hNorm, scalar(0.25));
+                aNew[celli] = max(target, alpha[celli] - dAlpha);
             }
+
+            scalar metalBefore = 0;
+            for (label celli = 0; celli < nCells; ++celli)
+            {
+                metalBefore += alpha[celli]*Vc[celli];
+            }
+            reduce(metalBefore, sumOp<scalar>());
 
             scalar removed = 0;
             scalarField donate(nCells, 0);
@@ -167,7 +182,6 @@
                 alpha[celli] = min(max(aNew[celli], scalar(0)), scalar(1));
                 if (opening[celli] && alpha[celli] < 0.05)
                 {
-                    Uc[celli] = Zero;
                     nOpen += 1;
                 }
                 if (!opening[celli] && alpha[celli] < 0.5)
@@ -184,6 +198,13 @@
             }
             reduce(nOpen, sumOp<scalar>());
             reduce(nSpur, sumOp<scalar>());
+            scalar metalAfter = 0;
+            for (label celli = 0; celli < nCells; ++celli)
+            {
+                metalAfter += alpha[celli]*Vc[celli];
+            }
+            reduce(metalAfter, sumOp<scalar>());
+            const scalar imbalance = metalAfter - metalBefore;
             alpha1.correctBoundaryConditions();
             U.correctBoundaryConditions();
             mixture.correct();
@@ -203,6 +224,7 @@
                     << " mm  open " << nOpen
                     << "  metalOut " << removed
                     << "  metalBack " << returned
+                    << "  imbalance " << imbalance
                     << "  spur " << nSpur
                     << "  (opening from the drag, not painted)"
                     << nl;

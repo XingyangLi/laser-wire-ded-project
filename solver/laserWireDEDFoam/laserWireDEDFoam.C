@@ -230,6 +230,7 @@ int main(int argc, char *argv[])
             }
 
             #include "neckVelocity.H"
+            #include "dampSpurious.H"
 
             if (pimple.turbCorr())
             {

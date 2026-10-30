@@ -137,7 +137,17 @@
         sigmaT *= sigmaScale;
     }
 
-    surfaceScalarField sigmaKf(fvc::interpolate(sigmaT*(-fvc::div(mixture.nHatf()))));
+    // Curvature from alpha smoothed by two explicit averages. The advected
+    // alpha is unchanged, so the force still sits on the real interface.
+    volScalarField alphaC(alpha1);
+    alphaC = fvc::average(fvc::interpolate(alphaC));
+    alphaC = fvc::average(fvc::interpolate(alphaC));
+    alphaC.correctBoundaryConditions();
+    const dimensionedScalar deltaN("deltaN", dimless/dimLength, 1e-8);
+    const surfaceVectorField gradCf(fvc::interpolate(fvc::grad(alphaC)));
+    const surfaceVectorField nHatC(gradCf/(mag(gradCf) + deltaN));
+    const surfaceScalarField nHatFlux(nHatC & mesh.Sf());
+    surfaceScalarField sigmaKf(fvc::interpolate(sigmaT*(-fvc::div(nHatFlux))));
 
     if (stLiquidOnly)
     {

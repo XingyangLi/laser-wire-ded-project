@@ -226,6 +226,9 @@ def build(dx_um, end=0.008, np=1, ppm=300, feed_mm=24, thresh=None, tag=None):
         shutil.copy(SRC / "constant" / name, case / "constant" / name)
     for name in ("fvSchemes", "fvSolution"):
         shutil.copy(SRC / "system" / name, case / "system" / name)
+    sol = (case / "system/fvSolution").read_text()
+    sol = sol.replace("nAlphaSubCycles 1;", "nAlphaSubCycles 2;")
+    (case / "system/fvSolution").write_text(sol)
 
     mesh, cells, nx_f, nz_f = block_mesh(dx)
     write(case / "system/blockMeshDict", mesh)
@@ -319,7 +322,7 @@ timePrecision   6;
 runTimeModifiable yes;
 adjustTimeStep  yes;
 maxCo           0.4;
-maxAlphaCo      0.4;
+maxAlphaCo      0.2;
 maxDeltaT       2e-6;
 """)
     write(case / "system/decomposeParDict", header("dictionary", "decomposeParDict") + f"""
