@@ -89,7 +89,14 @@
                 {
                     target = min(max((sAx - slitZfront)/hFront, scalar(0)), scalar(1));
                 }
-                const scalar hNorm = max(Foam::cbrt(Vc[celli]), SMALL);
+                // cbrt(V) is ~0.17 mm on a flat 10 µm x 50 µm cell, so it
+                // removes far less than entryRate*dt of wall-normal metal and
+                // leaves a finger of unconverted metal at the mouth.
+                const scalar hNorm = max
+                (
+                    min(Foam::cbrt(Vc[celli]), scalar(2.0e-5)),
+                    scalar(2.0e-6)
+                );
                 const scalar dAlpha = min(convDepth/hNorm, scalar(0.25));
                 aNew[celli] = max(target, alpha[celli] - dAlpha);
             }
