@@ -211,9 +211,11 @@ boundaryField
 """
 
 
-def build(dx_um, end=0.008, np=4):
+def build(dx_um, end=0.008, np=1, ppm=300, feed_mm=24, thresh=None, tag=None):
     dx = dx_um * 1e-6
-    tag = f"d2s{dx_um:g}".replace(".", "p")
+    feed = -abs(feed_mm) / 1000.0
+    if tag is None:
+        tag = f"d2s{dx_um:g}".replace(".", "p")
     case = ROOT / "cases" / f"wire_cavity_{tag}"
     if case.exists():
         shutil.rmtree(case)
@@ -261,7 +263,7 @@ def build(dx_um, end=0.008, np=4):
         "frontAndBack": empty,
     }
     bcs_U = {
-        "wireWall": "        type            fixedValue;\n        value           uniform (0 0 -0.024);",
+        "wireWall": f"        type            fixedValue;\n        value           uniform (0 0 {feed:.8g});",
         "outlet": "        type            pressureInletOutletVelocity;\n        value           uniform (0 0 0);",
         "bottom": "        type            noSlip;",
         "top": "        type            pressureInletOutletVelocity;\n        value           uniform (0 0 0);",
@@ -340,6 +342,7 @@ coeffs
         1,
     )
     mp = mp.replace("recoil          true;", "recoil          false;", 1)
+    mp = mp.replace("feedVelocity    ( 0 0 -0.024 );", f"feedVelocity    ( 0 0 {feed:.8g} );")
     if "\nslitEntry\n" not in mp:
         mp = mp.rstrip() + """
 
@@ -356,7 +359,7 @@ oxideSkin
 slitEntry
 {
     enabled         true;
-    ppm             300;
+    ppm             {ppm};
     depthSpan       0.00035;
     // Imposed. The pinned line moves at the feed from the generated crest.
     // Gas enters only after the line is this far below that crest.
@@ -365,10 +368,16 @@ slitEntry
     (
         (50  1.2e-4  0.012  4.5e-5  3.0e-5)
         (100 8.0e-5  0.020  5.5e-5  3.2e-5)
-        (300 4.0e-5  0.040  6.5e-5  3.5e-5)
+        (300 {4.0e-5 if thresh is None else thresh:.8g}  0.040  6.5e-5  3.5e-5)
     );
 }
 """
+    th = 4.0e-5 if thresh is None else thresh
+    mp = mp.replace("ppm             {ppm};", f"ppm             {ppm};")
+    mp = mp.replace(
+        "(300 {4.0e-5 if thresh is None else thresh:.8g}  0.040  6.5e-5  3.5e-5)",
+        f"(300 {th:.8g}  0.040  6.5e-5  3.5e-5)",
+    )
     (case / "constant/meltProperties").write_text(mp)
     print(f"{tag} cells~{cells} fine {nx_f} x {nz_f} dx {dx_um} um -> {case}")
     return case
@@ -377,5 +386,9 @@ slitEntry
 if __name__ == "__main__":
     dx = float(sys.argv[1]) if len(sys.argv) > 1 else 5.0
     end = float(sys.argv[2]) if len(sys.argv) > 2 else 0.008
-    np = int(sys.argv[3]) if len(sys.argv) > 3 else 4
-    build(dx, end, np)
+    np = int(sys.argv[3]) if len(sys.argv) > 3 else 1
+    ppm = int(sys.argv[4]) if len(sys.argv) > 4 else 300
+    feed_mm = float(sys.argv[5]) if len(sys.argv) > 5 else 24.0
+    thresh = float(sys.argv[6]) if len(sys.argv) > 6 and sys.argv[6] else None
+    tag = sys.argv[7] if len(sys.argv) > 7 else None
+    build(dx, end, np, ppm, feed_mm, thresh, tag)
