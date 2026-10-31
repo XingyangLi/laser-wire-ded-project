@@ -1,0 +1,246 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  2406                                  |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+FoamFile
+{
+    version         2;
+    format          ascii;
+    class           dictionary;
+    location        "constant";
+    object          meltProperties;
+}
+
+wireMaterial
+{
+    enabled         false;
+    cp              650;
+    k               22;
+    kLiquid         30;
+    L               270000;
+    Tsolidus        1658;
+    Tliquidus       1723;
+    sigma           1.75;
+    dSigmadT        -0.00043;
+    absorptivity    0.35;
+}
+
+metal
+{
+    cp              650;
+    k               22;
+    kLiquid         30;
+}
+
+gas
+{
+    cp              520.3;
+    k               0.0177;
+}
+
+Tsolidus        1658;
+
+Tliquidus       1723;
+
+L               270000;
+
+solidVelocity   ( 0.004 0 0 );
+
+weave
+{
+    enabled         false;
+    amplitude       0;
+    wavelength      1;
+}
+
+mushyZone
+{
+    C               1e+08;
+    eps             0.001;
+}
+
+rigidSubstrate
+{
+    enabled         true;
+    zTop            0;
+    KFactor         100;
+    flMax           0.05;
+}
+
+solution
+{
+    nTCorr          3;
+    flRelax         0.9;
+    Tmin            250;
+    Tmax            3490;
+    alphaMin        0.001;
+}
+
+surfaceTension
+{
+    sigma           1.75;
+    temperatureDependent true;
+    dSigmadT        -0.00043;
+    Tref            1723;
+    sigmaMin        0.525;
+    marangoni       false;
+    liquidOnly      true;
+    alphaMin        0.001;
+    capillaryDtFactor 0.8;
+    sigmaScale      1;
+}
+
+vaporisation
+{
+    recoil          false;
+    Tboil           3090;
+    Lv              7450000;
+    molarMass       0.0558;
+    pAmbient        101325;
+    recoilMax       200000;
+}
+
+surfaceLosses
+{
+    evaporation     true;
+    radiation       true;
+    convection      true;
+    emissivity      0.4;
+    hConv           20;
+    Tambient        300;
+}
+
+buoyancy
+{
+    enabled         false;
+    beta            0.00015;
+}
+
+wire
+{
+    origin          ( 0 0 0 );
+    axis            ( 0 0 1 );
+    radius          0.0005;
+    zoneRadiusFactor 1.5;
+    zoneMinZ        7.5e-05;
+    feedVelocity    ( 0 0 -0.024 );
+    tFeedStart      0;
+    tFeedRamp       0.002;
+}
+
+laser
+{
+    enabled         false;
+    absorptivity    0.35;
+    beams           ( beam1_az60 { power 246.667 ; focus ( -0.000302 0.000523079 0.0002 ) ; direction ( 0.12941 -0.224144 -0.965926 ) ; radius 0.00026 ; profile gaussian ; } beam2_az-60 { power 246.667 ; focus ( -0.000302 -0.000523079 0.0002 ) ; direction ( 0.12941 0.224144 -0.965926 ) ; radius 0.00026 ; profile gaussian ; } beam3_az180 { power 246.667 ; focus ( 0.000604 7.39687e-20 0.0002 ) ; direction ( -0.258819 -3.16962e-17 -0.965926 ) ; radius 0.00026 ; profile gaussian ; } );
+    symmetryY       false;
+    raySpacingFactor 0.5;
+    rayStepFactor   0.33;
+    alphaHit        0.5;
+    tStart          0;
+    tRamp           0.002;
+    shadowing       true;
+    planar2D        true;
+    width2D         0.0024;
+}
+
+statistics
+{
+    interval        20;
+    symmetryY       false;
+    powerFactor     2;
+    substrateTop    0;
+    beadProbeX      0.0058;
+    beadProbeAuto   true;
+    beadProbeOffset 0.00045;
+    beadHeightThreshold 3e-05;
+}
+
+contactLine
+{
+    enabled         true;
+    thetaReceding   10;
+    thetaAdvancing  40;
+    pinWire         false;
+    thetaRecedingWire 30;
+    thetaAdvancingWire 90;
+    wireVelocity    head;
+    flPin           0.15;
+    flFree          0.6;
+    flSolid         0.2;
+    Kpin            1e+07;
+    gradMin         0.25;
+    forceFactor     6;
+    forceBlend      0;
+    zSubstrate      0;
+    interval        10;
+}
+
+porosity
+{
+    enabled         true;
+    alphaOpen       0.5;
+    alphaLock       0.05;
+    flLock          0.35;
+    lofBand         0.0009;
+    keyholeTfrac    0.85;
+    keyholeDepth    0.0003;
+    keyholeRecoil   5000;
+    minCells        1;
+    zSubstrate      0;
+    Tboil           3090;
+    interval        10;
+    wireCavity      true;
+    cavityOuter     0.0018;
+    cavityHalfAngle 110;
+}
+
+linePin
+{
+    enabled         true;
+    nCells          2;
+    ppmRef          300;
+    Kpin            1e+12;
+    tau             0.0005;
+}
+
+wireTipMelt
+{
+    enabled         true;
+    Twire           300;
+    band            0.0004;
+    vMax            0.05;
+}
+
+
+// ************************************************************************* //
+
+wireSlide
+{
+    enabled         false;
+}
+
+oxideSkin
+{
+    enabled         false;
+}
+
+slitEntry
+{
+    enabled         true;
+    ppm             300;
+    depthSpan       0.00035;
+    // Imposed. The pinned line moves at the feed from the generated crest.
+    // Gas enters only after the line is this far below that crest.
+    // Columns: ppm threshold[m] entryRate[m/s] gapMouth[m] gapRoot[m]
+    oxygenTable
+    (
+        (50  1.2e-4  0.012  4.5e-5  3.0e-5)
+        (100 8.0e-5  0.020  5.5e-5  3.2e-5)
+        (300 4e-05  0.040  6.5e-5  3.5e-5)
+    );
+}

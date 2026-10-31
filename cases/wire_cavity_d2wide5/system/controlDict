@@ -1,0 +1,27 @@
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      controlDict;
+}
+
+application     laserWireDEDFoam;
+startFrom       startTime;
+startTime       0;
+stopAt          endTime;
+endTime         0.008;
+deltaT          1e-7;
+writeControl    adjustableRunTime;
+writeInterval   0.002;
+purgeWrite      0;
+writeFormat     ascii;
+writePrecision  8;
+writeCompression off;
+timeFormat      general;
+timePrecision   6;
+runTimeModifiable yes;
+adjustTimeStep  yes;
+maxCo           0.4;
+maxAlphaCo      0.2;
+maxDeltaT       2e-6;
