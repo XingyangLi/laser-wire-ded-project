@@ -124,7 +124,30 @@
         }
     }
 
-    surfaceScalarField sigmaKf(fvc::interpolate(sigmaT*(-fvc::div(mixture.nHatf()))));
+    // sigmaScale multiplies the coefficient that enters the CSF force.
+    // It is an imposed numerical enhancement, not a change of the alloy.
+    // The branches above write the physical sigma; this applies the factor once.
+    if (!oxygenDependent && !sigmaTdep)
+    {
+        sigmaT.primitiveFieldRef() = sigmaScale*matSigma.primitiveField();
+        sigmaT.correctBoundaryConditions();
+    }
+    else if (mag(sigmaScale - 1.0) > 1e-8)
+    {
+        sigmaT *= sigmaScale;
+    }
+
+    // Curvature from alpha smoothed by two explicit averages. The advected
+    // alpha is unchanged, so the force still sits on the real interface.
+    volScalarField alphaC(alpha1);
+    alphaC = fvc::average(fvc::interpolate(alphaC));
+    alphaC = fvc::average(fvc::interpolate(alphaC));
+    alphaC.correctBoundaryConditions();
+    const dimensionedScalar deltaN("deltaN", dimless/dimLength, 1e-8);
+    const surfaceVectorField gradCf(fvc::interpolate(fvc::grad(alphaC)));
+    const surfaceVectorField nHatC(gradCf/(mag(gradCf) + deltaN));
+    const surfaceScalarField nHatFlux(nHatC & mesh.Sf());
+    surfaceScalarField sigmaKf(fvc::interpolate(sigmaT*(-fvc::div(nHatFlux))));
 
     if (stLiquidOnly)
     {
@@ -145,6 +168,17 @@
     }
 
     stForcef = sigmaKf*fvc::snGrad(alpha1);
+    {
+        // Numerical cap. A one-cell interface on the 19 um neck can make
+        // snGrad(alpha)*kappa large enough to throw the velocity solver.
+        // 2 m/s per 1 us is above the capillary speed of a sane film and
+        // does not follow the current time step, so the cap does not loosen
+        // when deltaT shrinks. Alloy sigma is unchanged.
+        const scalar fMax = rho1.value()*2.0/1.0e-6;
+        const dimensionedScalar fMaxD("fCap", stForcef.dimensions(), fMax);
+        const dimensionedScalar fMinD("fCap", stForcef.dimensions(), -fMax);
+        stForcef = min(max(stForcef, fMinD), fMaxD);
+    }
     if (stDensityScaled)
     {
         // a = F/rho becomes sigma*kappa*grad(alpha)*2/(rho1+rho2) in both

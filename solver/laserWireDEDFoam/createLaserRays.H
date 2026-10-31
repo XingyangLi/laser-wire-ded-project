@@ -21,6 +21,14 @@
 // processor. A weave rebuilds the rays when the head has moved sideways by
 // about a quarter of a fine cell (retraceLaser, called from updateWeave.H).
 // The focus read from the dictionary is shifted by weaveY.
+//
+// Positive inclination aims the spot further out than the focus, so the line
+// above the focus runs back through the wire. That segment is not the path
+// onto the plate: samples above the focus (s < 0) that still lie inside the
+// wire radius are omitted. From the focus downward, and anywhere the ray is
+// already outside the wire, the first metal cell takes the ray. A bead grown
+// outside the wire stops the rear beam before the plate. The inner part of
+// the spot still meets the wire at the aim height.
 // ---------------------------------------------------------------------------
 DynamicList<scalar> rayPower;          // W (full ray power, before ramp/absorption)
 DynamicList<label>  rayBeam;
@@ -35,8 +43,12 @@ retraceLaser = [&]()
     const bool planar = ld.getOrDefault<bool>("planar2D", false);
     const scalar width2D = ld.getOrDefault<scalar>("width2D", 1e-3);
     const scalar dxMin = 1.0/max(gMax(mesh.deltaCoeffs().primitiveField()), SMALL);
-    const scalar hRay = ld.getOrDefault<scalar>("raySpacingFactor", 0.5)*dxMin;
-    const scalar dsRay = ld.getOrDefault<scalar>("rayStepFactor", 0.33)*dxMin;
+    // Neck cells can be a few micrometres. The beam radius is 0.26 mm, so
+    // ray spacing stops following the mesh below 15 um. Finer than that the
+    // march is billions of findCell calls and never reaches the time loop.
+    const scalar dxRay = max(dxMin, scalar(1.5e-5));
+    const scalar hRay = ld.getOrDefault<scalar>("raySpacingFactor", 0.5)*dxRay;
+    const scalar dsRay = ld.getOrDefault<scalar>("rayStepFactor", 0.33)*dxRay;
 
     // symmetryY: the mesh is the half y >= 0 of a domain symmetric about y = 0.
     // Rays are traced in the full (mirrored) domain and folded back with
@@ -138,8 +150,18 @@ retraceLaser = [&]()
             label lastCell = -1;
             for (label k = 0; k < ns; ++k)
             {
-                point p = org[ri] + (s0 + (k + 0.5)*dsRay)*d;
+                const scalar sHere = s0 + (k + 0.5)*dsRay;
+                point p = org[ri] + sHere*d;
                 if (symY) p.y() = mag(p.y());
+                // Above the focus the outward ray track passes through the
+                // wire column. Skip that segment so the spot on the plate,
+                // and a bead outside the wire, are not shadowed by the shaft.
+                if (sHere < 0
+                    && Foam::hypot(p.x() - wireOrigin.x(), p.y() - wireOrigin.y())
+                       < wireRadius)
+                {
+                    continue;
+                }
                 const label c = mesh.findCell(p);
                 if (c >= 0 && c != lastCell)
                 {

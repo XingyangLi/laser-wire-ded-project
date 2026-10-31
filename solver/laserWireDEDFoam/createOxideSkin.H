@@ -36,8 +36,8 @@
 
 const dictionary oxideSkinDict(meltProperties.subOrEmptyDict("oxideSkin"));
 const bool oxideSkinEnabled = oxideSkinDict.getOrDefault<bool>("enabled", false);
-const scalar oxideSkinMu0 = oxideSkinDict.getOrDefault<scalar>("muSkin", 20.0);
-const scalar oxideSkinK0 = oxideSkinDict.getOrDefault<scalar>("Kskin", 1.0e14);
+scalar oxideSkinMu0 = oxideSkinDict.getOrDefault<scalar>("muSkin", 20.0);
+scalar oxideSkinK0 = oxideSkinDict.getOrDefault<scalar>("Kskin", 1.0e14);
 const scalar oxideSkinGap = oxideSkinDict.getOrDefault<scalar>("gapThreshold", 0.10e-3);
 const scalar oxideSkinZ0 = oxideSkinDict.getOrDefault<scalar>("zMin", 0.30e-3);
 const scalar oxideSkinZ1 = oxideSkinDict.getOrDefault<scalar>("zMax", 1.55e-3);
@@ -62,12 +62,109 @@ const label oxideSkinInterval = oxideSkinDict.getOrDefault<label>
 label oxideSkinLogIndex = -1;
 
 scalar oxideSkinStrength = 0;
+// Extra tension (N/m) per unit coverage. 0 leaves the alloy sigma alone.
+// Imposed numerical stiffness of the skin, not a change of the alloy.
+scalar oxideSkinSigma = 0;
+// Non-wetting window written into the log. The wall BC carries the same
+// angles (thetaRox / thetaAox) so a skinned wall face does not wet.
+scalar oxideSkinThetaR = 0;
+scalar oxideSkinThetaA = 0;
+// Elastic membrane. Imposed numerical model. E is the in-plane modulus
+// (N/m) at saturation, bend is the length over which the membrane force
+// fades as the gap opens, epsRup is the stretch at which the skin breaks
+// and the surface is free again. aCap limits the elastic acceleration.
+scalar oxideSkinE = 0;
+scalar oxideSkinBend = 8e-5;
+scalar oxideSkinEpsRup = 1.2;
+scalar oxideSkinACap = oxideSkinDict.getOrDefault<scalar>("aCap", 150);
 if (oxideSkinEnabled)
 {
     oxideSkinStrength =
         oxygenDependent
       ? min(max(chamberOxygenPpm/oxideSkinPpmRef, scalar(0)), scalar(1))
       : scalar(1);
+
+    // ppm strength mu[Pa.s] sigmaExtra[N/m] thetaRox[deg] thetaAox[deg]
+    // Model assumption. Higher ppm: more skin, stiffer film, less wetting.
+    const List<scalarList> oxTable
+    (
+        oxideSkinDict.getOrDefault<List<scalarList>>
+        (
+            "oxygenTable",
+            List<scalarList>()
+        )
+    );
+    if (oxTable.size())
+    {
+        const scalar ppm = oxideSkinDict.getOrDefault<scalar>
+        (
+            "ppm",
+            oxygenDependent ? chamberOxygenPpm : 300
+        );
+        for (const scalarList& row : oxTable)
+        {
+            if (row.size() < 6)
+            {
+                FatalErrorInFunction
+                    << "oxideSkin/oxygenTable rows are ppm strength mu "
+                    << "sigmaExtra thetaRox thetaAox, got " << row << nl
+                    << exit(FatalError);
+            }
+        }
+        label iLo = 0;
+        label iHi = oxTable.size() - 1;
+        for (label i = 0; i < oxTable.size(); ++i)
+        {
+            if (oxTable[i][0] <= ppm) iLo = i;
+        }
+        for (label i = 0; i < oxTable.size(); ++i)
+        {
+            if (oxTable[i][0] >= ppm)
+            {
+                iHi = i;
+                break;
+            }
+        }
+        const scalar x0 = oxTable[iLo][0];
+        const scalar x1 = oxTable[iHi][0];
+        const scalar f =
+            (iLo == iHi) ? 0 : (ppm - x0)/max(x1 - x0, SMALL);
+        const scalar sat = oxTable[iLo][1] + f*(oxTable[iHi][1] - oxTable[iLo][1]);
+        const scalar muRow = oxTable[iLo][2] + f*(oxTable[iHi][2] - oxTable[iLo][2]);
+        const scalar sigRow = oxTable[iLo][3] + f*(oxTable[iHi][3] - oxTable[iLo][3]);
+        oxideSkinThetaR = oxTable[iLo][4] + f*(oxTable[iHi][4] - oxTable[iLo][4]);
+        oxideSkinThetaA = oxTable[iLo][5] + f*(oxTable[iHi][5] - oxTable[iLo][5]);
+        oxideSkinStrength = max(sat, scalar(0));
+        // Coverage saturates at `sat`, and mu/sigma are the values at that
+        // saturation. The damper K stays 0: stiffness is the extra tension,
+        // not a 1e14 sink.
+        const scalar satSafe = max(oxideSkinStrength, scalar(0.05));
+        oxideSkinMu0 = max(muRow, scalar(0))/satSafe;
+        oxideSkinSigma = max(sigRow, scalar(0))/satSafe;
+        oxideSkinK0 = 0;
+        oxideSkinE = 2.5*oxideSkinStrength;
+        if (oxTable[iLo].size() >= 9 && oxTable[iHi].size() >= 9)
+        {
+            oxideSkinE =
+                oxTable[iLo][6] + f*(oxTable[iHi][6] - oxTable[iLo][6]);
+            oxideSkinBend =
+                oxTable[iLo][7] + f*(oxTable[iHi][7] - oxTable[iLo][7]);
+            oxideSkinEpsRup =
+                oxTable[iLo][8] + f*(oxTable[iHi][8] - oxTable[iLo][8]);
+        }
+        oxideSkinE = max(oxideSkinE, scalar(0));
+        oxideSkinBend = max(oxideSkinBend, scalar(1e-5));
+        oxideSkinEpsRup = max(oxideSkinEpsRup, scalar(0.05));
+        Info<< "OxideSkin table: ppm " << ppm
+            << " sat " << oxideSkinStrength
+            << " mu " << muRow << " Pa.s"
+            << " sigmaExtra " << sigRow << " N/m"
+            << " thetaOx " << oxideSkinThetaR << "/" << oxideSkinThetaA
+            << " deg  E " << oxideSkinE << " N/m"
+            << " bend " << oxideSkinBend*1e3 << " mm"
+            << " epsRup " << oxideSkinEpsRup
+            << " (imposed elastic membrane)" << nl;
+    }
 }
 
 volScalarField muOxide
@@ -111,6 +208,39 @@ volVectorField Ukeep
         IOobject::NO_WRITE
     ),
     U
+);
+
+// Elastic membrane force. Zero when the skin is off.
+volVectorField Fskin
+(
+    IOobject
+    (
+        "Fskin",
+        runTime.timeName(),
+        mesh,
+        IOobject::NO_READ,
+        IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedVector(dimForce/dimVolume, Zero)
+);
+
+// Surface stretch. Missing file -> 0, same unpainted start as coverage.
+volScalarField skinStrain
+(
+    IOobject
+    (
+        "skinStrain",
+        runTime.timeName(),
+        mesh,
+        IOobject::READ_IF_PRESENT,
+        (oxideSkinEnabled && oxideSkinDynamic)
+      ? IOobject::AUTO_WRITE
+      : IOobject::NO_WRITE
+    ),
+    mesh,
+    dimensionedScalar(dimless, Zero),
+    "zeroGradient"
 );
 
 // Coverage in [0, 1]. Missing file -> 0, so a restarted neck is unpainted.

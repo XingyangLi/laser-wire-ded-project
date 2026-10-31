@@ -25,6 +25,7 @@
       + Fmarangoni
       + Fbuoy
       + Fcontact
+      + Fskin
       + fvOptions(rho, U)
     );
 

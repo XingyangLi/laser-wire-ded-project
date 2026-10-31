@@ -196,6 +196,10 @@ int main(int argc, char *argv[])
 
             mixture.correct();
 
+            // Gas entry at the dragged contact line. After alpha, so the
+            // opened cells are what the momentum equation sees.
+            #include "slitEntry.H"
+
             bool trailDragDoLog = false;
             #include "trailDrag.H"
             mixture.correct();
@@ -204,9 +208,12 @@ int main(int argc, char *argv[])
 
             // --- Energy equation with melting / solidification
             #include "TEqn.H"
+            #include "wireTipMelt.H"
             #include "updateSurfaceTension.H"
             #include "recoilPressure.H"
             #include "contactLine.H"
+            #include "linePin.H"
+            #include "wireWallSlide.H"
             #include "porosity.H"
 
             if (pimple.frozenFlow())
@@ -221,6 +228,9 @@ int main(int argc, char *argv[])
             {
                 #include "pEqn.H"
             }
+
+            #include "neckVelocity.H"
+            #include "dampSpurious.H"
 
             if (pimple.turbCorr())
             {
